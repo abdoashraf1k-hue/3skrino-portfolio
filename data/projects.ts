@@ -201,22 +201,6 @@ export const projects: Project[] = [
     videoUrl: "",
     thumbnail: "",
   },
-  {
-    id: "admin-smoke-test",
-    accentColor: "#e7fe55",
-    orientation: "vertical",
-    title: "Admin Smoke Test (edited)",
-    category: "ai",
-    year: 2026,
-    client: "QA",
-    role: "AI Director",
-    tools: ["Kling"],
-    duration: "01:05",
-    description: "Temporary entry created by the admin panel test run.",
-    videoUrl: "",
-    thumbnail: "",
-    featured: true,
-  },
 ];
 
 export type Reel = {
