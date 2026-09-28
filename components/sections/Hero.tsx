@@ -27,6 +27,7 @@ export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const nameRef = useRef<HTMLSpanElement>(null);
   const wordRef = useRef<HTMLDivElement>(null);
+  const underlineRef = useRef<HTMLSpanElement>(null);
 
   // Particles: desktop (≥768px) with motion allowed, and WebGL didn't fail.
   const rich = useMediaQuery(RICH_MOTION_QUERY);
@@ -67,6 +68,24 @@ export default function Hero() {
     });
     return () => ctx.revert();
   }, [particles]);
+
+  // Once the letters settle: a 2px accent line draws in under the name, then
+  // breathes between 30% and 50% of its width (static at 40% for reduced motion).
+  useEffect(() => {
+    const el = underlineRef.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      gsap.set(el, { scaleX: 0.4 });
+      return;
+    }
+    const tl = gsap
+      .timeline({ delay: 2.5 })
+      .fromTo(el, { scaleX: 0 }, { scaleX: 0.5, duration: 0.9, ease: "power3.out" })
+      .to(el, { scaleX: 0.3, duration: 2.4, ease: "sine.inOut", repeat: -1, yoyo: true });
+    return () => {
+      tl.kill();
+    };
+  }, []);
 
   const letters = site.name.split("");
   const lettersDone = 0.2 + letters.length * 0.04;
@@ -110,6 +129,9 @@ export default function Hero() {
           >
             <span className="size-1.5 rounded-full bg-accent" />
             Available for work — 2026
+            <span aria-hidden className="anim-nudge ml-1 text-accent">
+              ↓
+            </span>
           </motion.p>
 
           {/* On desktop the glyphs stay in the layout (and a11y tree) but render
@@ -121,7 +143,7 @@ export default function Hero() {
               particles && "text-transparent",
             )}
           >
-            <span ref={nameRef} data-text={site.name} className="inline-block">
+            <span ref={nameRef} data-text={site.name} className="relative inline-block">
               {letters.map((char, i) => (
                 <motion.span
                   key={`${char}-${i}`}
@@ -134,6 +156,11 @@ export default function Hero() {
                   {char}
                 </motion.span>
               ))}
+              <span
+                ref={underlineRef}
+                aria-hidden
+                className="absolute left-0 top-full mt-2 h-0.5 w-full origin-left scale-x-0 bg-accent"
+              />
             </span>
           </h1>
 
@@ -157,8 +184,6 @@ export default function Hero() {
             </Link>
             <Link
               href="/reels"
-              data-cursor="video"
-              data-cursor-label="▶ 01:00"
               className="group flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted transition-colors duration-300 hover:text-fg"
             >
               Showreel

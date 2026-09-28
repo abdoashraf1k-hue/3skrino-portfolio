@@ -37,7 +37,9 @@ export default function Footer() {
         )}
 
         <div className="flex flex-col justify-between gap-3 font-mono text-[10px] uppercase tracking-widest text-muted sm:flex-row">
-          <span>© 2026 {site.name}</span>
+          <span>
+            © 2026 {site.name} <span className="text-muted/70">— Cairo, EG</span>
+          </span>
           {!showCta && <SocialLinks className="hidden lg:flex" compact />}
           <span>Cairo → Worldwide</span>
         </div>

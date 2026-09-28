@@ -1,10 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { useState } from "react";
-import Timecode from "@/components/ui/Timecode";
 import type { Category } from "@/data/categories";
-import { play } from "@/lib/sound";
 import { cn, pad } from "@/lib/utils";
 
 const GRADIENTS = [
@@ -13,46 +8,23 @@ const GRADIENTS = [
   "linear-gradient(140deg, #1e1e1e, #0b0b0b 35%, #262626 65%, #0e0e0e)",
 ];
 
-export default function CategoryCard({ category, index }: { category: Category; index: number }) {
-  const [recording, setRecording] = useState(false);
+// Hover-only "[ ● … ]" markers: zero-width at rest so the count stays flush left.
+const marker =
+  "inline-block max-w-0 overflow-hidden whitespace-pre opacity-0 transition-[max-width,opacity] duration-[400ms] group-hover:max-w-6 group-hover:opacity-100 group-focus-visible:max-w-6 group-focus-visible:opacity-100";
 
+export default function CategoryCard({ category, index }: { category: Category; index: number }) {
   return (
     <Link
       href={`/work/${category.id}`}
       data-hover
-      onMouseEnter={() => {
-        setRecording(true);
-        play("rewind");
-      }}
-      onMouseLeave={() => setRecording(false)}
-      onFocus={() => setRecording(true)}
-      onBlur={() => setRecording(false)}
-      className="group relative flex aspect-[3/4] flex-col border border-line p-6 transition-[background-color,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-accent/[0.03] active:scale-[0.98] active:duration-150 md:p-8"
+      className="group relative flex aspect-[3/4] flex-col border border-line p-6 transition-[background-color,border-color,transform] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-accent hover:bg-accent/[0.03] focus-visible:border-accent active:scale-[0.98] active:duration-150 md:p-8"
     >
-      {/* Accent stroke that traces the perimeter on hover */}
-      <svg aria-hidden className="pointer-events-none absolute inset-0 size-full overflow-visible">
-        <rect
-          x="0"
-          y="0"
-          width="100%"
-          height="100%"
-          pathLength={1}
-          fill="none"
-          stroke="var(--accent)"
-          strokeWidth="1"
-          vectorEffect="non-scaling-stroke"
-          className="[stroke-dasharray:1] [stroke-dashoffset:1] transition-[stroke-dashoffset] duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:[stroke-dashoffset:0] group-focus-visible:[stroke-dashoffset:0]"
-        />
-      </svg>
-
-      {/* Index ↔ live timecode flip */}
-      <div className="relative h-4 font-mono text-[10px] uppercase tracking-widest [perspective:400px]">
-        <span className="absolute inset-0 origin-bottom text-muted transition-[transform,opacity] duration-500 group-hover:-translate-y-1 group-hover:[transform:rotateX(90deg)] group-hover:opacity-0">
+      <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-widest">
+        <span className="text-muted transition-colors duration-[400ms] group-hover:italic group-hover:text-accent">
           {pad(index + 1)}
         </span>
-        <span className="absolute inset-0 flex origin-top items-center gap-1.5 text-accent opacity-0 transition-[transform,opacity] duration-500 [transform:rotateX(-90deg)] group-hover:opacity-100 group-hover:[transform:rotateX(0deg)]">
-          <span className="size-1.5 animate-pulse rounded-full bg-accent-2" />
-          REC <Timecode running={recording} fields={3} />
+        <span className="flex items-center gap-1.5 text-accent opacity-0 transition-opacity duration-[400ms] group-hover:opacity-100 group-focus-visible:opacity-100">
+          REC <span className="size-1.5 rounded-full bg-accent-2" />
         </span>
       </div>
 
@@ -78,13 +50,24 @@ export default function CategoryCard({ category, index }: { category: Category; 
       </div>
 
       <div>
-        <h3 className="text-[clamp(1.75rem,2.6vw,2.25rem)] font-black uppercase leading-none tracking-tight">
+        <h3 className="text-[clamp(1.75rem,2.6vw,2.25rem)] font-black uppercase leading-none tracking-tight transition-transform duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-1">
           {category.name}
         </h3>
         <span className="mt-4 flex items-center justify-between font-mono text-[10px] uppercase tracking-widest text-muted">
-          {category.count} {category.count === 1 ? "Project" : "Projects"}
+          <span className="flex items-center">
+            <span aria-hidden className={marker}>
+              {"[ "}
+            </span>
+            <span aria-hidden className={cn(marker, "text-accent")}>
+              {"● "}
+            </span>
+            {category.count} {category.count === 1 ? "Project" : "Projects"}
+            <span aria-hidden className={marker}>
+              {" ]"}
+            </span>
+          </span>
           <span
-            className={cn("text-sm transition-[transform,color] duration-300 group-hover:translate-x-1 group-hover:text-accent")}
+            className="text-sm transition-[transform,color] duration-[400ms] group-hover:translate-x-1 group-hover:text-accent"
           >
             →
           </span>

@@ -22,10 +22,12 @@ export default function SocialLinks({
             href={s.href}
             target="_blank"
             rel="noreferrer"
-            className="text-muted transition-colors duration-300 hover:text-accent"
+            className="group text-muted transition-colors duration-300 hover:text-accent"
           >
             {s.label}
-            {!compact && <span className="ml-1">↗</span>}
+            {!compact && (
+              <span className="ml-1 inline-block transition-transform duration-300 group-hover:translate-x-0.5">↗</span>
+            )}
           </a>
         </li>
       ))}

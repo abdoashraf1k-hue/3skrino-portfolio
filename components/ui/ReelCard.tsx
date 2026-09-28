@@ -16,8 +16,6 @@ export default function ReelCard({ reel, index, href = "/reels", natural = false
   return (
     <Link
       href={href}
-      data-cursor="video"
-      data-cursor-label={`▶ ${reel.duration}`}
       className={cn("group block", className)}
     >
       <div

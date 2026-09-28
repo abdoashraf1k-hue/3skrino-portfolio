@@ -9,12 +9,12 @@ export default function AIShowcase() {
   const aiWork = projects.filter((p) => p.category === "ai").slice(0, 4);
 
   return (
-    <section id="ai" className="border-b border-line py-24 md:py-40">
+    <section id="ai" className="border-b border-line py-20 md:py-32">
       <div className={CONTAINER}>
         <SectionHeader
           index="05"
           label="AI work"
-          lines={[{ text: "Future", className: "text-accent" }, "Formats."]}
+          lines={[{ text: "Future", italic: true }, "Formats."]}
         />
 
         <div className="grid grid-cols-12 gap-x-6 gap-y-12">
@@ -46,8 +46,6 @@ export default function AIShowcase() {
               <Link
                 key={project.id}
                 href={projectHref(project)}
-                data-cursor="view"
-                data-cursor-label={project.orientation === "vertical" ? "9:16" : "16:9"}
                 className="group block"
               >
                 <div className="relative aspect-[9/16] overflow-hidden rounded-sm bg-bg-soft">

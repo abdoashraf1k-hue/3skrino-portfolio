@@ -44,7 +44,7 @@ export default function AboutPage() {
 
       <About index="01" />
 
-      <section id="services" className="border-b border-line py-24 md:py-40">
+      <section id="services" className="border-b border-line py-20 md:py-32">
         <div className={CONTAINER}>
           <p className="mb-12 font-mono text-[11px] uppercase tracking-widest text-muted">(02) Services</p>
           <Reveal stagger className="border-t border-line">
@@ -66,7 +66,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section id="timeline" className="border-b border-line py-24 md:py-40">
+      <section id="timeline" className="border-b border-line py-20 md:py-32">
         <div className={CONTAINER}>
           <p className="mb-12 font-mono text-[11px] uppercase tracking-widest text-muted">(03) Timeline</p>
           <Reveal stagger className="grid grid-cols-1 gap-y-10 md:grid-cols-5 md:gap-x-6">
@@ -80,7 +80,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section id="fields" className="py-24 md:py-40">
+      <section id="fields" className="py-20 md:py-32">
         <div className={CONTAINER}>
           <p className="mb-12 font-mono text-[11px] uppercase tracking-widest text-muted">(04) Fields</p>
           <Reveal>

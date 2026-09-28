@@ -6,12 +6,12 @@ import { CONTAINER } from "@/lib/utils";
 
 export default function Categories() {
   return (
-    <section id="fields" className="border-b border-line py-24 md:py-40">
+    <section id="fields" className="border-b border-line py-20 md:py-32">
       <div className={CONTAINER}>
         <SectionHeader
           index="03"
           label="Fields"
-          lines={["What I", "Cut."]}
+          lines={["What I", { text: "Cut.", italic: true }]}
           aside={
             <p className="max-w-xs text-base leading-relaxed text-muted">
               Nine fields, one editorial eye. Mostly vertical, always built around

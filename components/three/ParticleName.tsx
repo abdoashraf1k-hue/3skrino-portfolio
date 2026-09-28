@@ -8,14 +8,15 @@ import { gsap } from "@/lib/gsap";
 /* ------------------------------------------------------------------ */
 /* Tunables                                                            */
 /* ------------------------------------------------------------------ */
-const MAX_PARTICLES = 8000;
+const MAX_PARTICLES = 4000;
 const CAMERA_Z = 1000;
 const FOV = 35;
-const PUSH_RADIUS = 150; // px
-const PUSH_FORCE = 5200; // px/s²
+const PUSH_RADIUS = 100; // px
+const PUSH_FORCE = 2600; // px/s²
 const SPRING_K = 55;
 const SPRING_DAMPING = 9;
-const BREATHE_PX = 2;
+const BREATHE_PX = 0.7;
+const POINT_SIZE = 1.36;
 /** Scroll window (in viewport heights) over which the name scatters. */
 const SCATTER_START = 0.4;
 const SCATTER_END = 0.8;
@@ -288,7 +289,7 @@ function Particles({ targetRef }: { targetRef: RefObject<HTMLElement | null> }) 
       vertexShader,
       fragmentShader,
       uniforms: {
-        uSize: { value: 2.3 * gl.getPixelRatio() },
+        uSize: { value: POINT_SIZE * gl.getPixelRatio() },
         uOpacity: { value: 0 },
       },
       transparent: true,
@@ -308,7 +309,7 @@ function Particles({ targetRef }: { targetRef: RefObject<HTMLElement | null> }) 
       sim.current?.geometry.dispose();
       points.geometry = next.geometry;
       sim.current = next;
-      material.uniforms.uSize.value = 2.3 * gl.getPixelRatio();
+      material.uniforms.uSize.value = POINT_SIZE * gl.getPixelRatio();
       if (animate) {
         formation.current.p = 0;
         tween = gsap.to(formation.current, { p: 1, duration: 2.5, ease: "expo.out", delay: 0.15 });

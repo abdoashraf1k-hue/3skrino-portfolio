@@ -11,8 +11,8 @@ const stats = [
 
 export default function About({ index = "06" }: { index?: string }) {
   return (
-    <section id="about" className="border-b border-line pt-24 md:pt-40">
-      <div className={cn(CONTAINER, "grid grid-cols-12 gap-x-6 gap-y-16 pb-24 md:pb-40")}>
+    <section id="about" className="border-b border-line pt-20 md:pt-32">
+      <div className={cn(CONTAINER, "grid grid-cols-12 gap-x-6 gap-y-16 pb-20 md:pb-32")}>
         <div className="col-span-12 lg:col-span-5">
           <Reveal stagger className="lg:sticky lg:top-32">
             <p className="mb-6 font-mono text-[11px] uppercase tracking-widest text-muted">
@@ -20,7 +20,9 @@ export default function About({ index = "06" }: { index?: string }) {
             </p>
             <h2 className="text-[clamp(3rem,7vw,7rem)] font-black uppercase leading-[0.9] tracking-tight">
               <span className="block">9+ Years</span>
-              <span className="block">of cutting.</span>
+              <span className="block">
+                of <span className="pr-[0.06em] italic text-accent">cutting.</span>
+              </span>
             </h2>
           </Reveal>
         </div>
@@ -73,7 +75,7 @@ export default function About({ index = "06" }: { index?: string }) {
         separator="/"
         separatorClassName="text-muted"
         className="border-t border-line py-6"
-        itemClassName="font-mono text-sm uppercase tracking-widest text-muted md:text-base"
+        itemClassName="font-mono text-sm uppercase tracking-widest text-muted duration-300 hover:text-fg md:text-base"
       />
     </section>
   );

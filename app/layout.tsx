@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import Cursor from "@/components/ui/Cursor";
-import FilmArtifacts from "@/components/ui/FilmArtifacts";
 import Footer from "@/components/ui/Footer";
 import Grain from "@/components/ui/Grain";
 import Navigation from "@/components/ui/Navigation";
@@ -9,11 +8,11 @@ import PageTransition from "@/components/ui/PageTransition";
 import SmoothScroll from "@/components/ui/SmoothScroll";
 import "./globals.css";
 
-// Variable font (no fixed weights) so font-weight can animate — used by the
-// "breathing" marquee. Covers 400–900 in a single file.
+// Variable font (no fixed weights) — covers 400–900; italic powers the editorial accent words.
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  style: ["normal", "italic"],
 });
 
 const jetbrains = JetBrains_Mono({
@@ -37,7 +36,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SmoothScroll>
           <PageTransition>
             <Grain />
-            <FilmArtifacts />
             <Cursor />
             <Navigation />
             <main>{children}</main>

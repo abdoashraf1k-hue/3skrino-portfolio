@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import Clock from "@/components/ui/Clock";
-import SoundToggle from "@/components/ui/SoundToggle";
 import { navLinks, site } from "@/data/site";
 import { cn, EASE_OUT } from "@/lib/utils";
 
@@ -29,7 +28,7 @@ function subscribeScrolling(onChange: () => void) {
     timer = window.setTimeout(() => {
       scrolling = false;
       onChange();
-    }, 180);
+    }, 300);
   };
   window.addEventListener("scroll", onScroll, { passive: true });
   return () => {
@@ -55,7 +54,10 @@ export default function Navigation() {
       <motion.div
         aria-hidden
         style={{ scaleX: progress }}
-        className="fixed inset-x-0 top-0 z-[60] h-0.5 origin-left bg-accent shadow-[0_0_12px_var(--accent)]"
+        className={cn(
+          "fixed inset-x-0 top-0 z-[60] h-[3px] origin-left bg-accent transition-shadow duration-300",
+          isScrolling && "shadow-[0_0_8px_color-mix(in_srgb,var(--accent)_40%,transparent)]",
+        )}
       />
       <motion.header
         initial={{ opacity: 0, y: -16 }}
@@ -72,9 +74,12 @@ export default function Navigation() {
           <Link
             href="/"
             onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-2 justify-self-start text-sm font-black uppercase tracking-widest"
+            className="wordmark flex items-center gap-2 justify-self-start text-sm font-black uppercase tracking-widest"
           >
-            {site.name}
+            <span>
+              {site.name}
+              <sup className="ml-0.5 font-mono text-[8px] font-normal text-muted">™</sup>
+            </span>
             <span
               aria-hidden
               className={cn(
@@ -89,9 +94,14 @@ export default function Navigation() {
               const active = isActive(link.href);
               return (
                 <li key={link.href} className="relative">
+                  {active && (
+                    <span
+                      aria-hidden
+                      className="absolute -left-2.5 top-1/2 size-1 -translate-y-1/2 rounded-full bg-accent"
+                    />
+                  )}
                   <Link
                     href={link.href}
-                    data-cursor="nav"
                     className={cn(
                       "font-mono text-[11px] uppercase tracking-widest transition-colors duration-300",
                       active ? "text-fg" : "text-muted hover:text-fg",
@@ -117,11 +127,9 @@ export default function Navigation() {
               <span className="size-1.5 rounded-full bg-accent-2" />
               {site.location}
             </span>
-            <SoundToggle />
           </div>
 
           <div className="flex items-center gap-4 justify-self-end md:hidden">
-            <SoundToggle />
             <button
               type="button"
               onClick={() => setMenuOpen((o) => !o)}

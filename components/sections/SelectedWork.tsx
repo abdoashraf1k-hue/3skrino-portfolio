@@ -18,12 +18,12 @@ export default function SelectedWork() {
   return (
     <>
       {/* A — vertical work: the default, and the majority */}
-      <section id="work" className="border-b border-line py-24 md:py-40">
+      <section id="work" className="border-b border-line py-20 md:py-32">
         <div className={CONTAINER}>
           <SectionHeader
             index="01"
             label="Vertical work — 9:16"
-            lines={["Vertical", "Work."]}
+            lines={["Vertical", { text: "Work.", italic: true }]}
             aside={
               <div className="flex flex-col items-start gap-3 lg:items-end">
                 <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
@@ -39,12 +39,12 @@ export default function SelectedWork() {
 
       {/* B — horizontal work: the featured minority */}
       {horizontalProjects.length > 0 && (
-        <section id="featured" className="border-b border-line bg-bg-soft py-24 md:py-40">
+        <section id="featured" className="border-b border-line bg-bg-soft py-20 md:py-32">
           <div className={cn(CONTAINER)}>
             <SectionHeader
               index="02"
               label="Horizontal / Featured — 16:9"
-              lines={["Wide", "Screen."]}
+              lines={["Wide", { text: "Screen.", italic: true }]}
               aside={
                 <p className="max-w-xs text-base leading-relaxed text-muted">
                   The minority, and the showpieces — brand films, launch spots and

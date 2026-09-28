@@ -4,7 +4,7 @@
   --bg: #0a0a0a;
   --bg-soft: #141414;
   --fg: #f5f5f5;
-  --muted: #7a7a7a;
+  --muted: #8a8a8a;
   --line: #1f1f1f;
   --accent: #e7fe55;
   --accent-2: #ff2d2d;
@@ -63,6 +63,11 @@ body label {
   color: var(--bg);
 }
 
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 html {
   scrollbar-width: none;
 }
@@ -99,21 +104,6 @@ html.lenis body {
 .marquee:has(.marquee-word:hover) .marquee-track {
   animation-play-state: paused;
 }
-.marquee-word::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -0.08em;
-  height: 1px;
-  background: var(--accent);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.marquee-word:hover::after {
-  transform: scaleX(1);
-}
 
 /* Animated placeholder gradient for vertical video stand-ins */
 @keyframes gradient-drift {
@@ -132,25 +122,55 @@ html.lenis body {
   animation: gradient-drift 9s ease-in-out infinite;
 }
 
-/* Audio waveform bars on hover previews */
-@keyframes wave {
+/* Tiny "↓" nudge beside the hero availability pill */
+@keyframes nudge {
   0%,
   100% {
-    transform: scaleY(0.25);
+    transform: translateY(0);
   }
   50% {
-    transform: scaleY(1);
+    transform: translateY(2px);
   }
 }
-.wave-bar {
-  transform-origin: bottom;
-  animation: wave 0.9s ease-in-out infinite;
+.anim-nudge {
+  display: inline-block;
+  animation: nudge 2s ease-in-out infinite;
+}
+
+/* Wordmark: a 150ms REC-style flicker once every 8s, and a skew "nod" on hover */
+@keyframes flicker {
+  0%,
+  98.1% {
+    opacity: 1;
+  }
+  99.05% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes nod {
+  0%,
+  100% {
+    transform: skewX(0deg);
+  }
+  50% {
+    transform: skewX(-3deg);
+  }
+}
+.wordmark {
+  animation: flicker 8s linear infinite;
+}
+.wordmark:hover {
+  animation: nod 200ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .marquee-track,
   .anim-gradient,
-  .wave-bar {
+  .anim-nudge,
+  .wordmark {
     animation: none;
   }
   *,

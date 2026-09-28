@@ -13,7 +13,6 @@ import {
 } from "react";
 import { gsap } from "@/lib/gsap";
 import { RICH_MOTION_QUERY, useMediaQuery } from "@/lib/hooks";
-import { play } from "@/lib/sound";
 
 /* ------------------------------------------------------------------ */
 /* Context — lets app/template.tsx know a client navigation happened   */
@@ -29,16 +28,15 @@ type IrisHandle = { close: () => Promise<void>; open: () => Promise<void> };
 const BLADES = 6;
 const R_OPEN = 80; // viewBox units — beyond the visible corners
 const R_CLOSED = -2; // slight overlap so no pinhole survives
-const TWIST = 50; // degrees the whole iris rotates while closing
-const CLOSE_S = 0.5;
-const OPEN_S = 0.5;
-const FLASH = "#ffb347";
+const TWIST = 60; // degrees the whole iris rotates while closing
+const CLOSE_S = 0.35;
+const OPEN_S = 0.35;
 
 function Iris({ rich, ref }: { rich: boolean; ref: Ref<IrisHandle> }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const bladeRefs = useRef<(SVGGElement | null)[]>([]);
   const fadeRef = useRef<HTMLDivElement>(null);
-  const flashRef = useRef<HTMLDivElement>(null);
+  const labelRef = useRef<HTMLSpanElement>(null);
   const state = useRef({ r: R_OPEN });
 
   const render = () => {
@@ -56,18 +54,25 @@ function Iris({ rich, ref }: { rich: boolean; ref: Ref<IrisHandle> }) {
         new Promise<void>((resolve) => {
           const root = rootRef.current;
           if (!root) return resolve();
-          gsap.killTweensOf([state.current, fadeRef.current, flashRef.current]);
+          gsap.killTweensOf([state.current, fadeRef.current, labelRef.current]);
           gsap.set(root, { visibility: "visible" });
-          const tl = gsap.timeline({ onComplete: resolve });
+          gsap.set(labelRef.current, { opacity: 0 });
+          const tl = gsap.timeline({
+            onComplete: () => {
+              // A 150ms "LOADING" blink while the iris is shut — runs alongside, never delays.
+              gsap
+                .timeline()
+                .to(labelRef.current, { opacity: 1, duration: 0.04, ease: "none" })
+                .to(labelRef.current, { opacity: 0, duration: 0.04, ease: "none" }, 0.11);
+              resolve();
+            },
+          });
           if (rich) {
             gsap.set(fadeRef.current, { opacity: 0 });
             tl.fromTo(state.current, { r: R_OPEN }, { r: R_CLOSED, duration: CLOSE_S, ease: "power3.inOut", onUpdate: render });
           } else {
-            tl.fromTo(fadeRef.current, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" });
+            tl.fromTo(fadeRef.current, { opacity: 0 }, { opacity: 1, duration: CLOSE_S, ease: "power2.out" });
           }
-          // Film-burn flash at the peak: 100ms warm pulse.
-          tl.fromTo(flashRef.current, { opacity: 0 }, { opacity: 0.85, duration: 0.05, ease: "none" })
-            .to(flashRef.current, { opacity: 0, duration: 0.05, ease: "none" });
         }),
       open: () =>
         new Promise<void>((resolve) => {
@@ -77,10 +82,12 @@ function Iris({ rich, ref }: { rich: boolean; ref: Ref<IrisHandle> }) {
             gsap.set(root, { visibility: "hidden" });
             resolve();
           };
+          gsap.killTweensOf(labelRef.current);
+          gsap.set(labelRef.current, { opacity: 0 });
           if (rich) {
             gsap.fromTo(state.current, { r: R_CLOSED }, { r: R_OPEN, duration: OPEN_S, ease: "power3.inOut", onUpdate: render, onComplete: done });
           } else {
-            gsap.to(fadeRef.current, { opacity: 0, duration: 0.35, ease: "power2.inOut", onComplete: done });
+            gsap.to(fadeRef.current, { opacity: 0, duration: OPEN_S, ease: "power2.inOut", onComplete: done });
           }
         }),
     }),
@@ -100,17 +107,18 @@ function Iris({ rich, ref }: { rich: boolean; ref: Ref<IrisHandle> }) {
               transform={`rotate(${i * (360 / BLADES)}) translate(0 ${-R_OPEN})`}
             >
               <rect x="-160" y="-320" width="320" height="320" fill="var(--bg)" />
-              <line x1="-160" y1="0" x2="160" y2="0" stroke="var(--accent)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+              <line x1="-160" y1="0" x2="160" y2="0" stroke="var(--accent)" strokeOpacity="0.6" strokeWidth="1" vectorEffect="non-scaling-stroke" />
             </g>
           ))}
         </svg>
       ) : null}
       <div ref={fadeRef} className="absolute inset-0 bg-bg opacity-0" />
-      <div
-        ref={flashRef}
-        className="absolute inset-0 opacity-0 mix-blend-screen"
-        style={{ background: `radial-gradient(70% 70% at 50% 50%, ${FLASH} 0%, transparent 75%)` }}
-      />
+      <span
+        ref={labelRef}
+        className="absolute inset-0 flex items-center justify-center font-mono text-[10px] uppercase tracking-widest text-accent opacity-0"
+      >
+        Loading
+      </span>
     </div>
   );
 }
@@ -149,17 +157,13 @@ export default function PageTransition({ children }: { children: ReactNode }) {
           return url.origin === window.location.origin && url.pathname !== window.location.pathname;
         })();
 
-      if (!isTransition || !anchor) {
-        if (!el.closest("[data-sound-toggle]")) play("snip");
-        return;
-      }
+      if (!isTransition || !anchor) return;
 
       // Hold the navigation until the iris has closed.
       e.preventDefault();
       if (busy.current) return;
       busy.current = true;
       const url = new URL(anchor.href, window.location.href);
-      play("projector");
       setHasNavigated(true);
 
       void (irisRef.current?.close() ?? Promise.resolve()).then(() => {
