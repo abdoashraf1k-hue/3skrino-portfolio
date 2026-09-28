@@ -1,0 +1,91 @@
+/*
+ * Admin-only styles. Every rule is scoped to [data-admin-root] (or to a body
+ * that contains it), so nothing here can reach the public site.
+ */
+
+/*
+ * The root layout renders nav, footer, grain, custom cursor, scroll progress
+ * and the page-transition iris as siblings of <main>. While /admin is mounted
+ * hide them all — no chrome, no film grain, no transitions in the admin.
+ */
+body:has(> main [data-admin-root]) > :not(main, nextjs-portal, script) {
+  display: none !important;
+}
+
+/* Native cursor (the site hides it for its custom one). */
+body:has([data-admin-root]),
+body:has([data-admin-root]) * {
+  cursor: auto !important;
+}
+[data-admin-root] :is(button, a, label, select, summary, input[type="color"]):not(:disabled) {
+  cursor: pointer !important;
+}
+[data-admin-root] [draggable="true"] {
+  cursor: grab !important;
+}
+[data-admin-root] :is(input:not([type="color"], [type="radio"], [type="file"]), textarea) {
+  cursor: text !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion — scroll-storytelling vocabulary, applied to a tool UI.      */
+/* The admin never pins or scrubs on scroll (it's a working surface);  */
+/* it borrows the site's entrance language instead.                    */
+/* ------------------------------------------------------------------ */
+
+/* Stagger: grid cards rise in sequence, 80ms apart (index via --i). */
+@keyframes admin-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+[data-admin-root] .admin-stagger {
+  animation: admin-rise 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+
+/* Clip reveal (bottom → top): the editor panel unveils upward. */
+@keyframes admin-clip-up {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+[data-admin-root] .admin-clip-reveal-up {
+  animation: admin-clip-up 420ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+/* Clip reveal (right → left): toasts unveil from the screen edge. */
+@keyframes admin-clip-left {
+  from {
+    clip-path: inset(0 0 0 100%);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+[data-admin-root] .admin-clip-reveal-left {
+  animation: admin-clip-left 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes admin-fade {
+  from {
+    opacity: 0;
+  }
+}
+[data-admin-root] .admin-fade {
+  animation: admin-fade 200ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-admin-root] :is(.admin-stagger, .admin-clip-reveal-up, .admin-clip-reveal-left, .admin-fade) {
+    animation: none;
+  }
+}
