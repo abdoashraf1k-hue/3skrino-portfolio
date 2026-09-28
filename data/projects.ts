@@ -201,6 +201,21 @@ export const projects: Project[] = [
     videoUrl: "",
     thumbnail: "",
   },
+  {
+    id: "admin-smoke-test",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "Admin Smoke Test",
+    category: "ai",
+    year: 2026,
+    client: "QA",
+    role: "AI Director",
+    tools: ["Sora", "Runway"],
+    duration: "00:42",
+    description: "Temporary entry created by the admin panel test run.",
+    videoUrl: "",
+    thumbnail: "",
+  },
 ];
 
 export type Reel = {
