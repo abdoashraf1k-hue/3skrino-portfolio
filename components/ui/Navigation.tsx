@@ -1,10 +1,11 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useScroll, useSpring } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import Clock from "@/components/ui/Clock";
+import SoundToggle from "@/components/ui/SoundToggle";
 import { navLinks, site } from "@/data/site";
 import { cn, EASE_OUT } from "@/lib/utils";
 
@@ -15,15 +16,47 @@ function subscribeScroll(onChange: () => void) {
 const getScrolled = () => window.scrollY > 40;
 const getScrolledServer = () => false;
 
+// "Is the page actively scrolling?" — true while scroll events keep arriving.
+let scrolling = false;
+function subscribeScrolling(onChange: () => void) {
+  let timer = 0;
+  const onScroll = () => {
+    if (!scrolling) {
+      scrolling = true;
+      onChange();
+    }
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      scrolling = false;
+      onChange();
+    }, 180);
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  return () => {
+    window.removeEventListener("scroll", onScroll);
+    window.clearTimeout(timer);
+  };
+}
+const getScrolling = () => scrolling;
+
 export default function Navigation() {
   const pathname = usePathname();
   const scrolled = useSyncExternalStore(subscribeScroll, getScrolled, getScrolledServer);
+  const isScrolling = useSyncExternalStore(subscribeScrolling, getScrolling, getScrolledServer);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { scrollYProgress } = useScroll();
+  const progress = useSpring(scrollYProgress, { stiffness: 200, damping: 40, restDelta: 0.001 });
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <>
+      {/* Scroll progress */}
+      <motion.div
+        aria-hidden
+        style={{ scaleX: progress }}
+        className="fixed inset-x-0 top-0 z-[60] h-0.5 origin-left bg-accent shadow-[0_0_12px_var(--accent)]"
+      />
       <motion.header
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -39,9 +72,16 @@ export default function Navigation() {
           <Link
             href="/"
             onClick={() => setMenuOpen(false)}
-            className="justify-self-start text-sm font-black uppercase tracking-widest"
+            className="flex items-center gap-2 justify-self-start text-sm font-black uppercase tracking-widest"
           >
             {site.name}
+            <span
+              aria-hidden
+              className={cn(
+                "size-1.5 rounded-full bg-accent-2 transition-opacity duration-300",
+                isScrolling ? "animate-pulse opacity-100" : "opacity-0",
+              )}
+            />
           </Link>
 
           <ul className="hidden items-center justify-center gap-8 md:flex">
@@ -51,6 +91,7 @@ export default function Navigation() {
                 <li key={link.href} className="relative">
                   <Link
                     href={link.href}
+                    data-cursor="nav"
                     className={cn(
                       "font-mono text-[11px] uppercase tracking-widest transition-colors duration-300",
                       active ? "text-fg" : "text-muted hover:text-fg",
@@ -76,17 +117,21 @@ export default function Navigation() {
               <span className="size-1.5 rounded-full bg-accent-2" />
               {site.location}
             </span>
+            <SoundToggle />
           </div>
 
-          <button
-            type="button"
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-expanded={menuOpen}
-            aria-controls="mobile-menu"
-            className="justify-self-end font-mono text-[11px] uppercase tracking-widest md:hidden"
-          >
-            {menuOpen ? "Close" : "Menu"}
-          </button>
+          <div className="flex items-center gap-4 justify-self-end md:hidden">
+            <SoundToggle />
+            <button
+              type="button"
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-menu"
+              className="font-mono text-[11px] uppercase tracking-widest"
+            >
+              {menuOpen ? "Close" : "Menu"}
+            </button>
+          </div>
         </nav>
       </motion.header>
 

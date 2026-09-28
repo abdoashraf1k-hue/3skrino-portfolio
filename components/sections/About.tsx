@@ -9,7 +9,7 @@ const stats = [
   { value: "9+", label: "Years" },
 ];
 
-export default function About({ index = "05" }: { index?: string }) {
+export default function About({ index = "06" }: { index?: string }) {
   return (
     <section id="about" className="border-b border-line pt-24 md:pt-40">
       <div className={cn(CONTAINER, "grid grid-cols-12 gap-x-6 gap-y-16 pb-24 md:pb-40")}>
@@ -71,6 +71,7 @@ export default function About({ index = "05" }: { index?: string }) {
         speed={45}
         direction="right"
         separator="/"
+        separatorClassName="text-muted"
         className="border-t border-line py-6"
         itemClassName="font-mono text-sm uppercase tracking-widest text-muted md:text-base"
       />

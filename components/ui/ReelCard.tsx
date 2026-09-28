@@ -14,7 +14,12 @@ type ReelCardProps = {
 
 export default function ReelCard({ reel, index, href = "/reels", natural = false, className }: ReelCardProps) {
   return (
-    <Link href={href} data-hover className={cn("group block", className)}>
+    <Link
+      href={href}
+      data-cursor="video"
+      data-cursor-label={`▶ ${reel.duration}`}
+      className={cn("group block", className)}
+    >
       <div
         className={cn(
           "relative overflow-hidden rounded-lg bg-bg-soft transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]",

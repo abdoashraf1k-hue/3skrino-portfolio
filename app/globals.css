@@ -28,7 +28,8 @@ body {
   color: var(--fg);
   font-family: var(--font-inter), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  /* clip, not hidden: hidden turns <body> into a scroll container and breaks position: sticky */
+  overflow-x: clip;
 }
 
 body {
@@ -94,9 +95,62 @@ html.lenis body {
   animation: marquee var(--marquee-duration, 40s) linear infinite;
   animation-direction: var(--marquee-direction, normal);
 }
+/* Hovering any word pauses the loop */
+.marquee:has(.marquee-word:hover) .marquee-track {
+  animation-play-state: paused;
+}
+.marquee-word::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.08em;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.marquee-word:hover::after {
+  transform: scaleX(1);
+}
+
+/* Animated placeholder gradient for vertical video stand-ins */
+@keyframes gradient-drift {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+.anim-gradient {
+  background-size: 220% 220%;
+  animation: gradient-drift 9s ease-in-out infinite;
+}
+
+/* Audio waveform bars on hover previews */
+@keyframes wave {
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.wave-bar {
+  transform-origin: bottom;
+  animation: wave 0.9s ease-in-out infinite;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .marquee-track {
+  .marquee-track,
+  .anim-gradient,
+  .wave-bar {
     animation: none;
   }
   *,

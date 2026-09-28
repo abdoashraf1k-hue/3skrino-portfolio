@@ -29,6 +29,7 @@ export default async function ProjectPage(props: PageProps<"/work/[category]/[pr
   if (!project || !category) notFound();
 
   const i = projects.indexOf(project);
+  const vertical = project.orientation === "vertical";
   const next = projects[(i + 1) % projects.length];
 
   const meta = [
@@ -51,7 +52,15 @@ export default async function ProjectPage(props: PageProps<"/work/[category]/[pr
 
       <section id="project" className={cn(CONTAINER, "pb-24 md:pb-40")}>
         <Reveal>
-          <div className="relative aspect-video overflow-hidden rounded-sm bg-bg-soft">
+          <div
+            data-cursor="video"
+            data-cursor-label={`▶ ${project.duration}`}
+            style={{ boxShadow: `0 0 120px -40px ${project.accentColor}` }}
+            className={cn(
+              "relative mx-auto overflow-hidden rounded-sm bg-bg-soft",
+              vertical ? "aspect-[9/16] w-full max-w-[min(100%,calc(80svh*9/16))]" : "aspect-video w-full",
+            )}
+          >
             {project.videoUrl ? (
               <video
                 src={project.videoUrl}
@@ -62,7 +71,7 @@ export default async function ProjectPage(props: PageProps<"/work/[category]/[pr
               />
             ) : (
               <>
-                <Placeholder title={project.title} seed={i} />
+                <Placeholder title={project.title} seed={i} size={vertical ? "sm" : "lg"} />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="flex size-20 items-center justify-center rounded-full border border-fg/30 text-sm md:size-24">
                     ▶
@@ -71,13 +80,18 @@ export default async function ProjectPage(props: PageProps<"/work/[category]/[pr
                 <div className="absolute inset-x-0 bottom-0 flex justify-between p-4 font-mono text-[10px] uppercase tracking-widest text-muted md:p-6">
                   <span className="flex items-center gap-1.5">
                     <span className="size-1.5 rounded-full bg-accent-2" />
-                    Footage coming soon
+                    Footage soon
                   </span>
-                  <span className="tabular-nums">00:00 / {project.duration}</span>
+                  <span className="tabular-nums" style={{ color: project.accentColor }}>
+                    00:00 / {project.duration}
+                  </span>
                 </div>
               </>
             )}
           </div>
+          <p className="mt-4 text-center font-mono text-[10px] uppercase tracking-widest text-muted">
+            {vertical ? "9:16 — Vertical" : "16:9 — Horizontal"}
+          </p>
         </Reveal>
 
         <Reveal stagger className="mt-12 grid grid-cols-2 border-y border-line md:grid-cols-4">

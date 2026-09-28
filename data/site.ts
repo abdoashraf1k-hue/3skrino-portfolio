@@ -23,12 +23,12 @@ export const navLinks = [
 ] as const;
 
 export const roles = [
-  "Video Editor",
-  "Colorist",
-  "Motion Designer",
-  "Content Creator",
-  "AI Video Artist",
-  "Reel Maker",
+  { label: "Video Editor", icon: "✦" },
+  { label: "Colorist", icon: "◉" },
+  { label: "Motion Designer", icon: "▣" },
+  { label: "Content Creator", icon: "⬢" },
+  { label: "AI Video Artist", icon: "◆" },
+  { label: "Reel Maker", icon: "✧" },
 ];
 
 export const tools = [

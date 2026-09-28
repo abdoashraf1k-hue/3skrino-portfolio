@@ -15,8 +15,9 @@ export default function Home() {
       <Marquee
         items={roles}
         speed={50}
+        breathe
         className="border-y border-line py-6"
-        itemClassName="text-3xl font-black uppercase tracking-tight md:text-5xl"
+        itemClassName="text-3xl uppercase tracking-tight md:text-5xl"
       />
       <SelectedWork />
       <Categories />

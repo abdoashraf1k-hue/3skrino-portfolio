@@ -14,11 +14,17 @@ export type Project = {
   /** Empty until real stills exist — cards fall back to a gradient. */
   thumbnail: string;
   featured?: boolean;
+  /** Per-project hover accent: glow, timecode, arrow. */
+  accentColor: string;
+  /** 90% of the work is 9:16 — vertical is the default. */
+  orientation: "vertical" | "horizontal";
 };
 
 export const projects: Project[] = [
   {
     id: "night-run",
+    accentColor: "#ff5a36",
+    orientation: "vertical",
     title: "Night Run",
     category: "sports",
     year: 2026,
@@ -34,6 +40,8 @@ export const projects: Project[] = [
   },
   {
     id: "quiet-luxury",
+    accentColor: "#d8c3a5",
+    orientation: "vertical",
     title: "Quiet Luxury",
     category: "fashion",
     year: 2025,
@@ -49,6 +57,8 @@ export const projects: Project[] = [
   },
   {
     id: "synthetic-dreams",
+    accentColor: "#9b8cff",
+    orientation: "horizontal",
     title: "Synthetic Dreams",
     category: "ai",
     year: 2026,
@@ -64,6 +74,8 @@ export const projects: Project[] = [
   },
   {
     id: "the-long-drive",
+    accentColor: "#5ad1c1",
+    orientation: "horizontal",
     title: "The Long Drive",
     category: "automotive",
     year: 2025,
@@ -79,6 +91,8 @@ export const projects: Project[] = [
   },
   {
     id: "built-to-scale",
+    accentColor: "#7aa7ff",
+    orientation: "horizontal",
     title: "Built to Scale",
     category: "corporate",
     year: 2024,
@@ -93,6 +107,8 @@ export const projects: Project[] = [
   },
   {
     id: "fire-and-salt",
+    accentColor: "#ff8a3d",
+    orientation: "vertical",
     title: "Fire & Salt",
     category: "restaurants",
     year: 2025,
@@ -107,6 +123,8 @@ export const projects: Project[] = [
   },
   {
     id: "skyline-residences",
+    accentColor: "#c9b28a",
+    orientation: "vertical",
     title: "Skyline Residences",
     category: "real-estate",
     year: 2024,
@@ -121,6 +139,8 @@ export const projects: Project[] = [
   },
   {
     id: "slow-mornings",
+    accentColor: "#e8d9b0",
+    orientation: "vertical",
     title: "Slow Mornings",
     category: "lifestyle",
     year: 2025,
@@ -135,6 +155,8 @@ export const projects: Project[] = [
   },
   {
     id: "neon-oasis",
+    accentColor: "#ff4fd8",
+    orientation: "vertical",
     title: "Neon Oasis",
     category: "ai",
     year: 2026,
@@ -149,6 +171,8 @@ export const projects: Project[] = [
   },
   {
     id: "second-skin",
+    accentColor: "#b8f0ff",
+    orientation: "vertical",
     title: "Second Skin",
     category: "ai",
     year: 2025,
@@ -163,6 +187,8 @@ export const projects: Project[] = [
   },
   {
     id: "future-archive",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
     title: "Future Archive",
     category: "ai",
     year: 2026,
@@ -184,18 +210,22 @@ export type Reel = {
   client: string;
   /** Tailwind aspect class — varied for the masonry layout on /reels */
   aspect: "aspect-[9/16]" | "aspect-[4/5]" | "aspect-[3/4]";
+  duration: string;
 };
 
 export const reels: Reel[] = [
-  { id: "r1", title: "Match Day", views: "2.4M", client: "Stride", aspect: "aspect-[9/16]" },
-  { id: "r2", title: "First Bite", views: "1.1M", client: "Ember Kitchen", aspect: "aspect-[4/5]" },
-  { id: "r3", title: "Drop 03", views: "860K", client: "Maison Noor", aspect: "aspect-[9/16]" },
-  { id: "r4", title: "Zero to 100", views: "3.2M", client: "Velocity", aspect: "aspect-[3/4]" },
-  { id: "r5", title: "Room Tour", views: "540K", client: "Horizon", aspect: "aspect-[9/16]" },
-  { id: "r6", title: "AI Morph", views: "1.8M", client: "Self", aspect: "aspect-[4/5]" },
-  { id: "r7", title: "Pour Over", views: "720K", client: "Bloom Coffee", aspect: "aspect-[9/16]" },
-  { id: "r8", title: "Behind the Cut", views: "410K", client: "Self", aspect: "aspect-[3/4]" },
+  { id: "r1", title: "Match Day", views: "2.4M", client: "Stride", aspect: "aspect-[9/16]", duration: "00:14" },
+  { id: "r2", title: "First Bite", views: "1.1M", client: "Ember Kitchen", aspect: "aspect-[4/5]", duration: "00:22" },
+  { id: "r3", title: "Drop 03", views: "860K", client: "Maison Noor", aspect: "aspect-[9/16]", duration: "00:09" },
+  { id: "r4", title: "Zero to 100", views: "3.2M", client: "Velocity", aspect: "aspect-[3/4]", duration: "00:18" },
+  { id: "r5", title: "Room Tour", views: "540K", client: "Horizon", aspect: "aspect-[9/16]", duration: "00:31" },
+  { id: "r6", title: "AI Morph", views: "1.8M", client: "Self", aspect: "aspect-[4/5]", duration: "00:12" },
+  { id: "r7", title: "Pour Over", views: "720K", client: "Bloom Coffee", aspect: "aspect-[9/16]", duration: "00:16" },
+  { id: "r8", title: "Behind the Cut", views: "410K", client: "Self", aspect: "aspect-[3/4]", duration: "00:27" },
 ];
+
+export const verticalProjects = projects.filter((p) => p.orientation === "vertical");
+export const horizontalProjects = projects.filter((p) => p.orientation === "horizontal");
 
 export function getProject(category: string, id: string): Project | undefined {
   return projects.find((p) => p.category === category && p.id === id);

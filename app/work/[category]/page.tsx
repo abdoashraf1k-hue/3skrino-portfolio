@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageHeader from "@/components/ui/PageHeader";
-import ProjectCard from "@/components/ui/ProjectCard";
+import ProjectGrid from "@/components/ui/ProjectGrid";
 import ReelCard from "@/components/ui/ReelCard";
 import Reveal from "@/components/ui/Reveal";
 import { categories, getCategory } from "@/data/categories";
@@ -51,13 +51,7 @@ export default async function CategoryPage(props: PageProps<"/work/[category]">)
             ))}
           </Reveal>
         ) : items.length > 0 ? (
-          <div className="grid grid-cols-1 gap-x-6 gap-y-12 md:grid-cols-2">
-            {items.map((project, i) => (
-              <Reveal key={project.id}>
-                <ProjectCard project={project} index={i} />
-              </Reveal>
-            ))}
-          </div>
+          <ProjectGrid projects={items} />
         ) : (
           <div className="flex flex-col items-start gap-6 border-y border-line py-24">
             <p className="font-mono text-[11px] uppercase tracking-widest text-muted">

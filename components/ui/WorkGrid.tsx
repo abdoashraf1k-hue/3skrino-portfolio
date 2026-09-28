@@ -15,7 +15,12 @@ type WorkGridProps = {
 export default function WorkGrid({ projects, categories }: WorkGridProps) {
   const [active, setActive] = useState<string>("all");
   const filters = categories.filter((c) => projects.some((p) => p.category === c.id));
-  const visible = active === "all" ? projects : projects.filter((p) => p.category === active);
+  const filtered = active === "all" ? projects : projects.filter((p) => p.category === active);
+  // Vertical first; 16:9 pieces span two columns and gather at the end.
+  const visible = [
+    ...filtered.filter((p) => p.orientation === "vertical"),
+    ...filtered.filter((p) => p.orientation === "horizontal"),
+  ];
 
   const chip = (id: string, label: string, count: number) => (
     <button
@@ -41,12 +46,13 @@ export default function WorkGrid({ projects, categories }: WorkGridProps) {
         {filters.map((c) => chip(c.id, c.name, projects.filter((p) => p.category === c.id).length))}
       </div>
 
-      <motion.div layout className="grid grid-cols-1 gap-x-6 gap-y-12 md:grid-cols-2">
+      <motion.div layout className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
         <AnimatePresence mode="popLayout">
           {visible.map((project) => (
             <motion.div
               key={project.id}
               layout
+              className={cn(project.orientation === "horizontal" && "col-span-2")}
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}

@@ -9,7 +9,7 @@ export default function Contact() {
       <Reveal stagger className={cn(CONTAINER, "flex flex-col items-center text-center")}>
         <p className="mb-10 flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted">
           <span className="size-1.5 rounded-full bg-accent" />
-          (06) Available for new projects
+          (07) Available for new projects
         </p>
         <h2 className="text-[clamp(4rem,12vw,14rem)] font-black uppercase leading-[0.88] tracking-tight">
           <span className="block">Let&apos;s</span>

@@ -1,41 +1,61 @@
 import Link from "next/link";
-import ProjectCard from "@/components/ui/ProjectCard";
-import Reveal from "@/components/ui/Reveal";
+import HorizontalStack from "@/components/sections/HorizontalStack";
+import VerticalMasonry from "@/components/sections/VerticalMasonry";
 import SectionHeader from "@/components/ui/SectionHeader";
-import { projects } from "@/data/projects";
+import { horizontalProjects, verticalProjects } from "@/data/projects";
 import { CONTAINER, cn } from "@/lib/utils";
 
-// Asymmetric 7 / 5 / 5 / 7 rhythm on the 12-col grid.
-const SPANS = ["lg:col-span-7", "lg:col-span-5", "lg:col-span-5", "lg:col-span-7"];
+const allWork = (
+  <Link
+    href="/work"
+    className="font-mono text-[11px] uppercase tracking-widest text-muted transition-colors duration-300 hover:text-accent"
+  >
+    All work →
+  </Link>
+);
 
 export default function SelectedWork() {
-  const featured = projects.filter((p) => p.featured).slice(0, 4);
-
   return (
-    <section id="work" className="border-b border-line py-24 md:py-40">
-      <div className={CONTAINER}>
-        <SectionHeader
-          index="01"
-          label="Selected work"
-          lines={["Featured", "Projects"]}
-          aside={
-            <Link
-              href="/work"
-              className="font-mono text-[11px] uppercase tracking-widest text-muted transition-colors duration-300 hover:text-accent"
-            >
-              All work →
-            </Link>
-          }
-        />
-
-        <div className="grid grid-cols-12 gap-x-6 gap-y-12 md:gap-y-16">
-          {featured.map((project, i) => (
-            <Reveal key={project.id} className={cn("col-span-12", SPANS[i % SPANS.length])}>
-              <ProjectCard project={project} index={i} />
-            </Reveal>
-          ))}
+    <>
+      {/* A — vertical work: the default, and the majority */}
+      <section id="work" className="border-b border-line py-24 md:py-40">
+        <div className={CONTAINER}>
+          <SectionHeader
+            index="01"
+            label="Vertical work — 9:16"
+            lines={["Vertical", "Work."]}
+            aside={
+              <div className="flex flex-col items-start gap-3 lg:items-end">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
+                  {verticalProjects.length} projects — Reels / TikTok / Shorts
+                </span>
+                {allWork}
+              </div>
+            }
+          />
+          <VerticalMasonry projects={verticalProjects} />
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* B — horizontal work: the featured minority */}
+      {horizontalProjects.length > 0 && (
+        <section id="featured" className="border-b border-line bg-bg-soft py-24 md:py-40">
+          <div className={cn(CONTAINER)}>
+            <SectionHeader
+              index="02"
+              label="Horizontal / Featured — 16:9"
+              lines={["Wide", "Screen."]}
+              aside={
+                <p className="max-w-xs text-base leading-relaxed text-muted">
+                  The minority, and the showpieces — brand films, launch spots and
+                  music visuals cut for the big screen.
+                </p>
+              }
+            />
+            <HorizontalStack projects={horizontalProjects} />
+          </div>
+        </section>
+      )}
+    </>
   );
 }

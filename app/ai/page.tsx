@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import PageHeader from "@/components/ui/PageHeader";
-import ProjectCard from "@/components/ui/ProjectCard";
+import ProjectGrid from "@/components/ui/ProjectGrid";
 import Reveal from "@/components/ui/Reveal";
 import { projects } from "@/data/projects";
 import { CONTAINER, cn, pad } from "@/lib/utils";
@@ -34,13 +34,7 @@ export default function AIPage() {
       />
 
       <section id="ai" className={cn(CONTAINER, "pb-24 md:pb-32")}>
-        <div className="grid grid-cols-1 gap-x-6 gap-y-12 md:grid-cols-2">
-          {aiWork.map((project, i) => (
-            <Reveal key={project.id}>
-              <ProjectCard project={project} index={i} />
-            </Reveal>
-          ))}
-        </div>
+        <ProjectGrid projects={aiWork} />
       </section>
 
       <section id="process" className="border-t border-line py-24 md:py-32">

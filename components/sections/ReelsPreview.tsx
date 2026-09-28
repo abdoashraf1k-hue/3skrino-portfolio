@@ -10,7 +10,7 @@ export default function ReelsPreview() {
     <section id="reels" className="border-b border-line py-24 md:py-40">
       <div className={CONTAINER}>
         <SectionHeader
-          index="03"
+          index="04"
           label="Reels"
           lines={["Vertical", "Stories."]}
           aside={

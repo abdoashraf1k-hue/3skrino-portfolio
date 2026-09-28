@@ -12,9 +12,9 @@ export default function AIShowcase() {
     <section id="ai" className="border-b border-line py-24 md:py-40">
       <div className={CONTAINER}>
         <SectionHeader
-          index="04"
+          index="05"
           label="AI work"
-          lines={[<span key="f" className="text-accent">Future</span>, "Formats."]}
+          lines={[{ text: "Future", className: "text-accent" }, "Formats."]}
         />
 
         <div className="grid grid-cols-12 gap-x-6 gap-y-12">
@@ -41,10 +41,16 @@ export default function AIShowcase() {
             </div>
           </Reveal>
 
-          <Reveal stagger className="col-span-12 grid grid-cols-2 gap-3 md:gap-4 lg:col-span-7">
+          <Reveal stagger className="col-span-12 grid grid-cols-2 gap-3 sm:grid-cols-4 md:gap-4 lg:col-span-7">
             {aiWork.map((project, i) => (
-              <Link key={project.id} href={projectHref(project)} data-hover className="group block">
-                <div className="relative aspect-video overflow-hidden rounded-sm bg-bg-soft">
+              <Link
+                key={project.id}
+                href={projectHref(project)}
+                data-cursor="view"
+                data-cursor-label={project.orientation === "vertical" ? "9:16" : "16:9"}
+                className="group block"
+              >
+                <div className="relative aspect-[9/16] overflow-hidden rounded-sm bg-bg-soft">
                   <div className="absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02]">
                     <Placeholder title={project.title} seed={i + 1} size="sm" />
                   </div>

@@ -13,8 +13,8 @@ type PageHeaderProps = {
 };
 
 const item = {
-  hidden: { opacity: 0, y: 40 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: EASE_OUT } },
+  hidden: { opacity: 0, y: 60 },
+  show: { opacity: 1, y: 0, transition: { duration: 1, ease: EASE_OUT } },
 };
 
 /** Top-of-page header for inner routes — reveals on load. */
