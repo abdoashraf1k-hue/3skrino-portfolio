@@ -201,6 +201,23 @@ export const projects: Project[] = [
     videoUrl: "",
     thumbnail: "",
   },
+  {
+    id: "ama-sushi",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "AMA SUSHI",
+    category: "restaurants",
+    year: 2026,
+    client: "AMA SUSHI",
+    role: "Editor",
+    tools: ["Premiere Pro-Aftereffects"],
+    duration: "00:17",
+    description: "",
+    videoUrl:
+      "https://res.cloudinary.com/gnstqf5t/video/upload/v1790709851/wt2bfjipongwj31frmph.mp4",
+    thumbnail:
+      "https://res.cloudinary.com/gnstqf5t/video/upload/q_auto,f_auto,w_450,h_800,c_fill,so_1/wt2bfjipongwj31frmph.jpg",
+  },
 ];
 
 export type Reel = {
