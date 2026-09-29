@@ -106,20 +106,21 @@ export const projects: Project[] = [
     thumbnail: "",
   },
   {
-    id: "fire-and-salt",
-    accentColor: "#ff8a3d",
+    id: "ama-sushi",
+    accentColor: "#e7fe55",
     orientation: "vertical",
-    title: "Fire & Salt",
+    title: "AMA SUSHI",
     category: "restaurants",
-    year: 2025,
-    client: "Ember Kitchen",
-    role: "Editor, Colorist",
-    tools: ["Premiere Pro", "DaVinci Resolve"],
-    duration: "00:40",
-    description:
-      "Sizzle, smoke and slow motion. An opening campaign for a live-fire restaurant, cut for cinema screens and vertical feeds.",
-    videoUrl: "",
-    thumbnail: "",
+    year: 2026,
+    client: "AMA SUSHI",
+    role: "Editor",
+    tools: ["Premiere Pro-Aftereffects"],
+    duration: "00:17",
+    description: "",
+    videoUrl:
+      "https://res.cloudinary.com/gnstqf5t/video/upload/v1790709851/wt2bfjipongwj31frmph.mp4",
+    thumbnail:
+      "https://res.cloudinary.com/gnstqf5t/video/upload/q_auto,f_auto,w_450,h_800,c_fill,so_1/wt2bfjipongwj31frmph.jpg",
   },
   {
     id: "skyline-residences",
@@ -202,21 +203,20 @@ export const projects: Project[] = [
     thumbnail: "",
   },
   {
-    id: "ama-sushi",
-    accentColor: "#e7fe55",
+    id: "fire-and-salt",
+    accentColor: "#ff8a3d",
     orientation: "vertical",
-    title: "AMA SUSHI",
+    title: "Fire & Salt",
     category: "restaurants",
-    year: 2026,
-    client: "AMA SUSHI",
-    role: "Editor",
-    tools: ["Premiere Pro-Aftereffects"],
-    duration: "00:17",
-    description: "",
-    videoUrl:
-      "https://res.cloudinary.com/gnstqf5t/video/upload/v1790709851/wt2bfjipongwj31frmph.mp4",
-    thumbnail:
-      "https://res.cloudinary.com/gnstqf5t/video/upload/q_auto,f_auto,w_450,h_800,c_fill,so_1/wt2bfjipongwj31frmph.jpg",
+    year: 2025,
+    client: "Ember Kitchen",
+    role: "Editor, Colorist",
+    tools: ["Premiere Pro", "DaVinci Resolve"],
+    duration: "00:40",
+    description:
+      "Sizzle, smoke and slow motion. An opening campaign for a live-fire restaurant, cut for cinema screens and vertical feeds.",
+    videoUrl: "",
+    thumbnail: "",
   },
 ];
 
