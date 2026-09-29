@@ -25,7 +25,7 @@ export const projects: Project[] = [
     id: "night-run",
     accentColor: "#ff5a36",
     orientation: "vertical",
-    title: "Night Run",
+    title: "Night Run Test",
     category: "sports",
     year: 2026,
     client: "Stride Athletics",
