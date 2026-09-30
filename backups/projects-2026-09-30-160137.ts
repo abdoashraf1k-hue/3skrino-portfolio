@@ -288,6 +288,23 @@ export const projects: Project[] = [
     createdAt: "2026-09-30T14:40:16.046Z",
   },
   {
+    id: "the-long-drive",
+    accentColor: "#5ad1c1",
+    orientation: "horizontal",
+    title: "The Long Drive",
+    category: "automotive",
+    year: 2025,
+    client: "Velocity Motors",
+    role: "Editor, Colorist",
+    tools: ["DaVinci Resolve", "After Effects"],
+    duration: "01:00",
+    description:
+      "A launch spot for a new electric SUV — desert roads, golden hour and a sound design pass that makes silence feel powerful.",
+    videoUrl: "",
+    thumbnail: "",
+    featured: true,
+  },
+  {
     id: "rz-lexus-2",
     accentColor: "#e7fe55",
     orientation: "vertical",
@@ -309,23 +326,6 @@ export const projects: Project[] = [
     edited: true,
     thumbnailSource: "auto",
     createdAt: "2026-09-30T15:56:02.994Z",
-  },
-  {
-    id: "the-long-drive",
-    accentColor: "#5ad1c1",
-    orientation: "horizontal",
-    title: "The Long Drive",
-    category: "automotive",
-    year: 2025,
-    client: "Velocity Motors",
-    role: "Editor, Colorist",
-    tools: ["DaVinci Resolve", "After Effects"],
-    duration: "01:00",
-    description:
-      "A launch spot for a new electric SUV — desert roads, golden hour and a sound design pass that makes silence feel powerful.",
-    videoUrl: "",
-    thumbnail: "",
-    featured: true,
   },
 ];
 
