@@ -82,7 +82,7 @@ export const projects: Project[] = [
     accentColor: "#e7fe55",
     orientation: "vertical",
     title: "RZ-LEXUS",
-    category: "ai",
+    category: "automotive",
     year: 2026,
     client: "LEXUS",
     role: "Editor",
