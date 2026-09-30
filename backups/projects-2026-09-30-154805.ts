@@ -280,28 +280,6 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-09-30T14:40:16.046Z",
   },
-  {
-    id: "rz-lexus",
-    accentColor: "#e7fe55",
-    orientation: "vertical",
-    title: "RZ-LEXUS",
-    category: "automotive",
-    year: 2026,
-    client: "LEXUS",
-    role: "Editor",
-    tools: ["HIGGSFIELD", "Premiere Pro", "After Effects"],
-    duration: "00:18",
-    description: "",
-    videoUrl:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1790783137369-1886a927-c6d7-4f58-b77c-228fcec58c43.mp4",
-    thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1790783278733-eec604d5-0bbb-458f-98be-f5e78911ee1e.jpg",
-    filmed: false,
-    directed: true,
-    edited: true,
-    thumbnailSource: "auto",
-    createdAt: "2026-09-30T15:48:04.982Z",
-  },
 ];
 
 export type Reel = {
