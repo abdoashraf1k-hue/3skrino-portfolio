@@ -235,6 +235,23 @@ export const projects: Project[] = [
     thumbnail:
       "https://res.cloudinary.com/gnstqf5t/video/upload/q_auto,f_auto,w_450,h_800,c_fill,so_1/fevtvnuij6xh1lgtx0h6.jpg",
   },
+  {
+    id: "lush-mood",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "LUSH MOOD",
+    category: "restaurants",
+    year: 2026,
+    client: "LUSH MOOD RESTAURANTS AND CAFE",
+    role: "Editor",
+    tools: [],
+    duration: "00:19",
+    description: "",
+    videoUrl:
+      "https://res.cloudinary.com/gnstqf5t/video/upload/v1790767481/ywy46evz68uqpfjrwmyx.mp4",
+    thumbnail:
+      "https://res.cloudinary.com/gnstqf5t/video/upload/q_auto,f_auto,w_450,h_800,c_fill,so_1/ywy46evz68uqpfjrwmyx.jpg",
+  },
 ];
 
 export type Reel = {
