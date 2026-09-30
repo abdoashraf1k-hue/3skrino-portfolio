@@ -218,6 +218,23 @@ export const projects: Project[] = [
     videoUrl: "",
     thumbnail: "",
   },
+  {
+    id: "gad",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "GAD",
+    category: "restaurants",
+    year: 2026,
+    client: "GAD RESTAURANT",
+    role: "Editor+DIRECTING+SHOOTING",
+    tools: ["Premiere Pro"],
+    duration: "00:28",
+    description: "",
+    videoUrl:
+      "https://res.cloudinary.com/gnstqf5t/video/upload/v1790767326/fevtvnuij6xh1lgtx0h6.mp4",
+    thumbnail:
+      "https://res.cloudinary.com/gnstqf5t/video/upload/q_auto,f_auto,w_450,h_800,c_fill,so_1/fevtvnuij6xh1lgtx0h6.jpg",
+  },
 ];
 
 export type Reel = {
