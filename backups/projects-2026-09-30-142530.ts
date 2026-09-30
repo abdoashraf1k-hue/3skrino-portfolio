@@ -238,6 +238,22 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/gnstqf5t/video/upload/q_auto,f_auto,w_450,h_800,c_fill,so_1/ywy46evz68uqpfjrwmyx.jpg",
   },
   {
+    id: "fire-and-salt",
+    accentColor: "#ff8a3d",
+    orientation: "vertical",
+    title: "Fire & Salt",
+    category: "restaurants",
+    year: 2025,
+    client: "Ember Kitchen",
+    role: "Editor, Colorist",
+    tools: ["Premiere Pro", "DaVinci Resolve"],
+    duration: "00:40",
+    description:
+      "Sizzle, smoke and slow motion. An opening campaign for a live-fire restaurant, cut for cinema screens and vertical feeds.",
+    videoUrl: "",
+    thumbnail: "",
+  },
+  {
     id: "future-archive",
     accentColor: "#e7fe55",
     orientation: "vertical",
