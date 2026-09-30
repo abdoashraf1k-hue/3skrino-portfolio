@@ -60,7 +60,7 @@ export const projects: Project[] = [
     accentColor: "#e7fe55",
     orientation: "horizontal",
     title: "TWIST (UNOFFICIAL)",
-    category: "lifestyle",
+    category: "ai",
     year: 2026,
     client: "TWIST",
     role: "AI Director, Editor",
@@ -70,12 +70,7 @@ export const projects: Project[] = [
     videoUrl:
       "https://res.cloudinary.com/gnstqf5t/video/upload/v1790767671/q9n1asudfeuqslxakb9z.mp4",
     thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1790778374492-c51a0bcd-7e5c-4962-a1da-7e64e8b9dc05.jpg",
-    filmed: true,
-    directed: true,
-    edited: true,
-    tags: ["twist", "unofficial", "lifestyle", "video"],
-    thumbnailSource: "auto",
+      "https://res.cloudinary.com/gnstqf5t/video/upload/q_auto,f_auto,w_800,h_450,c_fill,so_1/q9n1asudfeuqslxakb9z.jpg",
   },
   {
     id: "the-long-drive",
