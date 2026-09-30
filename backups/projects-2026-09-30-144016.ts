@@ -258,28 +258,6 @@ export const projects: Project[] = [
     videoUrl: "",
     thumbnail: "",
   },
-  {
-    id: "downtown-mall-marathon",
-    accentColor: "#e7fe55",
-    orientation: "horizontal",
-    title: "DOWNTOWN MALL MARATHON",
-    category: "lifestyle",
-    year: 2026,
-    client: "DOWNTOWN MALL",
-    role: "Editor",
-    tools: ["Premiere Pro"],
-    duration: "01:42",
-    description: "",
-    videoUrl: "",
-    thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1790778984295-28701497-08cb-4842-bd20-cdc833c2714a.jpg",
-    filmed: false,
-    directed: false,
-    edited: true,
-    tags: ["downtown", "mall", "marathon"],
-    thumbnailSource: "auto",
-    createdAt: "2026-09-30T14:40:16.046Z",
-  },
 ];
 
 export type Reel = {
