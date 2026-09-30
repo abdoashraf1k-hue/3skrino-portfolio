@@ -93,7 +93,6 @@ export const projects: Project[] = [
       "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1790783137369-1886a927-c6d7-4f58-b77c-228fcec58c43.mp4",
     thumbnail:
       "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1790783278733-eec604d5-0bbb-458f-98be-f5e78911ee1e.jpg",
-    featured: true,
     filmed: false,
     directed: true,
     edited: true,
