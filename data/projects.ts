@@ -252,6 +252,23 @@ export const projects: Project[] = [
     videoUrl: "",
     thumbnail: "",
   },
+  {
+    id: "twist-unofficial",
+    accentColor: "#e7fe55",
+    orientation: "horizontal",
+    title: "TWIST (UNOFFICIAL)",
+    category: "ai",
+    year: 2026,
+    client: "TWIST",
+    role: "AI Director, Editor",
+    tools: ["HIGGSFIELD"],
+    duration: "01:02",
+    description: "",
+    videoUrl:
+      "https://res.cloudinary.com/gnstqf5t/video/upload/v1790767671/q9n1asudfeuqslxakb9z.mp4",
+    thumbnail:
+      "https://res.cloudinary.com/gnstqf5t/video/upload/q_auto,f_auto,w_800,h_450,c_fill,so_1/q9n1asudfeuqslxakb9z.jpg",
+  },
 ];
 
 export type Reel = {
