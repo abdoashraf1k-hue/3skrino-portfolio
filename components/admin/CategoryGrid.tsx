@@ -3,16 +3,23 @@
 import { useState, type CSSProperties } from "react";
 import { categories } from "@/data/categories";
 import type { Project } from "@/data/projects";
-import { assertUploadable } from "@/lib/admin/cloudinary";
+import { assertUploadable } from "@/lib/admin/video-upload";
 import DropZone, { isFileDrag } from "./DropZone";
 import { AiChip, ProjectThumb } from "./ProjectCard";
 import SortableList from "./SortableList";
 
 type Props = {
+  /** Projects to show (already filtered). */
   projects: Project[];
+  /** True while any filter is on: empty categories hide and reordering locks. */
+  filtering: boolean;
+  selected: Set<string>;
+  onToggleSelect: (id: string) => void;
+  onSelectAll: (ids: string[], on: boolean) => void;
   onNew: (category: string, file?: File) => void;
   onEdit: (project: Project) => void;
   onReorder: (category: string, ids: string[]) => void;
+  onMoveIn: (id: string, category: string, index: number) => void;
   onError: (message: string) => void;
 };
 
@@ -21,30 +28,44 @@ type Props = {
  * Stagger: cards rise in 80ms apart — the same 0.08s rhythm as the site's
  * Categories — Fields grid (see SCROLL_BLUEPRINTS.md).
  */
-export default function CategoryGrid({ projects, onNew, onEdit, onReorder, onError }: Props) {
+export default function CategoryGrid(props: Props) {
+  const { projects, filtering } = props;
+  const shown = categories
+    .map((c) => ({ ...c, items: projects.filter((p) => p.category === c.id) }))
+    .filter((c) => !filtering || c.items.length > 0);
+
+  if (!shown.length) {
+    return <p className="py-24 text-center font-mono text-[11px] uppercase tracking-widest text-white/40">No projects match these filters</p>;
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {categories.map((category, i) => (
-        <CategoryCard
-          key={category.id}
-          index={i}
-          id={category.id}
-          name={category.name}
-          projects={projects.filter((p) => p.category === category.id)}
-          onNew={onNew}
-          onEdit={onEdit}
-          onReorder={onReorder}
-          onError={onError}
-        />
+      {shown.map((category, i) => (
+        <CategoryCard key={category.id} index={i} id={category.id} name={category.name} items={category.items} {...props} />
       ))}
     </div>
   );
 }
 
-type CardProps = Omit<Props, "projects"> & { index: number; id: string; name: string; projects: Project[] };
+type CardProps = Props & { index: number; id: string; name: string; items: Project[] };
 
-function CategoryCard({ index, id, name, projects, onNew, onEdit, onReorder, onError }: CardProps) {
+function CategoryCard({
+  index,
+  id,
+  name,
+  items,
+  filtering,
+  selected,
+  onToggleSelect,
+  onSelectAll,
+  onNew,
+  onEdit,
+  onReorder,
+  onMoveIn,
+  onError,
+}: CardProps) {
   const [fileOver, setFileOver] = useState(false);
+  const allSelected = items.length > 0 && items.every((p) => selected.has(p.id));
 
   return (
     <section
@@ -82,19 +103,44 @@ function CategoryCard({ index, id, name, projects, onNew, onEdit, onReorder, onE
             {name}
             {id === "ai" && <AiChip />}
           </h2>
-          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-white/40">
-            {projects.length} {projects.length === 1 ? "project" : "projects"}
+          <p className="mt-0.5 flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest text-white/40">
+            {items.length} {items.length === 1 ? "project" : "projects"}
+            {items.length > 0 && (
+              <label className="flex items-center gap-1.5 text-white/30 hover:text-white/60">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={(e) =>
+                    onSelectAll(
+                      items.map((p) => p.id),
+                      e.target.checked,
+                    )
+                  }
+                  className="size-3 accent-[#e7fe55]"
+                />
+                all
+              </label>
+            )}
           </p>
         </div>
         <div className="flex shrink-0 -space-x-2">
-          {projects.slice(0, 4).map((p) => (
+          {items.slice(0, 4).map((p) => (
             <ProjectThumb key={p.id} project={p} className="size-10 ring-2 ring-[#0d0d0d]" />
           ))}
         </div>
       </header>
 
       <div className="flex-1">
-        <SortableList projects={projects} onEdit={onEdit} onReorder={(ids) => onReorder(id, ids)} />
+        <SortableList
+          category={id}
+          projects={items}
+          onEdit={onEdit}
+          onReorder={(ids) => onReorder(id, ids)}
+          onMoveIn={(projectId, at) => onMoveIn(projectId, id, at)}
+          reorderable={!filtering}
+          selected={selected}
+          onToggleSelect={onToggleSelect}
+        />
       </div>
 
       <div className="mt-4 flex gap-2">

@@ -7,7 +7,23 @@
   --muted: #8a8a8a;
   --line: #1f1f1f;
   --accent: #e7fe55;
+  /* Accent as TEXT. Same lime on dark; a deep olive on light, where lime text is unreadable. */
+  --accent-ink: #e7fe55;
   --accent-2: #ff2d2d;
+  color-scheme: dark;
+}
+
+/* Light theme — set by the toggle / prefers-color-scheme (see app/layout.tsx). */
+:root[data-theme="light"] {
+  --bg: #fafafa;
+  --bg-soft: #f0f0f0;
+  --fg: #0a0a0a;
+  --muted: #666666;
+  --line: #e2e2e2;
+  --accent: #e7fe55;
+  --accent-ink: #4f5e00;
+  --accent-2: #e5202a;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -64,8 +80,22 @@ body label {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-ink);
   outline-offset: 2px;
+}
+
+/* Text in the accent reads from --accent-ink so it stays legible on the light theme. */
+@utility text-accent {
+  color: var(--accent-ink);
+}
+
+/* Smooth hand-off when the theme flips (skipped for reduced motion below). */
+html.theme-switching,
+html.theme-switching * {
+  transition:
+    background-color 300ms ease,
+    color 300ms ease,
+    border-color 300ms ease !important;
 }
 
 html {

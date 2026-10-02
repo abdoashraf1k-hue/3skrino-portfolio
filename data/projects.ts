@@ -18,7 +18,24 @@ export type Project = {
   accentColor: string;
   /** 90% of the work is 9:16 — vertical is the default. */
   orientation: "vertical" | "horizontal";
+  /** Credits shown as badges. `edited` defaults to true when omitted. */
+  filmed?: boolean;
+  directed?: boolean;
+  edited?: boolean;
+  /** Free-form keywords (search, AI suggestions). */
+  tags?: string[];
+  /** Whether `thumbnail` was grabbed from the video or uploaded by hand. */
+  thumbnailSource?: "auto" | "manual";
+  /** ISO timestamp, set by the admin when the project is created. */
+  createdAt?: string;
 };
+
+export type ProjectCredits = { filmed: boolean; directed: boolean; edited: boolean };
+
+/** Resolved credits with defaults applied (edited unless explicitly false). */
+export function projectCredits(p: Pick<Project, "filmed" | "directed" | "edited">): ProjectCredits {
+  return { filmed: Boolean(p.filmed), directed: Boolean(p.directed), edited: p.edited !== false };
+}
 
 export const projects: Project[] = [
   {
@@ -37,6 +54,9 @@ export const projects: Project[] = [
     videoUrl: "",
     thumbnail: "",
     featured: true,
+    filmed: true,
+    directed: true,
+    edited: true,
   },
   {
     id: "quiet-luxury",
@@ -54,6 +74,9 @@ export const projects: Project[] = [
     videoUrl: "",
     thumbnail: "",
     featured: true,
+    filmed: true,
+    directed: false,
+    edited: true,
   },
   {
     id: "twist-unofficial",
@@ -116,6 +139,9 @@ export const projects: Project[] = [
       "A brand documentary about a logistics company's decade of growth, shaped from 30 hours of interviews into a tight, human story.",
     videoUrl: "",
     thumbnail: "",
+    filmed: true,
+    directed: false,
+    edited: true,
   },
   {
     id: "gad",
@@ -149,6 +175,9 @@ export const projects: Project[] = [
       "Drone-led property film with 3D-tracked typography and a warm, aspirational grade for a luxury tower launch.",
     videoUrl: "",
     thumbnail: "",
+    filmed: true,
+    directed: false,
+    edited: true,
   },
   {
     id: "slow-mornings",
@@ -165,6 +194,9 @@ export const projects: Project[] = [
       "An intimate lifestyle piece about morning rituals — natural light, handheld texture and an unhurried rhythm.",
     videoUrl: "",
     thumbnail: "",
+    filmed: true,
+    directed: true,
+    edited: true,
   },
   {
     id: "synthetic-dreams",
@@ -182,6 +214,9 @@ export const projects: Project[] = [
     videoUrl: "",
     thumbnail: "",
     featured: true,
+    filmed: false,
+    directed: true,
+    edited: true,
   },
   {
     id: "neon-oasis",
@@ -198,6 +233,9 @@ export const projects: Project[] = [
       "A generated festival teaser imagining a desert city of light. Built as a sequence of AI shots, composited and graded for continuity.",
     videoUrl: "",
     thumbnail: "",
+    filmed: false,
+    directed: true,
+    edited: true,
   },
   {
     id: "second-skin",
@@ -214,6 +252,9 @@ export const projects: Project[] = [
       "An AI fashion film where fabric morphs across impossible materials — chrome, water, sand — with a generated voiceover.",
     videoUrl: "",
     thumbnail: "",
+    filmed: false,
+    directed: true,
+    edited: false,
   },
   {
     id: "ama-sushi",
@@ -231,6 +272,9 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/gnstqf5t/video/upload/v1790709851/wt2bfjipongwj31frmph.mp4",
     thumbnail:
       "https://res.cloudinary.com/gnstqf5t/video/upload/q_auto,f_auto,w_450,h_800,c_fill,so_1/wt2bfjipongwj31frmph.jpg",
+    filmed: true,
+    directed: false,
+    edited: true,
   },
   {
     id: "lush-mood",
@@ -264,6 +308,9 @@ export const projects: Project[] = [
       "A speculative short about a museum of memories that haven't happened yet. A test bed for AI continuity and editorial pacing.",
     videoUrl: "",
     thumbnail: "",
+    filmed: false,
+    directed: true,
+    edited: true,
   },
   {
     id: "downtown-mall-marathon",
@@ -288,29 +335,6 @@ export const projects: Project[] = [
     createdAt: "2026-09-30T14:40:16.046Z",
   },
   {
-    id: "rz-lexus-2",
-    accentColor: "#e7fe55",
-    orientation: "vertical",
-    title: "RZ-LEXUS",
-    category: "automotive",
-    year: 2026,
-    client: "LEXU",
-    role: "Editor",
-    tools: ["HOGGSFILED", "Premiere Pro", "After Effects"],
-    duration: "00:18",
-    description: "",
-    videoUrl:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1790783724364-33fc866d-863a-47a2-aaba-1b2fe48f1aef.mp4",
-    thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1790783724593-f54a2b6c-8e9a-4f3a-9a7e-2b53824f2082.jpg",
-    featured: true,
-    filmed: false,
-    directed: true,
-    edited: true,
-    thumbnailSource: "auto",
-    createdAt: "2026-09-30T15:56:02.994Z",
-  },
-  {
     id: "the-long-drive",
     accentColor: "#5ad1c1",
     orientation: "horizontal",
@@ -326,6 +350,26 @@ export const projects: Project[] = [
     videoUrl: "",
     thumbnail: "",
     featured: true,
+    filmed: true,
+    directed: false,
+    edited: true,
+  },
+  {
+    id: "desert-nights",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "Desert Nights",
+    category: "tours",
+    year: 2026,
+    client: "Placeholder — update me",
+    role: "Editor & Colorist",
+    tools: ["Premiere Pro", "After Effects"],
+    duration: "00:45",
+    description: "Tour agency campaign placeholder.",
+    videoUrl: "",
+    thumbnail: "",
+    filmed: true,
+    edited: true,
   },
 ];
 
@@ -337,6 +381,12 @@ export type Reel = {
   /** Tailwind aspect class — varied for the masonry layout on /reels */
   aspect: "aspect-[9/16]" | "aspect-[4/5]" | "aspect-[3/4]";
   duration: string;
+  /** Optional footage for the /reels player; a placeholder plays when empty. */
+  videoUrl?: string;
+  poster?: string;
+  filmed?: boolean;
+  directed?: boolean;
+  edited?: boolean;
 };
 
 export const reels: Reel[] = [

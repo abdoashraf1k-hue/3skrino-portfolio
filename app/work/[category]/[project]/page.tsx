@@ -3,9 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageHeader from "@/components/ui/PageHeader";
 import Placeholder from "@/components/ui/Placeholder";
+import ProjectBadges from "@/components/ui/ProjectBadges";
 import Reveal from "@/components/ui/Reveal";
+import VideoPlayer from "@/components/ui/VideoPlayer";
 import { getCategory } from "@/data/categories";
 import { getProject, projectHref, projects } from "@/data/projects";
+import { jsonLd, videoSchema } from "@/lib/seo";
 import { CONTAINER, cn } from "@/lib/utils";
 
 export const dynamicParams = false;
@@ -19,7 +22,23 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { category, project } = await props.params;
   const data = getProject(category, project);
-  return data ? { title: data.title, description: data.description } : {};
+  if (!data) return {};
+  const description = data.description || `${data.title} — ${data.role} for ${data.client}.`;
+  const path = projectHref(data);
+  return {
+    title: data.title,
+    description,
+    alternates: { canonical: path },
+    openGraph: {
+      type: "video.other",
+      title: data.title,
+      description,
+      url: path,
+      ...(data.thumbnail ? { images: [{ url: data.thumbnail, alt: data.title }] } : {}),
+      ...(data.videoUrl ? { videos: [{ url: data.videoUrl }] } : {}),
+    },
+    twitter: { card: "summary_large_image", title: data.title, description },
+  };
 }
 
 export default async function ProjectPage(props: PageProps<"/work/[category]/[project]">) {
@@ -41,6 +60,7 @@ export default async function ProjectPage(props: PageProps<"/work/[category]/[pr
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(videoSchema(project)) }} />
       <PageHeader
         label={
           <Link href={`/work/${category.id}`} className="transition-colors duration-300 hover:text-accent">
@@ -60,12 +80,12 @@ export default async function ProjectPage(props: PageProps<"/work/[category]/[pr
             )}
           >
             {project.videoUrl ? (
-              <video
+              <VideoPlayer
+                projectId={project.id}
                 src={project.videoUrl}
                 poster={project.thumbnail || undefined}
-                controls
-                playsInline
-                className="absolute inset-0 h-full w-full object-cover"
+                title={project.title}
+                sizes={vertical ? "(min-width: 768px) 45vh, 100vw" : "(min-width: 1600px) 1440px, 100vw"}
               />
             ) : (
               <>
@@ -108,6 +128,11 @@ export default async function ProjectPage(props: PageProps<"/work/[category]/[pr
               <p className="mt-2 text-base font-medium md:text-lg">{m.value}</p>
             </div>
           ))}
+        </Reveal>
+
+        <Reveal className="mt-8 flex flex-wrap items-center gap-3">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-muted">Credits</span>
+          <ProjectBadges filmed={project.filmed} directed={project.directed} edited={project.edited} size="md" long />
         </Reveal>
 
         <Reveal className="mt-16 grid grid-cols-12 gap-6 md:mt-24">

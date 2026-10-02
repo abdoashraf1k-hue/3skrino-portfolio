@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import ContactForm from "@/components/ui/ContactForm";
 import PageHeader from "@/components/ui/PageHeader";
 import Reveal from "@/components/ui/Reveal";
@@ -6,10 +7,11 @@ import SocialLinks from "@/components/ui/SocialLinks";
 import { site } from "@/data/site";
 import { CONTAINER, cn } from "@/lib/utils";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Contact",
   description: "Start a project with 3SKRINO — brand films, commercials, social and AI video.",
-};
+  path: "/contact",
+});
 
 export default function ContactPage() {
   return (

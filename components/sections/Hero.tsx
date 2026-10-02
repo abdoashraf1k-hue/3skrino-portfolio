@@ -178,12 +178,16 @@ export default function Hero() {
           >
             <Link
               href="/work"
+              data-track="cta"
+              data-track-id="hero_view_work"
               className="border border-fg px-8 py-4 font-mono text-[11px] uppercase tracking-widest transition-colors duration-300 hover:bg-fg hover:text-bg"
             >
               View work
             </Link>
             <Link
               href="/reels"
+              data-track="cta"
+              data-track-id="hero_showreel"
               className="group flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted transition-colors duration-300 hover:text-fg"
             >
               Showreel

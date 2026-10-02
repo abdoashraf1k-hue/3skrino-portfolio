@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import About from "@/components/sections/About";
 import PageHeader from "@/components/ui/PageHeader";
 import Reveal from "@/components/ui/Reveal";
 import { categories } from "@/data/categories";
 import { CONTAINER, pad } from "@/lib/utils";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "About",
   description: "9+ years of cutting — the story and services behind 3SKRINO.",
-};
+  path: "/about",
+});
 
 const services = [
   { title: "Editing", text: "Story-first offline and online edits for film, broadcast and social." },

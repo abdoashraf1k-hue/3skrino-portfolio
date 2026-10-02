@@ -1,7 +1,7 @@
 "use client";
 
-import type { Project } from "@/data/projects";
-import { videoThumbnail } from "@/lib/admin/cloudinary";
+import { projectCredits, type Project } from "@/data/projects";
+import { SourceChip } from "./VideoUploader";
 
 /** Subtle marker for AI-generated work (category "ai"). */
 export function AiChip({ className = "" }: { className?: string }) {
@@ -14,23 +14,42 @@ export function AiChip({ className = "" }: { className?: string }) {
   );
 }
 
-/** 40×40 still (requested at 80×80 for retina); falls back to the accent swatch. */
+/** 40×40 still from `thumbnail`; falls back to the accent swatch. */
 export function ProjectThumb({ project, className = "size-10" }: { project: Project; className?: string }) {
-  const src = videoThumbnail(project.videoUrl, 80, 80);
   return (
     <span
       className={`relative block shrink-0 overflow-hidden rounded-sm border border-white/10 ${className}`}
       style={{ background: `linear-gradient(135deg, ${project.accentColor}55, #141414)` }}
     >
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element -- Cloudinary already resizes/optimises this; next/image would double-process it.
-        <img src={src} alt="" width={40} height={40} loading="lazy" draggable={false} className="size-full object-cover" />
+      {project.thumbnail ? (
+        // eslint-disable-next-line @next/next/no-img-element -- tiny admin swatch; next/image would add a round-trip per row
+        <img src={project.thumbnail} alt="" width={40} height={40} loading="lazy" draggable={false} className="size-full object-cover" />
       ) : null}
     </span>
   );
 }
 
-/** One row in a category's sortable list. Click → edit. */
+/** Tiny 🎬 🎥 ✂️ credit glyphs for dense admin rows. */
+export function CreditGlyphs({ project }: { project: Project }) {
+  const c = projectCredits(project);
+  const items = [
+    { on: c.filmed, icon: "🎬", label: "Filmed" },
+    { on: c.directed, icon: "🎥", label: "Directed" },
+    { on: c.edited, icon: "✂️", label: "Edited" },
+  ].filter((i) => i.on);
+  if (!items.length) return null;
+  return (
+    <span className="flex shrink-0 gap-0.5 text-[10px] leading-none" aria-label={items.map((i) => i.label).join(", ")}>
+      {items.map((i) => (
+        <span key={i.label} title={i.label}>
+          {i.icon}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** One row in a category's list. Click → edit. */
 export default function ProjectCard({ project, onEdit }: { project: Project; onEdit: () => void }) {
   return (
     <button type="button" onClick={onEdit} className="flex min-w-0 flex-1 items-center gap-3 py-2 text-left">
@@ -44,6 +63,8 @@ export default function ProjectCard({ project, onEdit }: { project: Project; onE
               ★
             </span>
           )}
+          <CreditGlyphs project={project} />
+          {project.thumbnail && project.thumbnailSource && <SourceChip source={project.thumbnailSource} />}
         </span>
         <span className="block truncate font-mono text-[10px] uppercase tracking-widest text-white/40">
           {project.client || "—"} · {project.year} · {project.duration} · {project.orientation === "vertical" ? "9:16" : "16:9"}

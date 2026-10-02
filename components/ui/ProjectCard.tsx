@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import Placeholder from "@/components/ui/Placeholder";
+import ProjectBadges from "@/components/ui/ProjectBadges";
 import { getCategory } from "@/data/categories";
 import { projectHref, type Project } from "@/data/projects";
 import { cn, pad } from "@/lib/utils";
@@ -26,6 +27,8 @@ export default function ProjectCard({ project, index, size = "md", className }: 
     <Link
       href={projectHref(project)}
       style={style}
+      data-track="project"
+      data-track-id={project.id}
       className={cn("group block", className)}
     >
       <div
@@ -39,6 +42,12 @@ export default function ProjectCard({ project, index, size = "md", className }: 
             title={project.title}
             seed={index}
             image={project.thumbnail || undefined}
+            accent={project.accentColor}
+            sizes={
+              vertical
+                ? "(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+                : "(min-width: 1024px) 60vw, 100vw"
+            }
             size={vertical && size === "md" ? "sm" : "lg"}
           />
         </div>
@@ -68,6 +77,7 @@ export default function ProjectCard({ project, index, size = "md", className }: 
         </div>
 
         <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-bg/90 via-bg/40 to-transparent p-4 pt-20 md:p-5 md:pt-24">
+          <ProjectBadges filmed={project.filmed} directed={project.directed} edited={project.edited} className="mb-3" />
           <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
             <span
               aria-hidden

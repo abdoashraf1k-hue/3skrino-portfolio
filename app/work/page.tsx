@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import PageHeader from "@/components/ui/PageHeader";
 import WorkGrid from "@/components/ui/WorkGrid";
 import { categories } from "@/data/categories";
 import { projects } from "@/data/projects";
 import { CONTAINER, cn } from "@/lib/utils";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Work",
   description: "Brand films, commercials, social and AI work by 3SKRINO.",
-};
+  path: "/work",
+});
 
 export default function WorkPage() {
   return (

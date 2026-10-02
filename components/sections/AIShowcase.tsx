@@ -50,7 +50,14 @@ export default function AIShowcase() {
               >
                 <div className="relative aspect-[9/16] overflow-hidden rounded-sm bg-bg-soft">
                   <div className="absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02]">
-                    <Placeholder title={project.title} seed={i + 1} size="sm" />
+                    <Placeholder
+                      title={project.title}
+                      seed={i + 1}
+                      size="sm"
+                      image={project.thumbnail || undefined}
+                      accent={project.accentColor}
+                      sizes="(min-width: 1024px) 15vw, 50vw"
+                    />
                   </div>
                   <span className="absolute left-3 top-3 font-mono text-[9px] uppercase tracking-widest text-accent md:left-4 md:top-4">
                     ● AI

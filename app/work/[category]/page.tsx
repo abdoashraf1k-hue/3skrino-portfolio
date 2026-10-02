@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageHeader from "@/components/ui/PageHeader";
@@ -18,7 +19,7 @@ export function generateStaticParams() {
 export async function generateMetadata(props: PageProps<"/work/[category]">): Promise<Metadata> {
   const { category } = await props.params;
   const data = getCategory(category);
-  return data ? { title: data.name, description: data.description } : {};
+  return data ? pageMetadata({ title: data.name, description: data.description, path: `/work/${data.id}` }) : {};
 }
 
 export default async function CategoryPage(props: PageProps<"/work/[category]">) {

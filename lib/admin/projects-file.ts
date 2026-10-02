@@ -1,6 +1,7 @@
 import { categories } from "@/data/categories";
 import type { Project } from "@/data/projects";
-import { GitHubError, getFile, putFile } from "./github";
+import { snapshotChanges } from "./backups";
+import { commitFiles, getFile, getFileAt, getHead, GitHubError } from "./github";
 
 /**
  * Serialize / deserialize data/projects.ts.
@@ -33,6 +34,12 @@ const KEY_ORDER: (keyof Project)[] = [
   "videoUrl",
   "thumbnail",
   "featured",
+  "filmed",
+  "directed",
+  "edited",
+  "tags",
+  "thumbnailSource",
+  "createdAt",
 ];
 
 export class ProjectsFileError extends Error {
@@ -319,6 +326,27 @@ export function validateProject(input: unknown): Project {
     throw new ProjectsFileError('"featured" must be true or false');
   }
 
+  for (const key of ["filmed", "directed", "edited"] as const) {
+    if (input[key] !== undefined && typeof input[key] !== "boolean") {
+      throw new ProjectsFileError(`"${key}" must be true or false`);
+    }
+  }
+
+  const tags = input.tags;
+  if (tags !== undefined && (!Array.isArray(tags) || !tags.every((t): t is string => typeof t === "string"))) {
+    throw new ProjectsFileError('"tags" must be a list of strings');
+  }
+
+  const thumbnailSource = input.thumbnailSource;
+  if (thumbnailSource !== undefined && thumbnailSource !== "auto" && thumbnailSource !== "manual") {
+    throw new ProjectsFileError('"thumbnailSource" must be "auto" or "manual"');
+  }
+
+  const createdAt = input.createdAt;
+  if (createdAt !== undefined && (typeof createdAt !== "string" || Number.isNaN(Date.parse(createdAt)))) {
+    throw new ProjectsFileError('"createdAt" must be an ISO date string');
+  }
+
   const project: Project = {
     id,
     title,
@@ -335,6 +363,15 @@ export function validateProject(input: unknown): Project {
     orientation,
   };
   if (featured) project.featured = true;
+  if (typeof input.filmed === "boolean") project.filmed = input.filmed;
+  if (typeof input.directed === "boolean") project.directed = input.directed;
+  if (typeof input.edited === "boolean") project.edited = input.edited;
+  if (tags) {
+    const clean = [...new Set(tags.map((t) => t.trim().toLowerCase()).filter(Boolean))].slice(0, 12);
+    if (clean.length) project.tags = clean;
+  }
+  if (thumbnailSource && project.thumbnail) project.thumbnailSource = thumbnailSource;
+  if (typeof createdAt === "string") project.createdAt = new Date(createdAt).toISOString();
   return project;
 }
 
@@ -350,16 +387,24 @@ export async function readProjects(): Promise<{ projects: Project[]; sha: string
 type Mutation<T> = (projects: Project[]) => { projects: Project[]; message: string; result: T };
 
 /**
- * Read → mutate → commit. Always re-reads right before writing so the sha is
- * fresh; retries once if someone else committed in between (409/422).
+ * Read → mutate → commit. Reads at the branch head and commits on top of that
+ * exact commit, together with a snapshot of the version being replaced (see
+ * backups.ts) — one commit, one deploy. If the branch moved in between the
+ * ref update is rejected and the whole thing is retried once on fresh data.
  */
 export async function mutateProjects<T>(mutate: Mutation<T>): Promise<{ projects: Project[]; sha: string; result: T }> {
   for (let attempt = 0; ; attempt++) {
-    const { content, sha } = await getFile(PROJECTS_PATH);
+    const head = await getHead();
+    const content = await getFileAt(PROJECTS_PATH, head);
+    if (content === null) throw new ProjectsFileError(`${PROJECTS_PATH} is missing on the branch`, 500);
     const next = mutate(parseProjectsFile(content));
     try {
-      const newSha = await putFile(PROJECTS_PATH, writeProjectsFile(content, next.projects), next.message, sha);
-      return { projects: next.projects, sha: newSha, result: next.result };
+      const sha = await commitFiles(
+        head,
+        [{ path: PROJECTS_PATH, content: writeProjectsFile(content, next.projects) }, ...(await snapshotChanges(content))],
+        next.message,
+      );
+      return { projects: next.projects, sha, result: next.result };
     } catch (err) {
       const conflict = err instanceof GitHubError && (err.status === 409 || err.status === 422);
       if (!conflict || attempt >= 1) throw err;
@@ -373,7 +418,7 @@ export function errorResponse(err: unknown): Response {
     return Response.json({ ok: false, error: err.message }, { status: err.status });
   }
   if (err instanceof GitHubError) {
-    const status = err.status === 409 || err.status === 422 ? 409 : 502;
+    const status = err.status === 409 || err.status === 422 ? 409 : err.status === 504 ? 504 : 502;
     return Response.json({ ok: false, error: err.message }, { status });
   }
   return Response.json({ ok: false, error: "Unexpected server error" }, { status: 500 });

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import Clock from "@/components/ui/Clock";
+import NavTools from "@/components/ui/NavTools";
 import { navLinks, site } from "@/data/site";
 import { cn, EASE_OUT } from "@/lib/utils";
 
@@ -122,6 +123,7 @@ export default function Navigation() {
           </ul>
 
           <div className="hidden items-center justify-end gap-4 font-mono text-[10px] uppercase tracking-widest text-muted md:flex">
+            <NavTools />
             <Clock className="tabular-nums" />
             <span className="flex items-center gap-1.5">
               <span className="size-1.5 rounded-full bg-accent-2" />
@@ -129,7 +131,8 @@ export default function Navigation() {
             </span>
           </div>
 
-          <div className="flex items-center gap-4 justify-self-end md:hidden">
+          <div className="flex items-center gap-3 justify-self-end md:hidden">
+            <NavTools />
             <button
               type="button"
               onClick={() => setMenuOpen((o) => !o)}

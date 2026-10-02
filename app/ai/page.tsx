@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import PageHeader from "@/components/ui/PageHeader";
 import ProjectGrid from "@/components/ui/ProjectGrid";
 import Reveal from "@/components/ui/Reveal";
 import { projects } from "@/data/projects";
 import { CONTAINER, cn, pad } from "@/lib/utils";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "AI Work",
   description: "AI-generated films and sequences directed and edited by 3SKRINO.",
-};
+  path: "/ai",
+});
 
 const process = [
   { title: "Concept", text: "Treatment, references and a shot list — the same prep as a live shoot." },

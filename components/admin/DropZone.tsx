@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type DragEvent, type ReactNode } from "react";
-import { assertUploadable } from "@/lib/admin/cloudinary";
+import { assertUploadable } from "@/lib/admin/video-upload";
 
 type Props = {
   onFile: (file: File) => void;

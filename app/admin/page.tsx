@@ -9,7 +9,13 @@ import AdminClient from "./AdminClient";
  * the URL itself.
  */
 export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
-  const { key } = await searchParams;
+  const params = await searchParams;
+  const { key } = params;
   if (typeof key !== "string" || !isValidAdminKey(key)) redirect("/");
-  return <AdminClient />;
+  // Filters + tab (never the key) so the first render already matches the URL.
+  const initialParams: Record<string, string> = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (k !== "key" && typeof v === "string") initialParams[k] = v;
+  }
+  return <AdminClient initialParams={initialParams} />;
 }

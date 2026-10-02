@@ -43,3 +43,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# …except the documented template
+!.env.example

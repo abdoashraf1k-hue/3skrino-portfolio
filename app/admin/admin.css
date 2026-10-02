@@ -12,6 +12,11 @@ body:has(> main [data-admin-root]) > :not(main, nextjs-portal, script) {
   display: none !important;
 }
 
+/* The admin is always dark, whatever the site theme is set to. */
+[data-admin-root] {
+  color-scheme: dark;
+}
+
 /* Native cursor (the site hides it for its custom one). */
 body:has([data-admin-root]),
 body:has([data-admin-root]) * {

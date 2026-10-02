@@ -35,11 +35,38 @@ export async function GET(request: Request) {
   }
 }
 
-/** POST { project } → appended; id derived from the title when missing or taken. */
+/**
+ * POST { project } → appended; id derived from the title when missing or taken.
+ * POST { duplicateOf: id } → a copy with id "<id>-copy" and title "<title> (copy)".
+ */
 export async function POST(request: Request) {
   if (!isAuthorized(request)) return unauthorized();
   try {
     const body = await readJson(request);
+
+    if (typeof body.duplicateOf === "string") {
+      const sourceId = body.duplicateOf;
+      const res = await mutateProjects((projects) => {
+        const source = findOrThrow(projects, sourceId);
+        const taken = new Set(projects.map((p) => p.id));
+        const copy = validateProject({
+          ...source,
+          id: uniqueId(`${source.id}-copy`, taken),
+          title: `${source.title} (copy)`.slice(0, 120),
+          featured: false,
+          createdAt: new Date().toISOString(),
+        });
+        // The copy lands right after its source so it's easy to find.
+        const at = projects.indexOf(source) + 1;
+        return {
+          projects: [...projects.slice(0, at), copy, ...projects.slice(at)],
+          message: `admin: duplicate project — ${source.title}`,
+          result: copy,
+        };
+      });
+      return Response.json({ ok: true, project: res.result, projects: res.projects, sha: res.sha });
+    }
+
     const input = body.project;
     if (typeof input !== "object" || input === null) throw new ProjectsFileError('"project" is required');
 
@@ -47,7 +74,11 @@ export async function POST(request: Request) {
       const taken = new Set(projects.map((p) => p.id));
       const draft = input as Record<string, unknown>;
       const wanted = typeof draft.id === "string" && draft.id ? draft.id : slugify(String(draft.title ?? ""));
-      const project = validateProject({ ...draft, id: uniqueId(slugify(wanted), taken) });
+      const project = validateProject({
+        ...draft,
+        id: uniqueId(slugify(wanted), taken),
+        createdAt: typeof draft.createdAt === "string" ? draft.createdAt : new Date().toISOString(),
+      });
       return {
         projects: [...projects, project],
         message: `admin: add project — ${project.title}`,

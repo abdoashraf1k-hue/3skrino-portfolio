@@ -5,6 +5,15 @@ export function cn(...classes: ClassValue[]): string {
   return classes.filter(Boolean).join(" ");
 }
 
+/**
+ * Legacy Cloudinary URLs are already optimised at the source, and re-fetching
+ * them through next/image times out upstream — render those `unoptimized`.
+ * Vercel Blob (and everything else) still goes through the optimiser.
+ */
+export function skipImageOptimizer(src: string): boolean {
+  return src.startsWith("https://res.cloudinary.com");
+}
+
 /** Zero-padded index label: 1 → "01". */
 export function pad(n: number, length = 2): string {
   return String(n).padStart(length, "0");

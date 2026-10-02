@@ -39,6 +39,29 @@ function headers(token: string): HeadersInit {
   };
 }
 
+const TIMEOUT_MS = 10_000;
+
+/**
+ * fetch with a hard 10s ceiling. GitHub occasionally stalls; without this a
+ * request hangs until the platform kills the function. A timeout surfaces as
+ * a 504 GitHubError the admin can show and retry.
+ */
+async function ghFetch(url: string, init: RequestInit): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { ...init, signal: ctrl.signal });
+    // Buffer the body inside the same window — a stall mid-body must time out too.
+    const body = res.status === 204 || res.status === 304 ? null : await res.arrayBuffer();
+    return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });
+  } catch (err) {
+    if (ctrl.signal.aborted) throw new GitHubError("GitHub timed out — retry", 504);
+    throw new GitHubError(`Couldn't reach GitHub${err instanceof Error ? `: ${err.message}` : ""}`, 502);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function contentsUrl(repo: string, path: string) {
   const encoded = path.split("/").map(encodeURIComponent).join("/");
   return `${API}/repos/${repo}/contents/${encoded}`;
@@ -58,7 +81,7 @@ async function fail(res: Response, action: string): Promise<never> {
 
 export async function getFile(path: string): Promise<{ content: string; sha: string }> {
   const { token, repo, branch } = config();
-  const res = await fetch(`${contentsUrl(repo, path)}?ref=${encodeURIComponent(branch)}`, {
+  const res = await ghFetch(`${contentsUrl(repo, path)}?ref=${encodeURIComponent(branch)}`, {
     headers: headers(token),
     cache: "no-store",
   });
@@ -71,23 +94,91 @@ export async function getFile(path: string): Promise<{ content: string; sha: str
   return { content: Buffer.from(data.content, "base64").toString("utf8"), sha: data.sha };
 }
 
-/** Commits `content` to `path` on the configured branch. Returns the new blob sha. */
-export async function putFile(path: string, content: string, message: string, sha: string): Promise<string> {
-  const { token, repo, branch, name, email } = config();
-  const res = await fetch(contentsUrl(repo, path), {
-    method: "PUT",
+/* ------------------------------------------------------------------ */
+/* Git Data API — several files (writes + deletes) in ONE commit        */
+/* ------------------------------------------------------------------ */
+
+async function gh<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const { token, repo } = config();
+  const res = await ghFetch(`${API}/repos/${repo}/${path}`, {
+    method,
     headers: headers(token),
     cache: "no-store",
-    body: JSON.stringify({
-      message,
-      content: Buffer.from(content, "utf8").toString("base64"),
-      sha,
-      branch,
-      ...(email ? { committer: { name, email } } : {}),
-    }),
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!res.ok) await fail(res, "write");
+  if (!res.ok) await fail(res, method === "GET" ? "read" : "write");
+  return (await res.json()) as T;
+}
 
-  const data = (await res.json()) as { content?: { sha?: unknown } };
-  return typeof data.content?.sha === "string" ? data.content.sha : "";
+/** The branch head right now — pass it to commitFiles for optimistic concurrency. */
+export async function getHead(): Promise<string> {
+  const { branch } = config();
+  const ref = await gh<{ object: { sha: string } }>("GET", `git/ref/heads/${encodeURIComponent(branch)}`);
+  return ref.object.sha;
+}
+
+/** Reads a file as of a specific commit (so reads and the later write agree on the base). */
+export async function getFileAt(path: string, commitSha: string): Promise<string | null> {
+  const { token, repo } = config();
+  const res = await ghFetch(`${contentsUrl(repo, path)}?ref=${commitSha}`, { headers: headers(token), cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) await fail(res, "read");
+  const data = (await res.json()) as { content?: unknown };
+  if (typeof data.content !== "string") throw new GitHubError("GitHub read returned an unexpected shape", 502);
+  return Buffer.from(data.content, "base64").toString("utf8");
+}
+
+export type FileChange = { path: string; content: string } | { path: string; delete: true };
+
+/**
+ * Commits every change on top of `parentSha` and fast-forwards the branch.
+ * If someone else pushed meanwhile the ref update is rejected (422) — callers
+ * re-read and retry.
+ */
+export async function commitFiles(parentSha: string, changes: FileChange[], message: string): Promise<string> {
+  const { branch, name, email } = config();
+  const parent = await gh<{ tree: { sha: string } }>("GET", `git/commits/${parentSha}`);
+  const tree = await gh<{ sha: string }>("POST", "git/trees", {
+    base_tree: parent.tree.sha,
+    tree: changes.map((c) =>
+      "delete" in c
+        ? { path: c.path, mode: "100644", type: "blob", sha: null }
+        : { path: c.path, mode: "100644", type: "blob", content: c.content },
+    ),
+  });
+  const commit = await gh<{ sha: string }>("POST", "git/commits", {
+    message,
+    tree: tree.sha,
+    parents: [parentSha],
+    ...(email ? { author: { name, email }, committer: { name, email } } : {}),
+  });
+  await gh("PATCH", `git/refs/heads/${encodeURIComponent(branch)}`, { sha: commit.sha, force: false });
+  return commit.sha;
+}
+
+/** Lists a directory at the branch head. Missing directory → []. */
+export async function listDir(path: string): Promise<{ name: string; path: string; size: number }[]> {
+  const { token, repo, branch } = config();
+  const res = await ghFetch(`${contentsUrl(repo, path)}?ref=${encodeURIComponent(branch)}`, {
+    headers: headers(token),
+    cache: "no-store",
+  });
+  if (res.status === 404) return [];
+  if (!res.ok) await fail(res, "read");
+  const data = (await res.json()) as unknown;
+  if (!Array.isArray(data)) return [];
+  return data
+    .filter((f): f is { type: string; name: string; path: string; size: number } => typeof f === "object" && f !== null)
+    .filter((f) => f.type === "file")
+    .map((f) => ({ name: f.name, path: f.path, size: f.size }));
+}
+
+/** Date of the latest commit touching `path` (ISO) — "last edit" in the dashboard. */
+export async function lastCommitDate(path: string): Promise<string | null> {
+  const { branch } = config();
+  const commits = await gh<{ commit: { committer: { date: string } } }[]>(
+    "GET",
+    `commits?path=${encodeURIComponent(path)}&sha=${encodeURIComponent(branch)}&per_page=1`,
+  );
+  return commits[0]?.commit.committer.date ?? null;
 }
