@@ -39,6 +39,26 @@ export function projectCredits(p: Pick<Project, "filmed" | "directed" | "edited"
 
 export const projects: Project[] = [
   {
+    id: "night-run",
+    accentColor: "#ff5a36",
+    orientation: "vertical",
+    title: "Night Run Test",
+    category: "sports",
+    year: 2026,
+    client: "Stride Athletics",
+    role: "Editor, Colorist",
+    tools: ["Premiere Pro", "DaVinci Resolve"],
+    duration: "01:30",
+    description:
+      "A high-tempo campaign film following amateur runners through Cairo after midnight. Cut to a pulsing score with speed-ramped transitions and a crushed, high-contrast grade.",
+    videoUrl: "",
+    thumbnail: "",
+    featured: true,
+    filmed: true,
+    directed: true,
+    edited: true,
+  },
+  {
     id: "quiet-luxury",
     accentColor: "#d8c3a5",
     orientation: "vertical",
