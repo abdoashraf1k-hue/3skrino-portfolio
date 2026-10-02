@@ -140,10 +140,9 @@ export const projects: Project[] = [
     tools: ["Premiere Pro"],
     duration: "01:42",
     description: "",
-    videoUrl:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1790904976757-50fa8732-9fb9-461c-8c93-b2e6588cfc17.mp4",
+    videoUrl: "",
     thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1790905254275-db3204ae-e580-4233-85b1-0d17e7e53acc.jpg",
+      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1790778984295-28701497-08cb-4842-bd20-cdc833c2714a.jpg",
     featured: true,
     filmed: false,
     directed: false,
