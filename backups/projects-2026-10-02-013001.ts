@@ -189,7 +189,7 @@ export const projects: Project[] = [
     accentColor: "#e7fe55",
     orientation: "horizontal",
     title: "DOWNTOWN MALL MARATHON",
-    category: "reels",
+    category: "lifestyle",
     year: 2026,
     client: "DOWNTOWN MALL",
     role: "Editor",
