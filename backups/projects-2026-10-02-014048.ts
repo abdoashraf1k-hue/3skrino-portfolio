@@ -190,28 +190,6 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/gnstqf5t/video/upload/q_auto,f_auto,w_450,h_800,c_fill,so_1/ywy46evz68uqpfjrwmyx.jpg",
     featured: true,
   },
-  {
-    id: "al-ahly-vs-miami-one-world-tours",
-    accentColor: "#e7fe55",
-    orientation: "vertical",
-    title: "AL AHLY VS MIAMI (ONE WORLD TOURS)",
-    category: "sports",
-    year: 2026,
-    client: "ONE WORLD TOURS",
-    role: "Editor",
-    tools: ["Premiere Pro"],
-    duration: "00:32",
-    description: "",
-    videoUrl:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1790905078735-65784531-9a32-4159-91d1-2c2e8bfad4ab.mp4",
-    thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1790905142137-fc6475b6-e490-4dc6-b1c3-4549254707d1.jpg",
-    filmed: false,
-    directed: false,
-    edited: true,
-    thumbnailSource: "auto",
-    createdAt: "2026-10-02T01:40:48.063Z",
-  },
 ];
 
 export type Reel = {
