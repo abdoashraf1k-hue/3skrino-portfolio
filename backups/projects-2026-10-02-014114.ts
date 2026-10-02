@@ -213,29 +213,6 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-02T01:40:48.063Z",
   },
-  {
-    id: "2025-recap-one-world-tours",
-    accentColor: "#e7fe55",
-    orientation: "vertical",
-    title: "2025 RECAP ONE WORLD TOURS",
-    category: "tours",
-    year: 2025,
-    client: "ONE WORLD TOURS",
-    role: "Editor",
-    tools: ["Premiere Pro", "After Effects"],
-    duration: "00:55",
-    description: "",
-    videoUrl:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1790905188602-a9ed15aa-b7f8-4710-8ef2-095d117f5e36.mp4",
-    thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1790905188963-24b43179-fe17-401c-872d-69937da3c55f.jpg",
-    filmed: false,
-    directed: true,
-    edited: true,
-    tags: ["recap", "world", "tours"],
-    thumbnailSource: "auto",
-    createdAt: "2026-10-02T01:41:14.030Z",
-  },
 ];
 
 export type Reel = {
