@@ -298,7 +298,6 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/gnstqf5t/video/upload/v1790767481/ywy46evz68uqpfjrwmyx.mp4",
     thumbnail:
       "https://res.cloudinary.com/gnstqf5t/video/upload/q_auto,f_auto,w_450,h_800,c_fill,so_1/ywy46evz68uqpfjrwmyx.jpg",
-    featured: true,
   },
   {
     id: "future-archive",
