@@ -277,7 +277,6 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/gnstqf5t/video/upload/v1790709851/wt2bfjipongwj31frmph.mp4",
     thumbnail:
       "https://res.cloudinary.com/gnstqf5t/video/upload/q_auto,f_auto,w_450,h_800,c_fill,so_1/wt2bfjipongwj31frmph.jpg",
-    featured: true,
     filmed: true,
     directed: false,
     edited: true,
