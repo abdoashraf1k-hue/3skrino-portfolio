@@ -83,7 +83,7 @@ export const projects: Project[] = [
     accentColor: "#e7fe55",
     orientation: "horizontal",
     title: "TWIST (UNOFFICIAL)",
-    category: "ai",
+    category: "lifestyle",
     year: 2026,
     client: "TWIST",
     role: "AI Director, Editor",
