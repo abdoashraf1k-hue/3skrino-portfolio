@@ -159,7 +159,6 @@ export const projects: Project[] = [
       "https://res.cloudinary.com/gnstqf5t/video/upload/v1790767326/fevtvnuij6xh1lgtx0h6.mp4",
     thumbnail:
       "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1790904474041-df1cf1c0-4a3f-4c91-bf5e-9c72f324dffc.jpg",
-    featured: true,
     filmed: true,
     directed: true,
     edited: true,
