@@ -99,8 +99,8 @@ export default function AdminDashboard({ projects, stats, syncedAt, now }: Props
         sub={blob?.configured ? `${blob.videos} videos · ${bytes(blob.videoBytes)}` : "not configured"}
       />
       <div className="col-span-2 flex flex-col justify-between gap-1 border-white/10 px-4 py-3 sm:col-span-3 lg:col-span-1 lg:border-l">
-        <span className="font-mono text-[9px] uppercase tracking-widest text-white/40">Uploads · 14 days</span>
-        <Sparkline values={blob?.uploadsByDay ?? Array(14).fill(0)} label="Uploads per day over the last 14 days" />
+        <span className="font-mono text-[9px] uppercase tracking-widest text-white/40">Uploads · 30 days</span>
+        <Sparkline values={blob?.uploadsByDay ?? Array(30).fill(0)} label="Uploads per day over the last 30 days" />
         <span className="font-mono text-[9px] uppercase tracking-widest text-white/35">
           {(blob?.uploadsByDay ?? []).reduce((a, b) => a + b, 0)} files
         </span>

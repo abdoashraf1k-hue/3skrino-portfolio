@@ -36,7 +36,7 @@ export function GET() {
   <channel>
     <title>${esc(site.name)} — Work</title>
     <link>${SITE_URL}</link>
-    <description>${esc(`New work from ${site.name}, ${site.role}.`)}</description>
+    <description>${esc(`New vertical, horizontal and AI cuts from ${site.name}, ${site.role}.`)}</description>
     <language>en</language>
     <atom:link href="${absoluteUrl("/feed.xml")}" rel="self" type="application/rss+xml" />
 ${items}

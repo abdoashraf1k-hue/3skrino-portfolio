@@ -8,6 +8,7 @@ import Reveal from "@/components/ui/Reveal";
 import VideoPlayer from "@/components/ui/VideoPlayer";
 import { getCategory } from "@/data/categories";
 import { getProject, projectHref, projects } from "@/data/projects";
+import { siteConfig } from "@/data/site-config";
 import { jsonLd, videoSchema } from "@/lib/seo";
 import { CONTAINER, cn } from "@/lib/utils";
 
@@ -23,21 +24,24 @@ export async function generateMetadata(
   const { category, project } = await props.params;
   const data = getProject(category, project);
   if (!data) return {};
-  const description = data.description || `${data.title} — ${data.role} for ${data.client}.`;
+  // Admin → SEO can override the title / description per project.
+  const seo = siteConfig.seo.projects[data.id] ?? {};
+  const title = seo.title || data.title;
+  const description = seo.description || data.description || `${data.title} — ${data.role} for ${data.client}.`;
   const path = projectHref(data);
   return {
-    title: data.title,
+    title,
     description,
     alternates: { canonical: path },
     openGraph: {
       type: "video.other",
-      title: data.title,
+      title,
       description,
       url: path,
       ...(data.thumbnail ? { images: [{ url: data.thumbnail, alt: data.title }] } : {}),
       ...(data.videoUrl ? { videos: [{ url: data.videoUrl }] } : {}),
     },
-    twitter: { card: "summary_large_image", title: data.title, description },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
@@ -152,7 +156,7 @@ export default async function ProjectPage(props: PageProps<"/work/[category]/[pr
       >
         <div className={cn(CONTAINER, "py-16 md:py-24")}>
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted">Next project →</p>
-          <p className="mt-4 text-[clamp(2.5rem,8vw,8rem)] font-black uppercase leading-[0.9] tracking-tight transition-colors duration-300 group-hover:text-accent">
+          <p className="mt-4 type-display text-[clamp(3rem,9vw,9rem)] leading-[0.88] transition-colors duration-300 group-hover:text-accent">
             {next.title}
           </p>
         </div>

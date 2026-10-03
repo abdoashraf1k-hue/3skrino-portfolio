@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { StatsResponse } from "@/app/api/admin/stats/route";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import AdminFilters, {
   filtersFromParams,
@@ -12,29 +13,80 @@ import AdminFilters, {
 } from "@/components/admin/AdminFilters";
 import BulkBar, { type BulkAction } from "@/components/admin/BulkBar";
 import CategoryGrid from "@/components/admin/CategoryGrid";
+import PreviewDock from "@/components/admin/PreviewDock";
 import ProjectEditor, { type EditorTarget } from "@/components/admin/ProjectEditor";
 import { ToastProvider, useToast } from "@/components/admin/Toast";
+import { btn, btnPrimary, micro } from "@/components/admin/ui";
+import ProjectCardPreview from "@/components/ui/ProjectCard";
 import { categories } from "@/data/categories";
 import type { Project } from "@/data/projects";
-import type { StatsResponse } from "@/app/api/admin/stats/route";
-import {
-  AuthError,
-  adminFetch,
-  clearStoredKey,
-  readStoredKey,
-  storeKey,
-  type ProjectsResponse,
-} from "@/lib/admin/client-api";
-import BackupsClient from "./BackupsClient";
-import HeroAdmin from "./HeroAdmin";
+import { AuthError, adminFetch, clearStoredKey, readStoredKey, storeKey, type ProjectsResponse } from "@/lib/admin/client-api";
+import { assertUploadable } from "@/lib/admin/video-upload";
+import { ConfigProvider, useConfigStore } from "./store";
+import AnalyticsTab from "./tabs/AnalyticsTab";
+import BackupsTab from "./tabs/BackupsTab";
+import BrandsTab from "./tabs/BrandsTab";
+import ContentTab from "./tabs/ContentTab";
+import DashboardTab from "./tabs/DashboardTab";
+import HeroTab from "./tabs/HeroTab";
+import LayoutTab from "./tabs/LayoutTab";
+import LogsTab from "./tabs/LogsTab";
+import RolesTab from "./tabs/RolesTab";
+import SeoTab from "./tabs/SeoTab";
+import SettingsTab from "./tabs/SettingsTab";
+import ThemeTab from "./tabs/ThemeTab";
 
 const POLL_MS = 30_000;
 const TICK_MS = 15_000;
 
 type Status = { kind: "loading" } | { kind: "ready" } | { kind: "denied" } | { kind: "error"; message: string };
-type Tab = "projects" | "backups" | "hero";
-const TABS: readonly Tab[] = ["projects", "backups", "hero"];
 type WithProject = ProjectsResponse & { project: Project };
+
+/** The control center's tabs, grouped in the sidebar. */
+const NAV = [
+  {
+    group: "Overview",
+    tabs: [
+      { id: "dashboard", label: "Dashboard", icon: "◧" },
+      { id: "analytics", label: "Analytics", icon: "◔" },
+      { id: "logs", label: "Logs", icon: "≡" },
+    ],
+  },
+  {
+    group: "Work",
+    tabs: [
+      { id: "projects", label: "Projects", icon: "▦" },
+      { id: "content", label: "Content", icon: "¶" },
+      { id: "seo", label: "SEO", icon: "⌕" },
+    ],
+  },
+  {
+    group: "Hero",
+    tabs: [
+      { id: "hero", label: "Hero", icon: "◉" },
+      { id: "brands", label: "Brands", icon: "✦" },
+      { id: "roles", label: "Roles", icon: "↻" },
+    ],
+  },
+  {
+    group: "Design",
+    tabs: [
+      { id: "layout", label: "Layout", icon: "▤" },
+      { id: "theme", label: "Theme", icon: "◐" },
+    ],
+  },
+  {
+    group: "System",
+    tabs: [
+      { id: "backups", label: "Backups", icon: "⟲" },
+      { id: "settings", label: "Settings", icon: "⚙" },
+    ],
+  },
+] as const;
+type Tab = (typeof NAV)[number]["tabs"][number]["id"];
+const TABS: readonly Tab[] = NAV.flatMap((g) => g.tabs.map((t) => t.id));
+/** Tabs that edit the configs the live preview renders — the dock follows them to the home page. */
+const HOME_PREVIEW_TABS = new Set<Tab>(["hero", "brands", "roles", "layout"]);
 
 export default function AdminClient({ initialParams }: { initialParams: Record<string, string> }) {
   return (
@@ -81,6 +133,42 @@ function isTyping(el: EventTarget | null): boolean {
 function Admin({ initialParams }: { initialParams: Record<string, string> }) {
   const toast = useToast();
   const [status, setStatus] = useState<Status>({ kind: "loading" });
+  const [adminKey] = useState(readKey);
+
+  const deny = useCallback(() => {
+    clearStoredKey();
+    setStatus({ kind: "denied" });
+  }, []);
+
+  if (status.kind === "denied") {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
+        <p className="font-mono text-[11px] uppercase tracking-widest text-[#ff5a5a]">Access denied</p>
+        <Link href="/" className="font-mono text-[11px] uppercase tracking-widest text-white/60 underline-offset-4 hover:underline">
+          Back to site
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <ConfigProvider adminKey={adminKey} onAuthError={deny} onError={toast.error} onSuccess={toast.success}>
+      <Shell initialParams={initialParams} adminKey={adminKey} status={status} setStatus={setStatus} deny={deny} />
+    </ConfigProvider>
+  );
+}
+
+type ShellProps = {
+  initialParams: Record<string, string>;
+  adminKey: string;
+  status: Status;
+  setStatus: (s: Status) => void;
+  deny: () => void;
+};
+
+function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps) {
+  const toast = useToast();
+  const config = useConfigStore();
   const [projects, setProjects] = useState<Project[]>([]);
   const [syncedAt, setSyncedAt] = useState<number | null>(null);
   const [now, setNow] = useState(0);
@@ -89,14 +177,15 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
   const [filters, setFilters] = useState<Filters>(() => filtersFromParams(new URLSearchParams(initialParams)));
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
-  const [tab, setTab] = useState<Tab>(() => TABS.find((t) => t === initialParams.tab) ?? "projects");
-  const [adminKey] = useState(readKey);
-  // Once opened, the hero panel stays mounted (hidden) so a tab switch keeps its unsaved draft.
-  const [heroOpened, setHeroOpened] = useState(tab === "hero");
-  if (tab === "hero" && !heroOpened) setHeroOpened(true);
+  const [tab, setTab] = useState<Tab>(() => TABS.find((t) => t === initialParams.tab) ?? "dashboard");
+  const [previewProject, setPreviewProject] = useState<Project | null>(null);
+  /** Videos picked via "Bulk upload" — the editor opens for each in turn. */
+  const [uploadQueue, setUploadQueue] = useState<File[]>([]);
+  const [navOpen, setNavOpen] = useState(false);
 
   const keyRef = useRef(adminKey);
   const searchRef = useRef<HTMLInputElement>(null);
+  const bulkInputRef = useRef<HTMLInputElement>(null);
   const booted = useRef(false);
   const inFlightWrites = useRef(0);
   const writeGen = useRef(0); // bumps on every write so stale polls are discarded
@@ -105,12 +194,12 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
   const filtering = isFiltering(filters);
   const visible = useFilteredProjects(projects, filters);
   const years = useMemo(() => [...new Set(projects.map((p) => p.year))].sort((a, b) => b - a), [projects]);
+  const dirtyNames = [...config.dirty.hero, ...config.dirty.site];
 
   const applyServer = useCallback((res: ProjectsResponse) => {
     setProjects(res.projects);
     setSyncedAt(Date.now());
     setNow(Date.now());
-    // Drop selections that no longer exist.
     setSelected((sel) => {
       const ids = new Set(res.projects.map((p) => p.id));
       const next = new Set([...sel].filter((id) => ids.has(id)));
@@ -118,13 +207,7 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
     });
   }, []);
 
-  const deny = useCallback(() => {
-    clearStoredKey();
-    setEditor(null);
-    setStatus({ kind: "denied" });
-  }, []);
-
-  /** GET the file from GitHub. Skipped while a write is in flight. */
+  /** GET the projects file from GitHub. Skipped while a write is in flight. */
   const refresh = useCallback(
     async (initial = false) => {
       if (inFlightWrites.current > 0) return;
@@ -140,7 +223,7 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
         if (initial) setStatus({ kind: "error", message });
       }
     },
-    [applyServer, deny],
+    [applyServer, deny, setStatus],
   );
 
   const refreshStats = useCallback(async () => {
@@ -178,13 +261,15 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
     return () => window.clearTimeout(id);
   }, [filters]);
 
-  const switchTab = (next: Tab) => {
+  const switchTab = useCallback((next: Tab) => {
     setTab(next);
+    setNavOpen(false);
     const url = new URL(window.location.href);
-    if (next === "projects") url.searchParams.delete("tab");
+    if (next === "dashboard") url.searchParams.delete("tab");
     else url.searchParams.set("tab", next);
     window.history.replaceState(window.history.state, "", url);
-  };
+    window.scrollTo({ top: 0 });
+  }, []);
 
   // Poll every 30s (only while the tab is visible) + tick the "Xm ago" labels.
   useEffect(() => {
@@ -214,25 +299,47 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
   }, []);
 
   const newProject = useCallback(() => {
-    setTab("projects");
+    switchTab("projects");
     setEditor({ mode: "new", category: filters.cat || categories[0].id });
-  }, [filters.cat]);
+  }, [filters.cat, switchTab]);
 
-  // Shortcuts: Ctrl/⌘+K search · Ctrl/⌘+N (or plain N) new project. The editor owns Esc and Ctrl/⌘+S.
+  // Bulk upload: open the editor for the next queued video whenever it's free.
+  useEffect(() => {
+    if (editor || !uploadQueue.length) return;
+    const id = requestAnimationFrame(() => {
+      const [file, ...rest] = uploadQueue;
+      setUploadQueue(rest);
+      setEditor({ mode: "new", category: filters.cat || categories[0].id, file });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [editor, uploadQueue, filters.cat]);
+
+  const startBulkUpload = useCallback(() => {
+    switchTab("projects");
+    requestAnimationFrame(() => bulkInputRef.current?.click());
+  }, [switchTab]);
+
+  // Shortcuts: Ctrl/⌘+S saves config drafts (the project editor owns it while open) ·
+  // projects tab: Ctrl/⌘+K search · N new project · Esc clears the selection.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (editor || status.kind !== "ready" || tab === "hero") return;
       const mod = e.metaKey || e.ctrlKey;
       const k = e.key.toLowerCase();
+      if (mod && k === "s" && !editor) {
+        if (config.dirty.hero.length + config.dirty.site.length) {
+          e.preventDefault();
+          void config.saveAll();
+        }
+        return;
+      }
+      if (editor || status.kind !== "ready" || tab !== "projects") return;
       if (mod && k === "k") {
         e.preventDefault();
-        setTab("projects");
         requestAnimationFrame(() => {
           searchRef.current?.focus();
           searchRef.current?.select();
         });
       } else if ((mod && k === "n") || (k === "n" && !e.altKey && !mod && !isTyping(e.target))) {
-        // Browsers reserve Ctrl/⌘+N for a new window in most cases — plain "N" always works.
         e.preventDefault();
         newProject();
       } else if (k === "escape" && selected.size && !isTyping(e.target)) {
@@ -241,7 +348,7 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [editor, newProject, selected.size, status.kind, tab]);
+  }, [config, editor, newProject, selected.size, status.kind, tab]);
 
   const withAuth = async <T,>(p: Promise<T>): Promise<T> => {
     try {
@@ -266,6 +373,18 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
     setEditor(null);
     toast.success("Saved — deploying…");
     void refreshStats();
+  };
+
+  /** Inline ✎ edit: title / year without opening the editor. */
+  const quickEdit = async (id: string, patch: { title: string; year: number }) => {
+    try {
+      const res = await withAuth(runWrite(() => adminFetch<ProjectsResponse>(keyRef.current, "projects", "PUT", { id, patch })));
+      applyServer(res);
+      toast.success("Updated — deploying…");
+    } catch (err) {
+      if (!(err instanceof AuthError)) toast.error(err instanceof Error ? err.message : "Update failed");
+      throw err;
+    }
   };
 
   /** Optimistic: gone from the list at once; restored if the commit fails. */
@@ -340,11 +459,7 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
     setProjects((all) => {
       if (op.action === "delete") return all.filter((p) => !set.has(p.id));
       return all.map((p) =>
-        !set.has(p.id)
-          ? p
-          : op.action === "category"
-            ? { ...p, category: op.category }
-            : { ...p, featured: op.action === "feature" },
+        !set.has(p.id) ? p : op.action === "category" ? { ...p, category: op.category } : { ...p, featured: op.action === "feature" },
       );
     });
     try {
@@ -365,6 +480,15 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
       if (!(err instanceof AuthError)) toast.error(err instanceof Error ? `Reverted: ${err.message}` : "Bulk action failed");
     } finally {
       setBulkBusy(false);
+    }
+  };
+
+  const backupNow = async () => {
+    try {
+      const r = await withAuth(adminFetch<{ files: number }>(keyRef.current, "backups", "POST", { action: "snapshot" }));
+      toast.success(`Backed up ${r.files} files`);
+    } catch (err) {
+      if (!(err instanceof AuthError)) toast.error(err instanceof Error ? err.message : "Backup failed");
     }
   };
 
@@ -391,40 +515,187 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
     window.location.replace("/");
   };
 
-  if (status.kind === "denied") {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-[#ff5a5a]">Access denied</p>
-        <Link href="/" className="font-mono text-[11px] uppercase tracking-widest text-white/60 underline-offset-4 hover:underline">
-          Back to site
-        </Link>
-      </div>
+  const reloadAll = () => {
+    void refresh();
+    void config.reload();
+  };
+
+  const configReady = config.status.kind === "ready";
+  const needsConfig = !["dashboard", "projects", "analytics", "logs", "settings"].includes(tab);
+
+  let body: ReactNode;
+  if (needsConfig && !configReady) {
+    body =
+      config.status.kind === "error" ? (
+        <div className="flex flex-col items-center gap-4 py-24 text-center">
+          <p className="max-w-md text-sm text-[#ff5a5a]">{config.status.message}</p>
+          <button type="button" className={btn} onClick={() => void config.reload()}>
+            Retry
+          </button>
+        </div>
+      ) : (
+        <p className={`${micro} py-24 text-center text-white/40`}>Loading settings from GitHub…</p>
+      );
+  } else if (tab === "dashboard") {
+    body = (
+      <DashboardTab
+        adminKey={adminKey}
+        projects={projects}
+        stats={stats}
+        now={now}
+        onAuthError={deny}
+        onNewProject={newProject}
+        onBulkUpload={startBulkUpload}
+        onBackupNow={backupNow}
+        onOpenLogs={() => switchTab("logs")}
+      />
+    );
+  } else if (tab === "analytics") {
+    body = <AnalyticsTab adminKey={adminKey} projects={projects} onAuthError={deny} />;
+  } else if (tab === "logs") {
+    body = <LogsTab adminKey={adminKey} onAuthError={deny} onError={toast.error} onSuccess={toast.success} onChanged={reloadAll} />;
+  } else if (tab === "content") {
+    body = <ContentTab adminKey={adminKey} onError={toast.error} />;
+  } else if (tab === "seo") {
+    body = <SeoTab projects={projects} />;
+  } else if (tab === "hero") {
+    body = <HeroTab adminKey={adminKey} onError={toast.error} onSuccess={toast.success} />;
+  } else if (tab === "brands") {
+    body = <BrandsTab adminKey={adminKey} onError={toast.error} />;
+  } else if (tab === "roles") {
+    body = <RolesTab />;
+  } else if (tab === "layout") {
+    body = <LayoutTab />;
+  } else if (tab === "theme") {
+    body = <ThemeTab />;
+  } else if (tab === "backups") {
+    body = <BackupsTab adminKey={adminKey} onRestoredProjects={applyServer} onAuthError={deny} onError={toast.error} onSuccess={toast.success} />;
+  } else if (tab === "settings") {
+    body = <SettingsTab adminKey={adminKey} onAuthError={deny} onError={toast.error} onSuccess={toast.success} />;
+  } else {
+    body = (
+      <>
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-black uppercase tracking-tight md:text-4xl">Projects</h1>
+            <p className={`${micro} mt-1 text-white/40`}>
+              drop a video on a category · drag rows to reorder or into another category · ✎ quick edit · N new · Ctrl K search
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={startBulkUpload} className={btn}>
+              Bulk upload
+            </button>
+            <button type="button" onClick={newProject} className={btnPrimary}>
+              + New project
+            </button>
+          </div>
+        </div>
+
+        {status.kind === "ready" && <AdminDashboard projects={projects} stats={stats} syncedAt={syncedAt} now={now} />}
+        {status.kind === "ready" && (
+          <AdminFilters value={filters} onChange={setFilters} years={years} resultCount={visible.length} total={projects.length} searchRef={searchRef} />
+        )}
+        {status.kind === "loading" && <p className={`${micro} py-24 text-center text-white/40`}>Loading from GitHub…</p>}
+        {status.kind === "error" && (
+          <div className="flex flex-col items-center gap-4 py-24 text-center">
+            <p className="max-w-md text-sm text-[#ff5a5a]">{status.message}</p>
+            <button type="button" onClick={() => void refresh(true)} className={btn}>
+              Retry
+            </button>
+          </div>
+        )}
+        {status.kind === "ready" && (
+          <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
+            <CategoryGrid
+              projects={visible}
+              filtering={filtering}
+              selected={selected}
+              onToggleSelect={toggleSelect}
+              onSelectAll={selectAll}
+              onNew={(category, file) => setEditor({ mode: "new", category, file })}
+              onEdit={(project) => setEditor({ mode: "edit", project })}
+              onReorder={reorder}
+              onMoveIn={moveIn}
+              onError={toast.error}
+              onQuickEdit={quickEdit}
+              onPreview={setPreviewProject}
+            />
+            {/* Live card preview: the real site card for the row under the pointer / focus. */}
+            <aside className="hidden 2xl:block">
+              <div className="sticky top-24">
+                <p className={`${micro} mb-2 text-white/40`}>Card preview {previewProject ? "· hover it" : "· hover a row"}</p>
+                {previewProject ? (
+                  <div className="pointer-events-auto" style={{ aspectRatio: previewProject.orientation === "vertical" ? "9 / 16" : "16 / 9" }}>
+                    <ProjectCardPreview project={previewProject} index={Math.max(0, projects.findIndex((p) => p.id === previewProject.id))} aspect={previewProject.orientation === "vertical" ? "tall" : "wide"} />
+                  </div>
+                ) : (
+                  <div className="flex aspect-[9/16] items-center justify-center border border-dashed border-white/10">
+                    <span className={`${micro} text-white/25`}>No project</span>
+                  </div>
+                )}
+              </div>
+            </aside>
+          </div>
+        )}
+      </>
     );
   }
 
-  const navBtn = (t: Tab, label: string) => (
-    <button
-      type="button"
-      onClick={() => switchTab(t)}
-      aria-current={tab === t ? "page" : undefined}
-      className={`font-mono text-[10px] uppercase tracking-widest ${tab === t ? "text-[#e7fe55]" : "text-white/50 hover:text-white"}`}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <>
-      {/* Pin: the header sticks while the grid scrolls beneath it. */}
+      <input
+        ref={bulkInputRef}
+        type="file"
+        accept="video/*"
+        multiple
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden
+        onChange={(e) => {
+          const files = [...(e.target.files ?? [])];
+          e.target.value = "";
+          const ok: File[] = [];
+          for (const f of files) {
+            try {
+              assertUploadable(f);
+              ok.push(f);
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : `${f.name} can't be uploaded`);
+            }
+          }
+          if (ok.length) {
+            setUploadQueue((q) => [...q, ...ok]);
+            toast.info(`${ok.length} video${ok.length === 1 ? "" : "s"} queued — the editor opens for each`);
+          }
+        }}
+      />
+
+      {/* Header: brand · unsaved-changes bar · sync · site · logout. Sticks while the page scrolls. */}
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a0a0a]/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between gap-4 px-4 md:px-8">
-          <p className="text-sm font-black uppercase tracking-widest">
-            3SKRINO <span className="text-white/30">—</span> <span className="text-[#e7fe55]">Admin</span>
+        <div className="flex h-14 items-center gap-3 px-4 md:px-6">
+          <button type="button" className={`${btn} lg:hidden`} onClick={() => setNavOpen((o) => !o)} aria-expanded={navOpen} aria-controls="admin-nav">
+            ☰
+          </button>
+          <p className="shrink-0 text-sm font-black uppercase tracking-widest">
+            3SKRINO <span className="text-white/30">—</span> <span className="text-[#e7fe55]">Control</span>
           </p>
-          <div className="flex items-center gap-3 md:gap-5">
-            {navBtn("projects", "Projects")}
-            {navBtn("hero", "Hero")}
-            {navBtn("backups", "Backups")}
+
+          <div className="ml-auto flex min-w-0 items-center gap-2 md:gap-3">
+            {dirtyNames.length > 0 && (
+              <div className="admin-fade flex min-w-0 items-center gap-2 border border-[#e7fe55]/30 bg-[#e7fe55]/[0.06] py-1 pl-3 pr-1">
+                <span className={`${micro} hidden min-w-0 truncate text-[#e7fe55] sm:inline`} title={dirtyNames.join(", ")}>
+                  ● Unsaved: {dirtyNames.join(", ")}
+                </span>
+                <span className={`${micro} text-[#e7fe55] sm:hidden`}>● {dirtyNames.length}</span>
+                <button type="button" className={`${btn} h-7 px-2`} disabled={config.saving} onClick={config.discard}>
+                  Discard
+                </button>
+                <button type="button" className={`${btnPrimary} h-7 px-3 py-0`} disabled={config.saving} onClick={() => void config.saveAll()}>
+                  {config.saving ? "Saving…" : "Save"}
+                </button>
+              </div>
+            )}
             <button
               type="button"
               onClick={() => {
@@ -432,116 +703,90 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
                 void refreshStats();
               }}
               title="Refresh now"
-              className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-white/50 hover:text-white"
+              className={`${micro} hidden items-center gap-2 text-white/50 hover:text-white md:flex`}
             >
-              <span
-                className={`size-1.5 rounded-full ${
-                  status.kind === "ready" ? "bg-[#e7fe55]" : status.kind === "error" ? "bg-[#ff2d2d]" : "bg-white/30"
-                }`}
-              />
-              <span className="hidden lg:inline">
+              <span className={`size-1.5 rounded-full ${status.kind === "ready" ? "bg-[#e7fe55]" : status.kind === "error" ? "bg-[#ff2d2d]" : "bg-white/30"}`} />
+              <span className="hidden xl:inline">
                 {syncedAt === null ? "Connecting…" : now - syncedAt < 60_000 ? "Synced just now" : `Synced ${Math.floor((now - syncedAt) / 60_000)}m ago`}
               </span>
             </button>
-            <a href="/" target="_blank" rel="noreferrer" className="hidden font-mono text-[10px] uppercase tracking-widest text-white/50 hover:text-white md:inline">
-              View site ↗
+            <a href="/" target="_blank" rel="noreferrer" className={`${micro} hidden text-white/50 hover:text-white md:inline`}>
+              Site ↗
             </a>
-            <button
-              type="button"
-              onClick={logout}
-              className="border border-white/15 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-white/70 hover:border-white/40 hover:text-white"
-            >
+            <button type="button" onClick={logout} className={`${btn} h-8`}>
               Logout
             </button>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1600px] px-4 py-8 pb-32 md:px-8">
-        {heroOpened && (
-          <div hidden={tab !== "hero"}>
-            <HeroAdmin adminKey={adminKey} active={tab === "hero"} onError={toast.error} onSuccess={toast.success} onAuthError={deny} />
+      <div className="flex">
+        {/* Sidebar: grouped tabs. A drawer under lg. */}
+        <nav
+          id="admin-nav"
+          aria-label="Admin sections"
+          className={`${navOpen ? "fixed inset-x-0 top-14 bottom-0 z-[35] block overflow-y-auto bg-[#0a0a0a]" : "hidden"} w-full shrink-0 border-r border-white/10 lg:sticky lg:top-14 lg:block lg:h-[calc(100vh-3.5rem)] lg:w-52 lg:overflow-y-auto`}
+        >
+          <div className="flex flex-col gap-5 px-3 py-5">
+            {NAV.map((g) => (
+              <div key={g.group}>
+                <p className={`${micro} mb-1.5 px-2 text-[9px] text-white/30`}>{g.group}</p>
+                <ul className="flex flex-col">
+                  {g.tabs.map((t) => {
+                    const on = tab === t.id;
+                    const dirtyHere =
+                      (t.id === "hero" && config.dirty.hero.some((d) => d === "poses" || d === "hero effects" || d === "ambient sound")) ||
+                      (t.id === "brands" && config.dirty.hero.includes("brands")) ||
+                      (t.id === "roles" && config.dirty.hero.includes("roles")) ||
+                      (t.id === "layout" && config.dirty.site.includes("layout")) ||
+                      (t.id === "theme" && config.dirty.site.includes("theme")) ||
+                      (t.id === "content" && config.dirty.site.includes("content")) ||
+                      (t.id === "seo" && config.dirty.site.includes("SEO")) ||
+                      (t.id === "backups" && config.dirty.site.includes("backup schedule"));
+                    return (
+                      <li key={t.id}>
+                        <button
+                          type="button"
+                          onClick={() => switchTab(t.id)}
+                          aria-current={on ? "page" : undefined}
+                          className={`flex w-full items-center gap-2.5 px-2 py-1.5 text-left font-mono text-[11px] uppercase tracking-widest transition-colors ${
+                            on ? "bg-[#e7fe55]/[0.08] text-[#e7fe55]" : "text-white/55 hover:bg-white/[0.04] hover:text-white"
+                          }`}
+                        >
+                          <span aria-hidden className="w-4 text-center text-[12px]">
+                            {t.icon}
+                          </span>
+                          {t.label}
+                          {dirtyHere && <span aria-label="unsaved" className="ml-auto size-1.5 rounded-full bg-[#e7fe55]" />}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
           </div>
-        )}
-        {tab === "hero" ? null : tab === "backups" ? (
-          <BackupsClient
-            adminKey={adminKey}
-            now={now}
-            onRestored={applyServer}
-            onError={toast.error}
-            onSuccess={toast.success}
-          />
-        ) : (
-          <>
-            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <h1 className="text-3xl font-black uppercase tracking-tight md:text-4xl">Projects</h1>
-                <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-white/40">
-                  drop a video on a category · drag rows to reorder or into another category · N new · Ctrl K search
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={newProject}
-                className="bg-[#e7fe55] px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] hover:bg-[#f0ff8a]"
-              >
-                + New project
-              </button>
-            </div>
+        </nav>
 
-            {status.kind === "ready" && <AdminDashboard projects={projects} stats={stats} syncedAt={syncedAt} now={now} />}
-
-            {status.kind === "ready" && (
-              <AdminFilters
-                value={filters}
-                onChange={setFilters}
-                years={years}
-                resultCount={visible.length}
-                total={projects.length}
-                searchRef={searchRef}
-              />
-            )}
-
-            {status.kind === "loading" && (
-              <p className="py-24 text-center font-mono text-[11px] uppercase tracking-widest text-white/40">Loading from GitHub…</p>
-            )}
-            {status.kind === "error" && (
-              <div className="flex flex-col items-center gap-4 py-24 text-center">
-                <p className="max-w-md text-sm text-[#ff5a5a]">{status.message}</p>
-                <button
-                  type="button"
-                  onClick={() => void refresh(true)}
-                  className="border border-white/15 px-4 py-2 font-mono text-[11px] uppercase tracking-widest hover:border-white/40"
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-            {status.kind === "ready" && (
-              <CategoryGrid
-                projects={visible}
-                filtering={filtering}
-                selected={selected}
-                onToggleSelect={toggleSelect}
-                onSelectAll={selectAll}
-                onNew={(category, file) => setEditor({ mode: "new", category, file })}
-                onEdit={(project) => setEditor({ mode: "edit", project })}
-                onReorder={reorder}
-                onMoveIn={moveIn}
-                onError={toast.error}
-              />
-            )}
-          </>
-        )}
+        <main className="min-w-0 flex-1 px-4 py-8 pb-32 md:px-8">
+          <div className="mx-auto max-w-[1500px]">{body}</div>
+        </main>
       </div>
 
       {selected.size > 0 && tab === "projects" && (
         <BulkBar count={selected.size} busy={bulkBusy} onRun={(op) => void runBulk(op)} onCancel={() => setSelected(new Set())} />
       )}
 
+      <PreviewDock
+        hero={config.hero}
+        site={config.site}
+        dirty={dirtyNames.length > 0}
+        focusPath={HOME_PREVIEW_TABS.has(tab) ? "/" : undefined}
+      />
+
       {editor && (
         <ProjectEditor
-          key={editor.mode === "edit" ? editor.project.id : `new-${editor.category}`}
+          key={editor.mode === "edit" ? editor.project.id : `new-${editor.category}-${editor.file?.name ?? ""}`}
           target={editor}
           adminKey={adminKey}
           onClose={() => setEditor(null)}

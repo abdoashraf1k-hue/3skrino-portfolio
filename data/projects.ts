@@ -265,8 +265,10 @@ export const reels: Reel[] = [
   { id: "r8", title: "Behind the Cut", views: "410K", client: "Self", aspect: "aspect-[3/4]", duration: "00:27" },
 ];
 
+/** The three cuts. Vertical / horizontal include AI work in that format; AI Cuts collects every AI piece. */
 export const verticalProjects = projects.filter((p) => p.orientation === "vertical");
 export const horizontalProjects = projects.filter((p) => p.orientation === "horizontal");
+export const aiProjects = projects.filter((p) => p.category === "ai");
 
 export function getProject(category: string, id: string): Project | undefined {
   return projects.find((p) => p.category === category && p.id === id);

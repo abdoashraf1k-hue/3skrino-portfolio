@@ -56,7 +56,7 @@ export default function AboutPage() {
                 className="grid grid-cols-12 items-baseline gap-6 border-b border-line py-8 md:py-10"
               >
                 <span className="col-span-2 font-mono text-[11px] text-muted md:col-span-1">{pad(i + 1)}</span>
-                <h3 className="col-span-10 text-3xl font-black uppercase tracking-tight md:col-span-5 md:text-5xl">
+                <h3 className="type-display col-span-10 text-4xl md:col-span-5 md:text-6xl">
                   {s.title}
                 </h3>
                 <p className="col-span-12 max-w-md text-base leading-relaxed text-muted md:col-span-6">
@@ -74,7 +74,7 @@ export default function AboutPage() {
           <Reveal stagger className="grid grid-cols-1 gap-y-10 md:grid-cols-5 md:gap-x-6">
             {timeline.map((t) => (
               <div key={t.year} className="border-t border-line pt-6">
-                <p className="text-4xl font-black tracking-tight">{t.year}</p>
+                <p className="type-display text-5xl">{t.year}</p>
                 <p className="mt-4 text-base leading-relaxed text-muted">{t.text}</p>
               </div>
             ))}
@@ -86,7 +86,7 @@ export default function AboutPage() {
         <div className={CONTAINER}>
           <p className="mb-12 font-mono text-[11px] uppercase tracking-widest text-muted">(04) Fields</p>
           <Reveal>
-            <p className="max-w-5xl text-[clamp(2rem,5vw,4.5rem)] font-black uppercase leading-[1.05] tracking-tight">
+            <p className="type-display max-w-5xl text-[clamp(2.5rem,6vw,5.5rem)] leading-[1.02]">
               {categories.map((c, i) => (
                 <span key={c.id}>
                   {c.name}

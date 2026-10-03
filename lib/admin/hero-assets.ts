@@ -17,6 +17,10 @@ export function assertPoseFile(file: File): void {
   if (!POSE_TYPES.test(file.type)) throw new Error(`"${file.name}" must be a transparent PNG or WebP`);
 }
 
+export function assertSiteImage(file: File): void {
+  if (!/^image\/(png|webp|jpeg)$/.test(file.type)) throw new Error(`"${file.name}" must be a PNG, JPEG or WebP`);
+}
+
 export function assertLogoFile(file: File): void {
   if (!LOGO_TYPES.test(file.type)) throw new Error(`"${file.name}" must be a PNG, SVG, WebP or JPEG`);
 }
@@ -37,7 +41,7 @@ function extension(type: string): string {
 
 export async function uploadHeroAsset(
   file: Blob,
-  folder: "hero" | "brands",
+  folder: "hero" | "brands" | "site",
   name: string,
   key: string,
   onProgress?: (pct: number) => void,

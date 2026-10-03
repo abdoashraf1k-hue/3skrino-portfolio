@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { gsap } from "@/lib/gsap";
 
 type RevealProps = {
   children: ReactNode;
   className?: string;
+  style?: CSSProperties;
   /** Animate direct children one after another instead of the wrapper. */
   stagger?: boolean;
   /** Animate every [data-reveal-split] descendant (words/letters), `each` seconds apart. */
@@ -23,6 +24,7 @@ type RevealProps = {
 export default function Reveal({
   children,
   className,
+  style,
   stagger = false,
   split = false,
   each = 0.03,
@@ -66,7 +68,7 @@ export default function Reveal({
   }, [stagger, split, each, blur, delay, y, duration]);
 
   return (
-    <div ref={ref} className={className}>
+    <div ref={ref} className={className} style={style}>
       {children}
     </div>
   );

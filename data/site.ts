@@ -1,25 +1,22 @@
+import { siteConfig } from "./site-config";
+
+/** Identity. Email / location / role are edited from /admin → Content (data/site-config.ts). */
 export const site = {
   name: "3SKRINO",
-  email: "hello@3skrino.com",
-  location: "Cairo",
-  role: "Senior Video Editor & Content Creator",
-} as const;
+  email: siteConfig.content.email,
+  location: siteConfig.content.location,
+  role: siteConfig.content.role,
+};
 
-export const socials = [
-  { label: "Instagram", href: "https://instagram.com/" },
-  { label: "Vimeo", href: "https://vimeo.com/" },
-  { label: "Behance", href: "https://behance.net/" },
-  { label: "YouTube", href: "https://youtube.com/" },
-  { label: "TikTok", href: "https://tiktok.com/" },
-  { label: "X", href: "https://x.com/" },
-] as const;
+export const socials = siteConfig.content.socials;
 
+/** `short` is used where the nav is tight (tablet). */
 export const navLinks = [
-  { label: "Work", href: "/work" },
-  { label: "Reels", href: "/reels" },
-  { label: "AI", href: "/ai" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
+  { label: "Vertical Cuts", short: "Vertical", href: "/vertical-cuts" },
+  { label: "Horizontal Cuts", short: "Horizontal", href: "/horizontal-cuts" },
+  { label: "AI Cuts", short: "AI", href: "/ai-cuts" },
+  { label: "About", short: "About", href: "/about" },
+  { label: "Contact", short: "Contact", href: "/contact" },
 ] as const;
 
 export const roles = [

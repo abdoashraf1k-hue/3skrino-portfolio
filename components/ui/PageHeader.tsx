@@ -34,7 +34,7 @@ export default function PageHeader({ label, title, description, meta, children }
       </motion.p>
       <motion.h1
         variants={item}
-        className="text-[clamp(3.5rem,13vw,13rem)] font-black uppercase leading-[0.88] tracking-tight"
+        className="type-display text-[clamp(4rem,14vw,14rem)] leading-[0.86]"
       >
         {title}
       </motion.h1>

@@ -15,7 +15,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     page("/", 1, "weekly"),
-    page("/work", 0.8, "weekly"),
+    page("/vertical-cuts", 0.9, "weekly"),
+    page("/horizontal-cuts", 0.9, "weekly"),
+    page("/ai-cuts", 0.9, "weekly"),
     ...categories.map((c) => page(`/work/${c.id}`, 0.8, "weekly")),
     ...projects.map((p) => ({
       url: absoluteUrl(projectHref(p)),
@@ -23,8 +25,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: 0.6,
     })),
-    page("/reels", 0.8, "weekly"),
-    page("/ai", 0.8, "monthly"),
     page("/search", 0.3, "monthly"),
     page("/about", 0.4, "yearly"),
     page("/contact", 0.4, "yearly"),

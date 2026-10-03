@@ -7,7 +7,9 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import HeroLogos from "@/components/sections/HeroLogos";
 import SafeBoundary from "@/components/three/SafeBoundary";
+import MidRoleCycler from "@/components/ui/MidRoleCycler";
 import Timecode from "@/components/ui/Timecode";
+import type { HeroFilter } from "@/data/hero-config";
 import { site } from "@/data/site";
 import { gsap } from "@/lib/gsap";
 import {
@@ -17,7 +19,7 @@ import {
   stopAmbient,
   useAmbientMuted,
 } from "@/lib/hero-ambient";
-import { useHeroConfig } from "@/lib/hero-config-client";
+import { useHeroConfig, useSiteConfig } from "@/lib/live-config";
 import { RICH_MOTION_QUERY, useInView, useMediaQuery } from "@/lib/hooks";
 import { CONTAINER, cn, EASE_OUT } from "@/lib/utils";
 
@@ -91,6 +93,7 @@ export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const nameRef = useRef<HTMLSpanElement>(null);
   const config = useHeroConfig();
+  const { content } = useSiteConfig();
   const { features } = config;
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const wordRef = useRef<HTMLDivElement>(null);
@@ -207,7 +210,7 @@ export default function Hero() {
 
         {/* Static backdrop: mobile, reduced motion, no WebGL — and underneath
             the live scene until its first frame lands, so there's no flash. */}
-        {!(scene && sceneReady) && <HeroFallback />}
+        {!(scene && sceneReady) && <HeroFallback filter={features.filter} />}
 
         {scene && (
           <motion.div aria-hidden style={{ opacity: sceneOpacity }} className="pointer-events-none absolute inset-0">
@@ -277,7 +280,7 @@ export default function Hero() {
           <h1
             aria-label={site.name}
             className={cn(
-              "text-[clamp(4rem,15vw,16rem)] font-black uppercase leading-[0.9] tracking-tight",
+              "type-display text-[clamp(4.5rem,17vw,18rem)] leading-[0.86]",
               particles && "text-transparent",
             )}
           >
@@ -306,8 +309,7 @@ export default function Hero() {
             {...fadeUp(lettersDone)}
             className="mt-8 max-w-2xl text-xl leading-snug text-fg/80 md:text-[28px]"
           >
-            Senior Video Editor &amp; Content Creator — 9+ years cutting brand films,
-            commercials, social reels, and AI-driven visuals.
+            {content.tagline}
           </motion.p>
 
           <motion.div
@@ -315,7 +317,7 @@ export default function Hero() {
             className="mt-12 flex flex-wrap items-center justify-center gap-6"
           >
             <Link
-              href="/work"
+              href="/vertical-cuts"
               data-track="cta"
               data-track-id="hero_view_work"
               className="border border-fg px-8 py-4 font-mono text-[11px] uppercase tracking-widest transition-colors duration-300 hover:bg-fg hover:text-bg"
@@ -323,7 +325,7 @@ export default function Hero() {
               View work
             </Link>
             <Link
-              href="/reels"
+              href="/vertical-cuts?view=player"
               data-track="cta"
               data-track-id="hero_showreel"
               className="group flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted transition-colors duration-300 hover:text-fg"
@@ -342,11 +344,8 @@ export default function Hero() {
             aria-hidden
             className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center opacity-0"
           >
-            <p className="text-center text-[clamp(3rem,10vw,10rem)] font-black uppercase leading-[0.9]">
-              Video <span className="text-accent">/</span>
-              <br />
-              Editor
-            </p>
+            {/* Cycles through the roles (admin → Roles) — the hero's hand-off line. */}
+            <MidRoleCycler />
           </div>
         )}
 
@@ -378,9 +377,22 @@ export default function Hero() {
  * No-WebGL stand-in for the hero scene: a CSS perspective grid and the
  * silhouette, with stacked drop-shadows tracing its alpha as a cheap rim light.
  */
-function HeroFallback() {
+/** The static backdrop's take on each grade (the live scene grades in a post pass). */
+const FALLBACK_FILTER: Record<HeroFilter, string> = {
+  none: "",
+  warm: "sepia(0.25) saturate(1.2) hue-rotate(-8deg)",
+  cool: "hue-rotate(12deg) saturate(0.9) brightness(1.03)",
+  vintage: "sepia(0.55) contrast(0.9) brightness(0.95)",
+  contrast: "contrast(1.35) saturate(1.2)",
+};
+
+function HeroFallback({ filter }: { filter: HeroFilter }) {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      style={FALLBACK_FILTER[filter] ? { filter: FALLBACK_FILTER[filter] } : undefined}
+    >
       {/* Horizon haze */}
       <div
         className="absolute inset-x-0 top-[38%] h-[30%]"

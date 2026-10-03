@@ -16,14 +16,15 @@ export default function CategoryCard({ category, index }: { category: Category; 
   return (
     <Link
       href={`/work/${category.id}`}
+      data-cat={category.id}
       data-hover
-      className="group relative flex aspect-[3/4] flex-col border border-line p-6 transition-[background-color,border-color,transform] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-accent hover:bg-accent/[0.03] focus-visible:border-accent active:scale-[0.98] active:duration-150 md:p-8"
+      className="group relative flex aspect-[3/4] flex-col border border-line p-6 transition-[background-color,border-color,transform] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-cat hover:bg-cat/[0.03] focus-visible:border-cat active:scale-[0.98] active:duration-150 md:p-8"
     >
       <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-widest">
-        <span className="text-muted transition-colors duration-[400ms] group-hover:italic group-hover:text-accent">
+        <span className="rounded-[3px] border border-fg/20 px-1.5 py-0.5 tabular-nums text-muted transition-colors duration-[400ms] group-hover:border-cat group-hover:text-cat">
           {pad(index + 1)}
         </span>
-        <span className="flex items-center gap-1.5 text-accent opacity-0 transition-opacity duration-[400ms] group-hover:opacity-100 group-focus-visible:opacity-100">
+        <span className="flex items-center gap-1.5 text-cat opacity-0 transition-opacity duration-[400ms] group-hover:opacity-100 group-focus-visible:opacity-100">
           REC <span className="size-1.5 rounded-full bg-accent-2" />
         </span>
       </div>
@@ -38,7 +39,7 @@ export default function CategoryCard({ category, index }: { category: Category; 
           <span className="absolute inset-0 flex items-center justify-center">
             <span className="relative flex size-10 items-center justify-center">
               <span className="absolute inset-0 animate-ping rounded-full border border-fg/20 [animation-duration:2.4s]" />
-              <span className="flex size-10 items-center justify-center rounded-full border border-fg/30 text-[9px] transition-colors duration-300 group-hover:border-accent group-hover:text-accent">
+              <span className="flex size-10 items-center justify-center rounded-full border border-fg/30 text-[9px] transition-colors duration-300 group-hover:border-cat group-hover:text-cat">
                 ▶
               </span>
             </span>
@@ -50,7 +51,7 @@ export default function CategoryCard({ category, index }: { category: Category; 
       </div>
 
       <div>
-        <h3 className="text-[clamp(1.75rem,2.6vw,2.25rem)] font-black uppercase leading-none tracking-tight transition-transform duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-1">
+        <h3 className="type-display text-[clamp(2.25rem,3.4vw,3rem)] leading-none transition-transform duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-1">
           {category.name}
         </h3>
         <span className="mt-4 flex items-center justify-between font-mono text-[10px] uppercase tracking-widest text-muted">
@@ -58,7 +59,7 @@ export default function CategoryCard({ category, index }: { category: Category; 
             <span aria-hidden className={marker}>
               {"[ "}
             </span>
-            <span aria-hidden className={cn(marker, "text-accent")}>
+            <span aria-hidden className={cn(marker, "text-cat")}>
               {"● "}
             </span>
             {category.count} {category.count === 1 ? "Project" : "Projects"}
@@ -67,7 +68,7 @@ export default function CategoryCard({ category, index }: { category: Category; 
             </span>
           </span>
           <span
-            className="text-sm transition-[transform,color] duration-[400ms] group-hover:translate-x-1 group-hover:text-accent"
+            className="text-sm transition-[transform,color] duration-[400ms] group-hover:translate-x-1 group-hover:text-cat"
           >
             →
           </span>

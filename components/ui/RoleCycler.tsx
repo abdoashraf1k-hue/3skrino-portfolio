@@ -2,7 +2,8 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { useHeroConfig } from "@/lib/hero-config-client";
+import type { HeroConfig } from "@/data/hero-config";
+import { useHeroConfig } from "@/lib/live-config";
 import { useMediaQuery } from "@/lib/hooks";
 import { cn, EASE_OUT } from "@/lib/utils";
 
@@ -14,8 +15,9 @@ const STATIC_ROLE = "Creative Studio";
  * is as wide as the longest one and the nav never reflows. Reduced motion →
  * a static "Creative Studio". Screen readers get the full list once.
  */
-export default function RoleCycler({ className }: { className?: string }) {
-  const { roles } = useHeroConfig();
+export default function RoleCycler({ className, roles: rolesProp }: { className?: string; roles?: HeroConfig["roles"] }) {
+  const live = useHeroConfig().roles;
+  const roles = rolesProp ?? live;
   // useMediaQuery (not framer's hook) — it reports false while hydrating, so server and client markup match.
   const reduced = useMediaQuery("(prefers-reduced-motion: reduce)");
   const [index, setIndex] = useState(0);

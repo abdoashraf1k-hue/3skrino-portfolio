@@ -21,6 +21,8 @@ type Props = {
   onReorder: (category: string, ids: string[]) => void;
   onMoveIn: (id: string, category: string, index: number) => void;
   onError: (message: string) => void;
+  onQuickEdit?: (id: string, patch: { title: string; year: number }) => Promise<void>;
+  onPreview?: (project: Project | null) => void;
 };
 
 /**
@@ -39,7 +41,7 @@ export default function CategoryGrid(props: Props) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 min-[1920px]:grid-cols-3">
       {shown.map((category, i) => (
         <CategoryCard key={category.id} index={i} id={category.id} name={category.name} items={category.items} {...props} />
       ))}
@@ -63,6 +65,8 @@ function CategoryCard({
   onReorder,
   onMoveIn,
   onError,
+  onQuickEdit,
+  onPreview,
 }: CardProps) {
   const [fileOver, setFileOver] = useState(false);
   const allSelected = items.length > 0 && items.every((p) => selected.has(p.id));
@@ -140,6 +144,8 @@ function CategoryCard({
           reorderable={!filtering}
           selected={selected}
           onToggleSelect={onToggleSelect}
+          onQuickEdit={onQuickEdit}
+          onPreview={onPreview}
         />
       </div>
 

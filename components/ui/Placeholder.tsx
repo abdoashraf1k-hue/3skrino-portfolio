@@ -59,7 +59,7 @@ export default function Placeholder({
         <span
           aria-hidden
           className={cn(
-            "absolute inset-0 flex items-center justify-center px-6 text-center font-black uppercase leading-none tracking-tight text-fg/[0.05]",
+            "absolute inset-0 flex items-center justify-center px-6 text-center type-display leading-none text-fg/[0.05]",
             size === "lg" ? "text-[clamp(2.5rem,7vw,7rem)]" : "text-4xl",
           )}
         >

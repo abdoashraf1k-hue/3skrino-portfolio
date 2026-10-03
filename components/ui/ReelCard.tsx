@@ -16,7 +16,7 @@ type ReelCardProps = {
   className?: string;
 };
 
-export default function ReelCard({ reel, index, href = "/reels", onOpen, natural = false, className }: ReelCardProps) {
+export default function ReelCard({ reel, index, href = "/vertical-cuts", onOpen, natural = false, className }: ReelCardProps) {
   const body: ReactNode = (
     <div
       className={cn(
@@ -42,7 +42,7 @@ export default function ReelCard({ reel, index, href = "/reels", onOpen, natural
       )}
       <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-bg/80 to-transparent p-4 pt-16 text-left">
         <ProjectBadges filmed={reel.filmed} directed={reel.directed} edited={reel.edited} className="mb-2" />
-        <h3 className="text-lg font-black uppercase tracking-tight">{reel.title}</h3>
+        <h3 className="type-label text-lg">{reel.title}</h3>
         <p className="mt-1 flex justify-between font-mono text-[10px] uppercase tracking-widest text-muted">
           <span>{reel.client}</span>
           <span>▶ {reel.views} views</span>

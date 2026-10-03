@@ -3,6 +3,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import type { CSSProperties, PointerEvent, ReactNode } from "react";
 import Reveal from "@/components/ui/Reveal";
+import { useSectionInfo } from "@/components/ui/SectionContext";
+import type { BentoPattern } from "@/data/site-config";
 import { cn, EASE_OUT } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
@@ -30,6 +32,8 @@ type Props = {
   animateLayout?: boolean;
   /** Extra classes for each tile's tilt wrapper (e.g. its corner radius). */
   tileClassName?: string;
+  /** Layout preset. Defaults to the enclosing home section's (admin → Layout), else mosaic. */
+  pattern?: BentoPattern;
   className?: string;
 };
 
@@ -40,7 +44,11 @@ type Span = "1x1" | "2x1" | "1x2" | "2x2";
 
 /** Shape for items with no hint — the bento rhythm. */
 const CYCLE: Span[] = ["2x2", "1x1", "1x1", "2x1", "1x2", "1x1", "2x1", "1x2"];
+/** Editorial: fewer, bigger tiles — every other one is a 2×2 or a wide band. */
+const EDITORIAL: Span[] = ["2x2", "1x2", "1x2", "2x1", "2x2", "2x1"];
 const FROM_ASPECT: Record<BentoAspect, Span> = { square: "2x2", wide: "2x1", tall: "1x2", small: "1x1" };
+/** Editorial upsizes the aspect hints by one step. */
+const EDITORIAL_FROM_ASPECT: Record<BentoAspect, Span> = { square: "2x2", wide: "2x1", tall: "1x2", small: "1x2" };
 
 const SPAN_SIZE: Record<Span, { w: number; h: number }> = {
   "1x1": { w: 1, h: 1 },
@@ -62,9 +70,21 @@ const DESKTOP_COLS: Record<NonNullable<Props["columns"]>, string> = {
   6: "lg:grid-cols-6",
 };
 
-/** Desktop spans: priority → 2×2, then the aspect hint, else the next CYCLE step. */
-function resolveSpans(items: BentoItem[]): Span[] {
+/**
+ * Desktop spans per pattern. mosaic: priority → 2×2, then the aspect hint,
+ * else the next CYCLE step. editorial: same, upsized, every third tile a
+ * 2×2. uniform: every tile 1×1, priority ignored.
+ */
+function resolveSpans(items: BentoItem[], pattern: BentoPattern): Span[] {
   let step = 0;
+  if (pattern === "uniform") return items.map(() => "1x1");
+  if (pattern === "editorial") {
+    return items.map((item, i) => {
+      if ((item.priority ?? 0) > 0 || i % 3 === 0) return "2x2";
+      if (item.aspect) return EDITORIAL_FROM_ASPECT[item.aspect];
+      return EDITORIAL[step++ % EDITORIAL.length];
+    });
+  }
   return items.map((item) => {
     if ((item.priority ?? 0) > 0) return "2x2";
     if (item.aspect) return FROM_ASPECT[item.aspect];
@@ -143,8 +163,8 @@ function fillHoles(spans: Span[], columns: number): Size[] {
  * - tablet (md): two columns, priority tiles 2×2, everything else 1×1
  * - desktop (lg): `columns` columns with the resolved span
  */
-function tileClass(item: BentoItem, size: Size): string {
-  const priority = (item.priority ?? 0) > 0;
+function tileClass(item: BentoItem, size: Size, pattern: BentoPattern): string {
+  const priority = pattern !== "uniform" && (item.priority ?? 0) > 0;
   return cn(
     item.aspect === "wide" ? "aspect-video" : "aspect-[4/5]",
     "md:aspect-auto",
@@ -220,14 +240,21 @@ export default function BentoGrid({
   columns = 4,
   gap = 4,
   animateLayout = false,
-  tileClassName = "rounded-sm",
+  tileClassName = "rounded-[var(--radius-card)]",
+  pattern: patternProp,
   className,
 }: Props) {
-  const spans = resolveSpans(items);
+  const section = useSectionInfo();
+  const pattern = patternProp ?? section?.pattern ?? "mosaic";
+  const spans = resolveSpans(items, pattern);
   const sizes = fillHoles(spans, columns);
   const style: CSSProperties = { gap: `${gap * 4}px` };
   const gridClass = cn(
-    "grid grid-cols-1 md:grid-flow-dense md:grid-cols-2 md:auto-rows-[260px] lg:auto-rows-[220px] xl:auto-rows-[260px]",
+    "grid grid-cols-1 md:grid-flow-dense md:grid-cols-2",
+    // Uniform tiles are all 1×1 — give them a taller, poster-like row.
+    pattern === "uniform"
+      ? "md:auto-rows-[340px] lg:auto-rows-[300px] xl:auto-rows-[360px]"
+      : "md:auto-rows-[260px] lg:auto-rows-[220px] xl:auto-rows-[260px]",
     DESKTOP_COLS[columns],
     className,
   );
@@ -246,7 +273,7 @@ export default function BentoGrid({
             <motion.div
               key={item.id}
               layout
-              className={tileClass(item, sizes[i])}
+              className={tileClass(item, sizes[i], pattern)}
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
@@ -263,7 +290,7 @@ export default function BentoGrid({
   return (
     <div className={gridClass} style={style}>
       {items.map((item, i) => (
-        <Reveal key={item.id} className={tileClass(item, sizes[i])}>
+        <Reveal key={item.id} className={tileClass(item, sizes[i], pattern)}>
           {tile(item, i)}
         </Reveal>
       ))}

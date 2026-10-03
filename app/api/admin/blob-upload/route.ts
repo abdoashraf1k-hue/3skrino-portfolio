@@ -29,10 +29,10 @@ export async function POST(request: Request): Promise<Response> {
       body,
       request,
       onBeforeGenerateToken: async (pathname) => {
-        const folder = /^(videos|thumbnails|hero|brands)\/[\w.-]+$/.exec(pathname)?.[1];
+        const folder = /^(videos|thumbnails|hero|brands|site)\/[\w.-]+$/.exec(pathname)?.[1];
         if (!folder) throw new Error("Invalid upload path");
-        // Hero poses + brand logos are images only (logos may be SVG), and small.
-        const heroAsset = folder === "hero" || folder === "brands";
+        // Hero poses, brand logos and site images (favicon / share image) are small images; logos may be SVG.
+        const heroAsset = folder === "hero" || folder === "brands" || folder === "site";
         return {
           allowedContentTypes: heroAsset
             ? ["image/png", "image/webp", "image/jpeg", ...(folder === "brands" ? ["image/svg+xml"] : [])]

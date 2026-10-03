@@ -5,6 +5,7 @@ import Lenis from "lenis";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, type ReactNode } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
+import { setLenis } from "@/lib/scroll";
 
 export default function SmoothScroll({ children }: { children: ReactNode }) {
   const lenisRef = useRef<Lenis | null>(null);
@@ -15,6 +16,7 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
 
     const lenis = new Lenis({ duration: 1.2, lerp: 0.08, smoothWheel: true });
     lenisRef.current = lenis;
+    setLenis(lenis);
     lenis.on("scroll", ScrollTrigger.update);
 
     // Drive Lenis from GSAP's RAF loop so ScrollTrigger stays in sync.
@@ -26,6 +28,7 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
       gsap.ticker.remove(raf);
       lenis.destroy();
       lenisRef.current = null;
+      setLenis(null);
     };
   }, []);
 

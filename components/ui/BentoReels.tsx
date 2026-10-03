@@ -14,7 +14,7 @@ const canHover = () => typeof window !== "undefined" && window.matchMedia(HOVER_
 
 type Props = {
   reels: Reel[];
-  /** Opens the in-page player. Without it, tiles link to the /reels player instead. */
+  /** Opens the in-page player. Without it, tiles link to the /vertical-cuts player instead. */
   onOpen?: (index: number) => void;
 };
 
@@ -82,8 +82,11 @@ function ReelTile({ reel, index, big, onOpen }: { reel: Reel; index: number; big
 
       <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4 font-mono text-[10px] uppercase tracking-widest text-muted">
         <span className="flex items-center gap-1.5">
+          <span className="rounded-[3px] border border-fg/20 bg-bg/50 px-1.5 py-0.5 tabular-nums text-fg/80 backdrop-blur-sm">
+            {String(index + 1).padStart(2, "0")}
+          </span>
           <span className={cn("size-1.5 rounded-full bg-accent-2", playing && "animate-pulse")} />
-          Reel {String(index + 1).padStart(2, "0")}
+          Reel
         </span>
         <span>{reel.duration}</span>
       </div>
@@ -99,7 +102,7 @@ function ReelTile({ reel, index, big, onOpen }: { reel: Reel; index: number; big
 
       <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-bg/85 to-transparent p-4 pt-16 md:p-5 md:pt-20">
         <ProjectBadges filmed={reel.filmed} directed={reel.directed} edited={reel.edited} className="mb-2" />
-        <h3 className={cn("font-black uppercase tracking-tight", big ? "text-2xl md:text-4xl" : "text-lg")}>{reel.title}</h3>
+        <h3 className={cn("type-label leading-[0.95]", big ? "text-2xl md:text-4xl" : "text-lg")}>{reel.title}</h3>
         <p className="mt-1 flex justify-between gap-3 font-mono text-[10px] uppercase tracking-widest text-muted">
           <span className="truncate">{reel.client}</span>
           <span className="shrink-0">▶ {reel.views} views</span>
@@ -109,15 +112,16 @@ function ReelTile({ reel, index, big, onOpen }: { reel: Reel; index: number; big
   );
 
   const cls = "group relative block size-full overflow-hidden bg-bg-soft text-left outline-offset-4";
+  const cat = { "data-cat": "reels" };
   if (onOpen) {
     return (
-      <button type="button" onClick={onOpen} onPointerEnter={onEnter} onPointerLeave={onLeave} aria-label={`Play ${reel.title}`} className={cls}>
+      <button type="button" {...cat} onClick={onOpen} onPointerEnter={onEnter} onPointerLeave={onLeave} aria-label={`Play ${reel.title}`} className={cls}>
         {body}
       </button>
     );
   }
   return (
-    <Link href={`/reels?view=player&reel=${reel.id}`} onPointerEnter={onEnter} onPointerLeave={onLeave} aria-label={`Play ${reel.title}`} className={cls}>
+    <Link href={`/vertical-cuts?view=player&reel=${reel.id}`} {...cat} onPointerEnter={onEnter} onPointerLeave={onLeave} aria-label={`Play ${reel.title}`} className={cls}>
       {body}
     </Link>
   );

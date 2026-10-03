@@ -1,4 +1,6 @@
-import { socials } from "@/data/site";
+"use client";
+
+import { useSiteConfig } from "@/lib/live-config";
 import { cn } from "@/lib/utils";
 
 export default function SocialLinks({
@@ -8,6 +10,8 @@ export default function SocialLinks({
   className?: string;
   compact?: boolean;
 }) {
+  // Live: admin → Content edits show in the preview before saving.
+  const { socials } = useSiteConfig().content;
   return (
     <ul
       className={cn(
@@ -17,7 +21,7 @@ export default function SocialLinks({
       )}
     >
       {socials.map((s) => (
-        <li key={s.label}>
+        <li key={`${s.label}-${s.href}`}>
           <a
             href={s.href}
             target="_blank"

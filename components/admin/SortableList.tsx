@@ -16,7 +16,83 @@ type Props = {
   reorderable: boolean;
   selected: Set<string>;
   onToggleSelect: (id: string) => void;
+  /** Inline title / year edit (✎). Resolves when saved; rejects to keep the form open. */
+  onQuickEdit?: (id: string, patch: { title: string; year: number }) => Promise<void>;
+  /** Hover / focus → the live card preview pane. */
+  onPreview?: (project: Project | null) => void;
 };
+
+/** The ✎ inline editor for one row. */
+function QuickEdit({
+  project,
+  onSave,
+  onClose,
+}: {
+  project: Project;
+  onSave: (patch: { title: string; year: number }) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [title, setTitle] = useState(project.title);
+  const [year, setYear] = useState(String(project.year));
+  const [busy, setBusy] = useState(false);
+  const yearNum = Number(year);
+  const valid = title.trim().length > 0 && Number.isInteger(yearNum) && yearNum >= 1990 && yearNum <= 2100;
+  const dirty = title.trim() !== project.title || yearNum !== project.year;
+
+  const submit = async () => {
+    if (!valid || busy) return;
+    if (!dirty) return onClose();
+    setBusy(true);
+    try {
+      await onSave({ title: title.trim(), year: yearNum });
+      onClose();
+    } catch {
+      setBusy(false); // the parent toasts the error; keep the form open
+    }
+  };
+
+  return (
+    <form
+      className="flex min-w-0 flex-1 items-center gap-2 py-1.5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void submit();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+    >
+      <input
+        autoFocus
+        value={title}
+        maxLength={120}
+        aria-label="Title"
+        onChange={(e) => setTitle(e.target.value)}
+        className="min-w-0 flex-1 border border-[#e7fe55]/40 bg-black/50 px-2 py-1 text-sm font-semibold text-white focus:border-[#e7fe55] focus:outline-none"
+      />
+      <input
+        value={year}
+        inputMode="numeric"
+        aria-label="Year"
+        onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
+        className="w-16 border border-white/15 bg-black/50 px-2 py-1 text-center font-mono text-xs tabular-nums text-white focus:border-[#e7fe55] focus:outline-none"
+      />
+      <button
+        type="submit"
+        disabled={!valid || busy}
+        className="bg-[#e7fe55] px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-black disabled:opacity-40"
+      >
+        {busy ? "…" : "Save"}
+      </button>
+      <button type="button" onClick={onClose} aria-label="Cancel" className="px-1 font-mono text-xs text-white/50 hover:text-white">
+        ✕
+      </button>
+    </form>
+  );
+}
 
 const DRAG_TYPE = "application/x-3skrino-project";
 const LONG_PRESS_MS = 450;
@@ -67,8 +143,11 @@ export default function SortableList({
   reorderable,
   selected,
   onToggleSelect,
+  onQuickEdit,
+  onPreview,
 }: Props) {
   const [dragId, setDragId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [dropAt, setDropAt] = useState<number | null>(null); // insertion index 0..n
   const [menuId, setMenuId] = useState<string | null>(null);
   const pressTimer = useRef<number | null>(null);
@@ -156,7 +235,9 @@ export default function SortableList({
         return (
           <li
             key={project.id}
-            draggable={reorderable}
+            draggable={reorderable && editingId !== project.id}
+            onPointerEnter={() => onPreview?.(project)}
+            onFocus={() => onPreview?.(project)}
             onDragStart={(e) => {
               e.dataTransfer.setData(DRAG_TYPE, project.id);
               e.dataTransfer.effectAllowed = "move";
@@ -234,16 +315,33 @@ export default function SortableList({
             >
               ⋮⋮
             </span>
-            <ProjectCard
-              project={project}
-              onEdit={() => {
-                if (suppressClick.current) {
-                  suppressClick.current = false;
-                  return;
-                }
-                onEdit(project);
-              }}
-            />
+            {editingId === project.id && onQuickEdit ? (
+              <QuickEdit project={project} onSave={(patch) => onQuickEdit(project.id, patch)} onClose={() => setEditingId(null)} />
+            ) : (
+              <>
+                <ProjectCard
+                  project={project}
+                  onEdit={() => {
+                    if (suppressClick.current) {
+                      suppressClick.current = false;
+                      return;
+                    }
+                    onEdit(project);
+                  }}
+                />
+                {onQuickEdit && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingId(project.id)}
+                    aria-label={`Quick edit ${project.title}`}
+                    title="Quick edit title / year"
+                    className="shrink-0 px-2 py-2 font-mono text-xs text-white/25 transition-colors hover:text-[#e7fe55] focus-visible:text-[#e7fe55]"
+                  >
+                    ✎
+                  </button>
+                )}
+              </>
+            )}
 
             {menuId === project.id && (
               <div

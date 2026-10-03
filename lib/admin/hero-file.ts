@@ -1,129 +1,41 @@
-import { LADDER_SIZE, type BrandLogo, type HeroConfig, type HeroPose } from "@/data/hero-config";
-import { commitFiles, getFile, getFileAt, getHead, GitHubError } from "./github";
-import { LiteralParser, ProjectsFileError, type Literal } from "./projects-file";
+import { LADDER_SIZE, type BrandLogo, type HeroConfig, type HeroFilter, type HeroPose } from "@/data/hero-config";
+import { DEFAULT_FEATURES } from "@/data/hero-defaults";
+import {
+  asset,
+  bool,
+  fail,
+  hex,
+  num,
+  oneOf,
+  parseConfigSource,
+  readConfig,
+  rec,
+  SLUG,
+  text,
+  writeConfig,
+  writeConfigSource,
+  type ConfigSpec,
+} from "./config-file";
 
-/**
- * Serialize / deserialize data/hero-config.ts. Only the `heroConfig` object
- * literal is regenerated; the types and comments around it are reused
- * verbatim. Git history is the backup (hero edits don't use backups/, which
- * is reserved for data/projects.ts snapshots).
- */
+/** data/hero-config.ts — poses, logos, effects, roles. */
 
 export const HERO_PATH = "data/hero-config.ts";
-const LITERAL_START = /export const heroConfig\s*:\s*HeroConfig\s*=\s*/;
-const PRINT_WIDTH = 110;
-
-function locate(source: string): { start: number; end: number; value: Literal } {
-  const m = LITERAL_START.exec(source);
-  if (!m) throw new ProjectsFileError(`Could not find heroConfig in ${HERO_PATH}`, 500);
-  const start = m.index + m[0].length;
-  const parser = new LiteralParser(source, start, HERO_PATH);
-  const value = parser.value();
-  return { start, end: parser.i, value };
-}
-
-export function parseHeroFile(source: string): HeroConfig {
-  try {
-    return validateHeroConfig(locate(source).value);
-  } catch (err) {
-    if (err instanceof ProjectsFileError && err.status === 400) {
-      throw new ProjectsFileError(`${HERO_PATH} is invalid: ${err.message}`, 500);
-    }
-    throw err;
-  }
-}
-
-/* ------------------------------------------------------------------ */
-/* Serialize — prettier-ish: bare keys, double quotes, trailing commas  */
-/* ------------------------------------------------------------------ */
-type Printable = string | number | boolean | null | undefined | Printable[] | { [key: string]: Printable };
-
-const IDENT = /^[A-Za-z_$][\w$]*$/;
-const key = (k: string) => (IDENT.test(k) ? k : JSON.stringify(k));
-
-function inline(v: Printable): string {
-  if (Array.isArray(v)) return `[${v.map(inline).join(", ")}]`;
-  if (v !== null && typeof v === "object") {
-    const parts = Object.entries(v)
-      .filter(([, x]) => x !== undefined)
-      .map(([k, x]) => `${key(k)}: ${inline(x)}`);
-    return parts.length ? `{ ${parts.join(", ")} }` : "{}";
-  }
-  return JSON.stringify(v);
-}
-
-function print(v: Printable, indent: number, prefixLen: number): string {
-  const flat = inline(v);
-  if (indent + prefixLen + flat.length + 1 <= PRINT_WIDTH || v === null || typeof v !== "object") return flat;
-  const pad = " ".repeat(indent + 2);
-  const close = " ".repeat(indent);
-  if (Array.isArray(v)) {
-    return `[\n${v.map((x) => `${pad}${print(x, indent + 2, 0)},`).join("\n")}\n${close}]`;
-  }
-  const lines = Object.entries(v)
-    .filter(([, x]) => x !== undefined)
-    .map(([k, x]) => `${pad}${key(k)}: ${print(x, indent + 2, key(k).length + 2)},`);
-  return `{\n${lines.join("\n")}\n${close}}`;
-}
-
-export function writeHeroFile(currentSource: string, config: HeroConfig): string {
-  const { start, end } = locate(currentSource);
-  const eol = currentSource.includes("\r\n") ? "\r\n" : "\n";
-  const literal = print(config as unknown as Printable, 0, 40).replace(/\n/g, eol);
-  return currentSource.slice(0, start) + literal + currentSource.slice(end);
-}
-
-/* ------------------------------------------------------------------ */
-/* Validation                                                          */
-/* ------------------------------------------------------------------ */
-const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const HEX = /^#[0-9a-fA-F]{6}$/;
-/** Site-relative (no traversal) or https. */
-const ASSET = /^(?:\/(?!.*\.\.)[\w\-./%]+|https:\/\/\S+)$/;
-
-const fail = (msg: string): never => {
-  throw new ProjectsFileError(msg);
-};
-
-function rec(v: unknown, what: string): Record<string, unknown> {
-  if (typeof v !== "object" || v === null || Array.isArray(v)) fail(`${what} must be an object`);
-  return v as Record<string, unknown>;
-}
-
-function text(o: Record<string, unknown>, k: string, what: string, max: number, required = true): string {
-  const v = o[k];
-  if (v === undefined && !required) return "";
-  if (typeof v !== "string") return fail(`${what}: "${k}" must be text`);
-  const t = v.trim();
-  if (required && !t) fail(`${what}: "${k}" is required`);
-  if (t.length > max) fail(`${what}: "${k}" is too long (max ${max})`);
-  return t;
-}
-
-function asset(o: Record<string, unknown>, k: string, what: string, required = true): string {
-  const v = text(o, k, what, 1000, required);
-  if (v && !ASSET.test(v)) fail(`${what}: "${k}" must be a /path or an https URL`);
-  return v;
-}
-
-function bool(o: Record<string, unknown>, k: string, what: string): boolean {
-  if (typeof o[k] !== "boolean") fail(`${what}: "${k}" must be true or false`);
-  return o[k] as boolean;
-}
-
-function unit(o: Record<string, unknown>, k: string, what: string): number {
-  const v = o[k];
-  if (typeof v !== "number" || !Number.isFinite(v)) return fail(`${what}: "${k}" must be a number`);
-  return Math.round(Math.min(1, Math.max(0, v)) * 100) / 100;
-}
+export const HERO_FILTERS: readonly HeroFilter[] = ["none", "warm", "cool", "vintage", "contrast"];
 
 function pose(v: unknown, what: string): HeroPose {
   const o = rec(v, what);
   const id = text(o, "id", what, 40);
   if (!SLUG.test(id)) fail(`${what}: id must be a lowercase slug`);
-  const tint = text(o, "tint", what, 7);
-  if (!HEX.test(tint)) fail(`${what}: tint must be a hex colour like #e7fe55`);
-  return { id, label: text(o, "label", what, 40), src: asset(o, "src", what), tint: tint.toLowerCase() };
+  const out: HeroPose = { id, label: text(o, "label", what, 40), src: asset(o, "src", what), tint: hex(o, "tint", what) };
+  if (o.offset !== undefined) {
+    const off = o.offset;
+    if (!Array.isArray(off) || off.length !== 2 || !off.every((n): n is number => typeof n === "number" && Number.isFinite(n))) {
+      fail(`${what}: offset must be [x, y]`);
+    }
+    const [x, y] = (off as number[]).map((n) => Math.round(Math.min(0.15, Math.max(-0.15, n)) * 10000) / 10000);
+    if (x !== 0 || y !== 0) out.offset = [x, y];
+  }
+  return out;
 }
 
 function logo(v: unknown, i: number): BrandLogo {
@@ -162,15 +74,28 @@ export function validateHeroConfig(input: unknown): HeroConfig {
   if (new Set(items.map((l) => l.id)).size !== items.length) fail("Logo ids must be unique");
 
   const f = rec(o.features, "features");
+  const d = DEFAULT_FEATURES;
+  const W = "Features";
   const features = {
-    ambientSound: bool(f, "ambientSound", "Features"),
-    cinematicBars: bool(f, "cinematicBars", "Features"),
-    parallax: unit(f, "parallax", "Features"),
-    reactiveLighting: bool(f, "reactiveLighting", "Features"),
-    cameraShake: bool(f, "cameraShake", "Features"),
-    glitch: bool(f, "glitch", "Features"),
-    chromaticAberration: unit(f, "chromaticAberration", "Features"),
-    bloom: unit(f, "bloom", "Features"),
+    ambientSound: bool(f, "ambientSound", W),
+    cinematicBars: bool(f, "cinematicBars", W),
+    parallax: num(f, "parallax", W, 0, 1),
+    reactiveLighting: bool(f, "reactiveLighting", W),
+    cameraShake: bool(f, "cameraShake", W),
+    glitch: bool(f, "glitch", W),
+    chromaticAberration: num(f, "chromaticAberration", W, 0, 1),
+    bloom: num(f, "bloom", W, 0, 1),
+    // Sprint 9.2 switches default in when an older file doesn't have them.
+    autoAlign: bool(f, "autoAlign", W, d.autoAlign),
+    particles: bool(f, "particles", W, d.particles),
+    particleIntensity: num(f, "particleIntensity", W, 0, 1, 0.01, d.particleIntensity),
+    fog: bool(f, "fog", W, d.fog),
+    lightRays: bool(f, "lightRays", W, d.lightRays),
+    rayIntensity: num(f, "rayIntensity", W, 0, 1, 0.01, d.rayIntensity),
+    depthOfField: bool(f, "depthOfField", W, d.depthOfField),
+    filter: oneOf(f, "filter", W, HERO_FILTERS, d.filter),
+    hueShift: bool(f, "hueShift", W, d.hueShift),
+    cursorRipple: bool(f, "cursorRipple", W, d.cursorRipple),
   };
 
   const ambientSrc = asset(o, "ambientSrc", "Ambient sound", false);
@@ -183,8 +108,7 @@ export function validateHeroConfig(input: unknown): HeroConfig {
   if (!roleItems.length) fail("Add at least one role");
   if (roleItems.length > 20) fail("At most 20 roles");
   if (roleItems.some((r) => r.length > 32)) fail("Roles must be 32 characters or fewer");
-  if (typeof roles.interval !== "number" || !Number.isFinite(roles.interval)) fail("Role interval must be a number");
-  const interval = Math.round(Math.min(30, Math.max(1.5, roles.interval as number)) * 10) / 10;
+  const interval = num(roles, "interval", "Roles", 1.5, 30, 0.1);
 
   return {
     poses: { ladder, up, down },
@@ -195,29 +119,14 @@ export function validateHeroConfig(input: unknown): HeroConfig {
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* Read / write through GitHub                                         */
-/* ------------------------------------------------------------------ */
-export async function readHero(): Promise<{ config: HeroConfig; sha: string }> {
-  const { content, sha } = await getFile(HERO_PATH);
-  return { config: parseHeroFile(content), sha };
-}
+export const HERO_SPEC: ConfigSpec<HeroConfig> = {
+  target: "hero-config",
+  path: HERO_PATH,
+  start: /export const heroConfig\s*:\s*HeroConfig\s*=\s*/,
+  validate: validateHeroConfig,
+};
 
-/** Validates, then commits on top of the branch head (retried once if the branch moved). */
-export async function writeHero(input: unknown): Promise<{ config: HeroConfig; sha: string }> {
-  const config = validateHeroConfig(input);
-  for (let attempt = 0; ; attempt++) {
-    const head = await getHead();
-    const content = await getFileAt(HERO_PATH, head);
-    if (content === null) throw new ProjectsFileError(`${HERO_PATH} is missing on the branch`, 500);
-    const next = writeHeroFile(content, config);
-    if (next === content) return { config, sha: head };
-    try {
-      const sha = await commitFiles(head, [{ path: HERO_PATH, content: next }], "admin: update hero settings");
-      return { config, sha };
-    } catch (err) {
-      const conflict = err instanceof GitHubError && (err.status === 409 || err.status === 422);
-      if (!conflict || attempt >= 1) throw err;
-    }
-  }
-}
+export const parseHeroFile = (source: string) => parseConfigSource(HERO_SPEC, source);
+export const writeHeroFile = (source: string, config: HeroConfig) => writeConfigSource(HERO_SPEC, source, config);
+export const readHero = () => readConfig(HERO_SPEC);
+export const writeHero = (input: unknown, message = "admin: update hero settings") => writeConfig(HERO_SPEC, input, message);

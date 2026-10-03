@@ -403,7 +403,7 @@ export async function mutateProjects<T>(mutate: Mutation<T>): Promise<{ projects
     try {
       const sha = await commitFiles(
         head,
-        [{ path: PROJECTS_PATH, content: writeProjectsFile(content, next.projects) }, ...(await snapshotChanges(content))],
+        [{ path: PROJECTS_PATH, content: writeProjectsFile(content, next.projects) }, ...(await snapshotChanges("projects", content))],
         next.message,
       );
       return { projects: next.projects, sha, result: next.result };

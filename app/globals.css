@@ -10,6 +10,17 @@
   /* Accent as TEXT. Same lime on dark; a deep olive on light, where lime text is unreadable. */
   --accent-ink: #e7fe55;
   --accent-2: #ff2d2d;
+  /* Typography + finish — overridden at runtime by <SiteStyle> from data/site-config.ts. */
+  --display-family: var(--font-anton), "Arial Narrow", sans-serif;
+  --display-weight: 400;
+  --display-tracking: -0.01em;
+  --label-family: var(--font-archivo), var(--font-inter), sans-serif;
+  --label-weight: 400;
+  --radius-card: 2px;
+  --grain-opacity: 0.03;
+  --vignette: 0.35;
+  /* Signature colour of the category a card / page belongs to (set per [data-cat]). */
+  --cat: var(--accent);
   color-scheme: dark;
 }
 
@@ -36,6 +47,27 @@
   --color-accent-2: var(--accent-2);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains);
+  --font-display: var(--display-family);
+  --font-label: var(--label-family);
+  --color-cat: var(--cat);
+}
+
+/* Big cinematic headlines: the display face at its own weight + the theme's tracking. */
+@utility type-display {
+  font-family: var(--display-family);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-tracking);
+  text-transform: uppercase;
+  font-synthesis: style; /* faux-oblique for the editorial italics, never faux-bold */
+}
+
+/* Small bold text — card titles, step names: the label face. */
+@utility type-label {
+  font-family: var(--label-family);
+  font-weight: var(--label-weight);
+  text-transform: uppercase;
+  letter-spacing: -0.005em;
+  font-synthesis: style; /* faux-oblique for the editorial italics, never faux-bold */
 }
 
 html,
@@ -268,5 +300,53 @@ html.lenis body {
 @media (prefers-reduced-motion: reduce) {
   .hero-logo {
     animation: none;
+  }
+}
+
+/* Screen-edge vignette (strength from the theme); lighter on the light theme. */
+.site-vignette {
+  opacity: var(--vignette);
+}
+:root[data-theme="light"] .site-vignette {
+  opacity: calc(var(--vignette) * 0.35);
+}
+
+/* Featured cards: a slowly rotating gradient border in the card's accent. */
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.card-featured::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 0deg,
+    transparent 220deg,
+    color-mix(in srgb, var(--p-accent, var(--accent)) 90%, transparent) 300deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-spin 7s linear infinite;
+}
+@keyframes border-spin {
+  to {
+    --border-angle: 360deg;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-featured::after {
+    animation: none;
+    --border-angle: 135deg;
   }
 }

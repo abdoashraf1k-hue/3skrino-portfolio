@@ -16,8 +16,9 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/apple-icon", sizes: "180x180", type: "image/png", purpose: "any" },
     ],
     shortcuts: [
-      { name: "Work", url: "/work" },
-      { name: "Reels", url: "/reels" },
+      { name: "Vertical Cuts", url: "/vertical-cuts" },
+      { name: "Horizontal Cuts", url: "/horizontal-cuts" },
+      { name: "AI Cuts", url: "/ai-cuts" },
       { name: "Contact", url: "/contact" },
     ],
   };

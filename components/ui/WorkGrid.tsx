@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 type WorkGridProps = {
   projects: Project[];
   categories: Category[];
+  /** Hide the 9:16 / 16:9 switch (pages that are one orientation already). */
+  hideOrientation?: boolean;
 };
 
 type Sort = "newest" | "oldest" | "az";
@@ -57,7 +59,7 @@ function WithParams(props: WorkGridProps) {
   return <Grid {...props} initial={fromParams(useSearchParams())} />;
 }
 
-/** Filterable, shareable grid for /work. Filters combine with AND and sync to the URL. */
+/** Filterable, shareable grid for the Cuts pages. Filters combine with AND and sync to the URL. */
 export default function WorkGrid(props: WorkGridProps) {
   return (
     <Suspense fallback={<Grid {...props} initial={DEFAULT} />}>
@@ -66,7 +68,7 @@ export default function WorkGrid(props: WorkGridProps) {
   );
 }
 
-function Grid({ projects, categories, initial }: WorkGridProps & { initial: State }) {
+function Grid({ projects, categories, hideOrientation = false, initial }: WorkGridProps & { initial: State }) {
   const [state, setState] = useState<State>(initial);
   const set = <K extends keyof State>(k: K, v: State[K]) => setState((s) => ({ ...s, [k]: v }));
 
@@ -140,7 +142,7 @@ function Grid({ projects, categories, initial }: WorkGridProps & { initial: Stat
           })}
 
           <span className="mx-1 hidden h-5 w-px bg-line md:block" />
-          <div role="radiogroup" aria-label="Orientation" className="flex">
+          <div role="radiogroup" aria-label="Orientation" className={cn("flex", hideOrientation && "hidden")}>
             {(
               [
                 ["", "All"],
@@ -195,7 +197,7 @@ function Grid({ projects, categories, initial }: WorkGridProps & { initial: Stat
 
       {visible.length === 0 ? (
         <div className="flex flex-col items-start gap-4 border-y border-line py-20">
-          <p className="text-2xl font-black uppercase tracking-tight md:text-4xl">Nothing matches — yet.</p>
+          <p className="type-display text-3xl md:text-5xl">Nothing matches — yet.</p>
           <button type="button" onClick={() => setState(DEFAULT)} className={pill(false)}>
             Reset filters
           </button>

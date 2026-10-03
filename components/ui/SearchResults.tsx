@@ -26,7 +26,7 @@ function MiniCard({ project, index }: { project: Doc; index: number }) {
         <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
           {project.categoryName} · {project.year} · {project.client}
         </p>
-        <p className="truncate text-2xl font-black uppercase tracking-tight transition-colors duration-300 group-hover:text-accent md:text-3xl">
+        <p className="type-label truncate text-2xl transition-colors duration-300 group-hover:text-accent md:text-3xl">
           {project.title}
         </p>
         <ProjectBadges filmed={project.filmed} directed={project.directed} edited={project.edited} />
@@ -117,7 +117,7 @@ function Search({ initial }: { initial: string }) {
             {results.length} {results.length === 1 ? "result" : "results"} for “{q.trim()}”
           </p>
           {results.length === 0 ? (
-            <p className="border-t border-line py-16 text-2xl font-black uppercase tracking-tight text-muted">Nothing yet — try a field or a tool.</p>
+            <p className="border-t border-line py-16 type-display text-3xl text-muted">Nothing yet — try a field or a tool.</p>
           ) : (
             <div className="border-b border-line">
               {results.map((p) => (

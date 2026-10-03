@@ -22,7 +22,7 @@ export default function Footer() {
             </p>
             <Link
               href="/contact"
-              className="block text-[clamp(3rem,9vw,9rem)] font-black uppercase leading-[0.9] tracking-tight transition-colors duration-300 hover:text-accent"
+              className="type-display block text-[clamp(3.5rem,11vw,11rem)] leading-[0.86] transition-colors duration-300 hover:text-accent"
             >
               Let&apos;s create
             </Link>

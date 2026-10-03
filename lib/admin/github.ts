@@ -182,3 +182,86 @@ export async function lastCommitDate(path: string): Promise<string | null> {
   );
   return commits[0]?.commit.committer.date ?? null;
 }
+
+/* ------------------------------------------------------------------ */
+/* History — the admin's Logs tab and the dashboard's activity feed     */
+/* ------------------------------------------------------------------ */
+
+export type CommitSummary = { sha: string; message: string; author: string; date: string; url: string };
+
+type RawCommit = {
+  sha: string;
+  html_url: string;
+  commit: { message: string; author: { name: string; date: string } | null; committer: { date: string } | null };
+  author: { login: string } | null;
+};
+
+const summarize = (c: RawCommit): CommitSummary => ({
+  sha: c.sha,
+  message: c.commit.message,
+  author: c.commit.author?.name ?? c.author?.login ?? "unknown",
+  date: c.commit.author?.date ?? c.commit.committer?.date ?? "",
+  url: c.html_url,
+});
+
+/** Newest first on the configured branch. */
+export async function listCommits(perPage = 50, page = 1): Promise<CommitSummary[]> {
+  const { branch } = config();
+  const commits = await gh<RawCommit[]>(
+    "GET",
+    `commits?sha=${encodeURIComponent(branch)}&per_page=${Math.min(100, perPage)}&page=${page}`,
+  );
+  return commits.map(summarize);
+}
+
+export type CommitFile = {
+  filename: string;
+  status: string;
+  additions: number;
+  deletions: number;
+  /** Unified diff hunk text (absent for binary / huge files). */
+  patch?: string;
+};
+
+export async function getCommit(sha: string): Promise<CommitSummary & { parent: string | null; files: CommitFile[] }> {
+  if (!/^[0-9a-f]{7,40}$/i.test(sha)) throw new GitHubError("Not a commit sha", 400);
+  const c = await gh<RawCommit & { parents: { sha: string }[]; files?: CommitFile[] }>("GET", `commits/${sha}`);
+  return {
+    ...summarize(c),
+    parent: c.parents[0]?.sha ?? null,
+    files: (c.files ?? []).map(({ filename, status, additions, deletions, patch }) => ({ filename, status, additions, deletions, patch })),
+  };
+}
+
+export type DeployStatus = {
+  state: "success" | "failure" | "error" | "pending" | "in_progress" | "queued" | "inactive" | "unknown";
+  environment: string;
+  sha: string;
+  createdAt: string;
+  url: string | null;
+};
+
+/**
+ * The newest deployment the Vercel GitHub integration recorded, with its
+ * latest status — build health without a Vercel token.
+ */
+export async function latestDeployment(): Promise<DeployStatus | null> {
+  const deployments = await gh<{ id: number; sha: string; environment: string; created_at: string }[]>(
+    "GET",
+    "deployments?per_page=5",
+  );
+  const d = deployments.find((x) => /production/i.test(x.environment)) ?? deployments[0];
+  if (!d) return null;
+  const statuses = await gh<{ state: DeployStatus["state"]; environment_url?: string; target_url?: string }[]>(
+    "GET",
+    `deployments/${d.id}/statuses?per_page=1`,
+  );
+  const s = statuses[0];
+  return {
+    state: s?.state ?? "unknown",
+    environment: d.environment,
+    sha: d.sha,
+    createdAt: d.created_at,
+    url: s?.environment_url || s?.target_url || null,
+  };
+}

@@ -5,6 +5,9 @@ import { errorResponse, readJson } from "@/lib/admin/projects-file";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** Optional commit subject the admin may pass ("admin: update brands"); anything else falls back. */
+const MESSAGE = /^admin: [\w ,.'&/-]{1,80}$/;
+
 /** GET → { config, sha } */
 export async function GET(request: Request) {
   if (!isAuthorized(request)) return unauthorized();
@@ -15,12 +18,13 @@ export async function GET(request: Request) {
   }
 }
 
-/** PUT { config } → validated, committed to data/hero-config.ts → { config, sha } */
+/** PUT { config, message? } → validated, committed to data/hero-config.ts (+ backup) → { config, sha } */
 export async function PUT(request: Request) {
   if (!isAuthorized(request)) return unauthorized();
   try {
-    const { config } = await readJson(request);
-    return Response.json({ ok: true, ...(await writeHero(config)) });
+    const { config, message } = await readJson(request);
+    const msg = typeof message === "string" && MESSAGE.test(message) ? message : undefined;
+    return Response.json({ ok: true, ...(await writeHero(config, msg)) });
   } catch (err) {
     return errorResponse(err);
   }

@@ -59,7 +59,9 @@ export default function Grain() {
     <canvas
       ref={canvasRef}
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-[90] h-full w-full opacity-[0.03] mix-blend-overlay [image-rendering:pixelated]"
+      className="pointer-events-none fixed inset-0 z-[90] h-full w-full mix-blend-overlay [image-rendering:pixelated]"
+      // Strength comes from the theme (data/site-config.ts → theme.grain).
+      style={{ opacity: "var(--grain-opacity)" }}
     />
   );
 }

@@ -10,6 +10,8 @@ export type HeroPose = {
   src: string;
   /** Rim-light tint this pose pulls toward (reactive lighting). */
   tint: string;
+  /** Manual nudge in UV units (x, y), added on top of auto-alignment. */
+  offset?: [number, number];
 };
 
 export type BrandLogo = {
@@ -23,6 +25,9 @@ export type BrandLogo = {
   visible: boolean;
 };
 
+/** Whole-hero colour grade. */
+export type HeroFilter = "none" | "warm" | "cool" | "vintage" | "contrast";
+
 export type HeroFeatures = {
   ambientSound: boolean;
   cinematicBars: boolean;
@@ -35,6 +40,25 @@ export type HeroFeatures = {
   chromaticAberration: number;
   /** 0–1 (0.5 = the original look). */
   bloom: number;
+  /** Snap every pose's shoulders onto the centre pose's (image-difference anchor search). */
+  autoAlign: boolean;
+  /** Dust / embers rising around the silhouette. */
+  particles: boolean;
+  /** 0–1: count + brightness. */
+  particleIntensity: number;
+  /** Coloured fog in front of the silhouette, drifting with the pointer. */
+  fog: boolean;
+  /** God-rays from the sun. */
+  lightRays: boolean;
+  /** 0–1. */
+  rayIntensity: number;
+  /** Background layers soften while the pointer rests near the centre. */
+  depthOfField: boolean;
+  filter: HeroFilter;
+  /** The scene's hue drifts as the hero scrolls away. */
+  hueShift: boolean;
+  /** A soft ripple from the cursor after 3s without movement. */
+  cursorRipple: boolean;
 };
 
 export type HeroConfig = {
@@ -100,6 +124,16 @@ export const heroConfig: HeroConfig = {
     glitch: true,
     chromaticAberration: 0.35,
     bloom: 0.75,
+    autoAlign: true,
+    particles: true,
+    particleIntensity: 0.5,
+    fog: true,
+    lightRays: true,
+    rayIntensity: 0.5,
+    depthOfField: true,
+    filter: "none",
+    hueShift: true,
+    cursorRipple: true,
   },
   ambientSrc: "",
   roles: {
