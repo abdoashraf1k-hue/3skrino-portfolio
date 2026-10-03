@@ -12,7 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Downloaded Claude Code / agent skills — not project source.
     ".claude/**",
+    ".agents/**",
     // Admin snapshots of data/projects.ts — data, not source.
     "backups/**",
     // Hand-written service worker (plain browser JS).

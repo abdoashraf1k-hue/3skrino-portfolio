@@ -47,6 +47,8 @@ next-env.d.ts
 # …except the documented template
 !.env.example
 
-# Claude Code skills (downloaded, not source)
+# Claude Code / Agent skills (downloaded, not source)
 .claude/
+.agents/
+skills-lock.json
 
