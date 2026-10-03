@@ -82,12 +82,12 @@ export const SECTION_LABELS: Record<SectionId, string> = {
 
 export const siteConfig: SiteConfig = {
   theme: {
-    bg: "#08060c",
-    bgSoft: "#120e19",
-    fg: "#f2eefb",
-    accent: "#b69cff",
-    accent2: "#ff3df0",
-    letterSpacing: 0.02,
+    bg: "#0a0a0a",
+    bgSoft: "#141414",
+    fg: "#f5f5f5",
+    accent: "#e7fe55",
+    accent2: "#ff2d2d",
+    letterSpacing: -0.01,
     radius: 2,
     grain: 0.03,
     vignette: 0.35,
