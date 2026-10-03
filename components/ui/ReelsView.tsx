@@ -3,9 +3,8 @@
 import { AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useState } from "react";
-import ReelCard from "@/components/ui/ReelCard";
+import BentoReels from "@/components/ui/BentoReels";
 import ReelsPlayer from "@/components/ui/ReelsPlayer";
-import Reveal from "@/components/ui/Reveal";
 import type { Reel } from "@/data/projects";
 import { cn } from "@/lib/utils";
 
@@ -53,14 +52,7 @@ function View({ reels, initialPlayer, initialIndex }: Props & { initialPlayer: b
         <p className="hidden font-mono text-[10px] uppercase tracking-widest text-muted md:block">Tap any reel to play full-screen</p>
       </div>
 
-      {/* CSS-columns masonry; reels carry mixed aspect ratios */}
-      <div className="columns-2 gap-4 md:columns-3 md:gap-6 lg:columns-4">
-        {reels.map((reel, i) => (
-          <Reveal key={reel.id} className="mb-4 break-inside-avoid md:mb-6">
-            <ReelCard reel={reel} index={i} natural onOpen={() => open(i)} />
-          </Reveal>
-        ))}
-      </div>
+      <BentoReels reels={reels} onOpen={open} />
 
       <AnimatePresence>
         {player !== null && <ReelsPlayer key="player" reels={reels} start={player} onIndex={onIndex} onClose={close} />}
@@ -75,7 +67,7 @@ function WithParams({ reels }: Props) {
   return <View reels={reels} initialPlayer={params.get("view") === "player"} initialIndex={index} />;
 }
 
-/** /reels: masonry grid ⇄ full-screen vertical player (?view=player&reel=id is shareable). */
+/** /reels: bento grid ⇄ full-screen vertical player (?view=player&reel=id is shareable). */
 export default function ReelsView({ reels }: Props) {
   return (
     <Suspense fallback={<View reels={reels} initialPlayer={false} initialIndex={0} />}>

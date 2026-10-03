@@ -12,6 +12,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    ".claude/**",
     // Admin snapshots of data/projects.ts — data, not source.
     "backups/**",
     // Hand-written service worker (plain browser JS).

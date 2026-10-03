@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import type { BentoAspect } from "@/components/ui/BentoGrid";
 import Placeholder from "@/components/ui/Placeholder";
 import ProjectBadges from "@/components/ui/ProjectBadges";
 import { getCategory } from "@/data/categories";
@@ -10,7 +11,19 @@ type ProjectCardProps = {
   project: Project;
   index: number;
   size?: "md" | "lg";
+  /**
+   * Bento tile shape. When set, the card fills its parent instead of keeping
+   * its own 9:16 / 16:9 box, and sizes its image + title for that span.
+   */
+  aspect?: BentoAspect;
   className?: string;
+};
+
+const BENTO_SIZES: Record<BentoAspect, string> = {
+  square: "(min-width: 1024px) 50vw, 100vw",
+  wide: "(min-width: 1024px) 50vw, 100vw",
+  tall: "(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw",
+  small: "(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw",
 };
 
 /**
@@ -18,9 +31,10 @@ type ProjectCardProps = {
  * work renders 16:9. Hover: slight zoom, soft darkening with a diagonal light
  * sweep in the project accent, title and meta rise in.
  */
-export default function ProjectCard({ project, index, size = "md", className }: ProjectCardProps) {
+export default function ProjectCard({ project, index, size: sizeProp = "md", aspect, className }: ProjectCardProps) {
   const category = getCategory(project.category);
   const vertical = project.orientation === "vertical";
+  const size = aspect === "square" ? "lg" : sizeProp;
   const style = { "--p-accent": project.accentColor } as CSSProperties;
 
   return (
@@ -29,12 +43,12 @@ export default function ProjectCard({ project, index, size = "md", className }: 
       style={style}
       data-track="project"
       data-track-id={project.id}
-      className={cn("group block", className)}
+      className={cn("group block", aspect && "size-full", className)}
     >
       <div
         className={cn(
           "relative overflow-hidden rounded-sm bg-bg-soft transition-shadow duration-700 group-hover:shadow-[0_0_80px_-20px_color-mix(in_srgb,var(--p-accent)_20%,transparent)]",
-          vertical ? "aspect-[9/16]" : "aspect-video",
+          aspect ? "size-full" : vertical ? "aspect-[9/16]" : "aspect-video",
         )}
       >
         <div className="absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02]">
@@ -44,11 +58,13 @@ export default function ProjectCard({ project, index, size = "md", className }: 
             image={project.thumbnail || undefined}
             accent={project.accentColor}
             sizes={
-              vertical
-                ? "(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-                : "(min-width: 1024px) 60vw, 100vw"
+              aspect
+                ? BENTO_SIZES[aspect]
+                : vertical
+                  ? "(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+                  : "(min-width: 1024px) 60vw, 100vw"
             }
-            size={vertical && size === "md" ? "sm" : "lg"}
+            size={aspect ? (aspect === "square" || aspect === "wide" ? "lg" : "sm") : vertical && size === "md" ? "sm" : "lg"}
           />
         </div>
 

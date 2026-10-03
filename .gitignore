@@ -46,3 +46,7 @@ next-env.d.ts
 
 # …except the documented template
 !.env.example
+
+# Claude Code skills (downloaded, not source)
+.claude/
+

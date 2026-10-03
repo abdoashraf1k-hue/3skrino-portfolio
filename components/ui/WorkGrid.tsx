@@ -1,12 +1,12 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import ProjectCard from "@/components/ui/ProjectCard";
+import BentoGrid from "@/components/ui/BentoGrid";
+import { projectBentoItems } from "@/components/ui/projectBento";
 import type { Category } from "@/data/categories";
 import { projectCredits, type Project } from "@/data/projects";
-import { cn, EASE_OUT } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 type WorkGridProps = {
   projects: Project[];
@@ -201,23 +201,7 @@ function Grid({ projects, categories, initial }: WorkGridProps & { initial: Stat
           </button>
         </div>
       ) : (
-        <motion.div layout className="grid grid-flow-row-dense grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
-          <AnimatePresence mode="popLayout">
-            {visible.map((project) => (
-              <motion.div
-                key={project.id}
-                layout
-                className={cn(project.orientation === "horizontal" && "col-span-2")}
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.6, ease: EASE_OUT }}
-              >
-                <ProjectCard project={project} index={projects.indexOf(project)} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+        <BentoGrid animateLayout items={projectBentoItems(visible, (p) => projects.indexOf(p))} />
       )}
     </>
   );

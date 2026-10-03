@@ -202,6 +202,93 @@ export function captureFrame(source: File | string, at = 1, maxEdge = 1280): Pro
   });
 }
 
+/** Where the thumbnail gallery samples, as fractions of the clip's length. */
+export const FRAME_POINTS = [0.25, 0.5, 0.75, 0.95] as const;
+
+export type CapturedFrame = { blob: Blob; time: number };
+
+/**
+ * Grabs several frames from one decoded video (one load, sequential seeks) —
+ * cheaper than calling captureFrame() per frame, which re-reads the file each
+ * time. `jitter` (0–1) nudges each point by up to ±jitter of the duration, so
+ * "refresh" yields different stills around the same beats. Gives up after
+ * `timeoutMs` per step: some codecs (HEVC .mov in Chrome) never fire events.
+ */
+export function captureFrames(
+  source: File | string,
+  fractions: readonly number[] = FRAME_POINTS,
+  { jitter = 0, maxEdge = 1280, timeoutMs = 10_000 }: { jitter?: number; maxEdge?: number; timeoutMs?: number } = {},
+): Promise<CapturedFrame[]> {
+  const video = document.createElement("video");
+  const local = typeof source !== "string";
+  const src = local ? URL.createObjectURL(source) : source;
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = "auto";
+  if (!local) video.crossOrigin = "anonymous";
+
+  const cleanup = () => {
+    if (local) URL.revokeObjectURL(src);
+    video.removeAttribute("src");
+    video.load();
+  };
+
+  /** Resolves on `event`, rejects on error or after timeoutMs. */
+  const once = (event: "loadedmetadata" | "seeked") =>
+    new Promise<void>((resolve, reject) => {
+      const timer = window.setTimeout(() => finish(new Error("Timed out reading the video")), timeoutMs);
+      const finish = (err?: Error) => {
+        window.clearTimeout(timer);
+        video.removeEventListener(event, ok);
+        video.removeEventListener("error", bad);
+        if (err) reject(err);
+        else resolve();
+      };
+      const ok = () => finish();
+      const bad = () => finish(new Error("Couldn't read that video to capture frames"));
+      video.addEventListener(event, ok);
+      video.addEventListener("error", bad);
+    });
+
+  const run = async () => {
+    const loaded = once("loadedmetadata");
+    video.src = src;
+    await loaded;
+    const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas isn't available in this browser");
+
+    const frames: CapturedFrame[] = [];
+    for (const f of fractions) {
+      const nudged = f + (Math.random() * 2 - 1) * jitter;
+      // Stay off the very first/last frame — often black or a fade.
+      const time = duration * Math.min(0.98, Math.max(0.02, nudged));
+      const seeked = once("seeked");
+      video.currentTime = time;
+      await seeked;
+
+      const scale = Math.min(1, maxEdge / Math.max(video.videoWidth, video.videoHeight));
+      canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+      canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      let blob: Blob | null;
+      try {
+        blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+      } catch {
+        // A tainted canvas (remote video without CORS) throws here.
+        throw new Error("This video's host doesn't allow frame capture (CORS)");
+      }
+      if (!blob) throw new Error("Couldn't encode a frame");
+      frames.push({ blob, time });
+    }
+    return frames;
+  };
+
+  return run().finally(cleanup);
+}
+
 /** Seconds → "MM:SS" or "HH:MM:SS". */
 export function formatDuration(seconds: number): string {
   const total = Math.max(0, Math.round(seconds));

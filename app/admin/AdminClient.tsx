@@ -26,12 +26,14 @@ import {
   type ProjectsResponse,
 } from "@/lib/admin/client-api";
 import BackupsClient from "./BackupsClient";
+import HeroAdmin from "./HeroAdmin";
 
 const POLL_MS = 30_000;
 const TICK_MS = 15_000;
 
 type Status = { kind: "loading" } | { kind: "ready" } | { kind: "denied" } | { kind: "error"; message: string };
-type Tab = "projects" | "backups";
+type Tab = "projects" | "backups" | "hero";
+const TABS: readonly Tab[] = ["projects", "backups", "hero"];
 type WithProject = ProjectsResponse & { project: Project };
 
 export default function AdminClient({ initialParams }: { initialParams: Record<string, string> }) {
@@ -87,8 +89,11 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
   const [filters, setFilters] = useState<Filters>(() => filtersFromParams(new URLSearchParams(initialParams)));
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
-  const [tab, setTab] = useState<Tab>(initialParams.tab === "backups" ? "backups" : "projects");
+  const [tab, setTab] = useState<Tab>(() => TABS.find((t) => t === initialParams.tab) ?? "projects");
   const [adminKey] = useState(readKey);
+  // Once opened, the hero panel stays mounted (hidden) so a tab switch keeps its unsaved draft.
+  const [heroOpened, setHeroOpened] = useState(tab === "hero");
+  if (tab === "hero" && !heroOpened) setHeroOpened(true);
 
   const keyRef = useRef(adminKey);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -176,8 +181,8 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
   const switchTab = (next: Tab) => {
     setTab(next);
     const url = new URL(window.location.href);
-    if (next === "backups") url.searchParams.set("tab", "backups");
-    else url.searchParams.delete("tab");
+    if (next === "projects") url.searchParams.delete("tab");
+    else url.searchParams.set("tab", next);
     window.history.replaceState(window.history.state, "", url);
   };
 
@@ -216,7 +221,7 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
   // Shortcuts: Ctrl/⌘+K search · Ctrl/⌘+N (or plain N) new project. The editor owns Esc and Ctrl/⌘+S.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (editor || status.kind !== "ready") return;
+      if (editor || status.kind !== "ready" || tab === "hero") return;
       const mod = e.metaKey || e.ctrlKey;
       const k = e.key.toLowerCase();
       if (mod && k === "k") {
@@ -236,7 +241,7 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [editor, newProject, selected.size, status.kind]);
+  }, [editor, newProject, selected.size, status.kind, tab]);
 
   const withAuth = async <T,>(p: Promise<T>): Promise<T> => {
     try {
@@ -418,6 +423,7 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
           </p>
           <div className="flex items-center gap-3 md:gap-5">
             {navBtn("projects", "Projects")}
+            {navBtn("hero", "Hero")}
             {navBtn("backups", "Backups")}
             <button
               type="button"
@@ -452,7 +458,12 @@ function Admin({ initialParams }: { initialParams: Record<string, string> }) {
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-8 pb-32 md:px-8">
-        {tab === "backups" ? (
+        {heroOpened && (
+          <div hidden={tab !== "hero"}>
+            <HeroAdmin adminKey={adminKey} active={tab === "hero"} onError={toast.error} onSuccess={toast.success} onAuthError={deny} />
+          </div>
+        )}
+        {tab === "hero" ? null : tab === "backups" ? (
           <BackupsClient
             adminKey={adminKey}
             now={now}

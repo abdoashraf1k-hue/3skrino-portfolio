@@ -56,19 +56,21 @@ export class ProjectsFileError extends Error {
 /* Deserialize                                                         */
 /* ------------------------------------------------------------------ */
 
-type Literal = string | number | boolean | null | Literal[] | { [key: string]: Literal };
+export type Literal = string | number | boolean | null | Literal[] | { [key: string]: Literal };
 
-class LiteralParser {
+/** Reads one JS literal (JSON plus comments, bare keys, single quotes, trailing commas). */
+export class LiteralParser {
   i: number;
   constructor(
     private readonly src: string,
     start: number,
+    private readonly label = PROJECTS_PATH,
   ) {
     this.i = start;
   }
 
   private fail(msg: string): never {
-    throw new ProjectsFileError(`Could not parse ${PROJECTS_PATH}: ${msg} at offset ${this.i}`, 500);
+    throw new ProjectsFileError(`Could not parse ${this.label}: ${msg} at offset ${this.i}`, 500);
   }
 
   skip() {

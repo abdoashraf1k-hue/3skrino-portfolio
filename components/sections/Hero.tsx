@@ -1,18 +1,29 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import HeroLogos from "@/components/sections/HeroLogos";
 import SafeBoundary from "@/components/three/SafeBoundary";
 import Timecode from "@/components/ui/Timecode";
 import { site } from "@/data/site";
 import { gsap } from "@/lib/gsap";
-import { RICH_MOTION_QUERY, useMediaQuery } from "@/lib/hooks";
+import {
+  disposeAmbient,
+  setAmbientAvailable,
+  startAmbient,
+  stopAmbient,
+  useAmbientMuted,
+} from "@/lib/hero-ambient";
+import { useHeroConfig } from "@/lib/hero-config-client";
+import { RICH_MOTION_QUERY, useInView, useMediaQuery } from "@/lib/hooks";
 import { CONTAINER, cn, EASE_OUT } from "@/lib/utils";
 
 // three.js + R3F only ever load on desktop, never on the server.
 const ParticleName = dynamic(() => import("@/components/three/ParticleName"), { ssr: false });
+const HeroScene = dynamic(() => import("@/components/three/HeroScene"), { ssr: false });
 
 const fadeUp = (delay: number) => ({
   initial: { opacity: 0, y: 40 },
@@ -22,10 +33,66 @@ const fadeUp = (delay: number) => ({
 
 const vh = () => (typeof window === "undefined" ? 1000 : window.innerHeight);
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+/** Cinematic bars leave once the page has scrolled this fraction of a viewport. */
+const BARS_OUT_AT = 0.2;
+const AMBIENT_EVENTS = ["pointerdown", "keydown", "touchstart", "mousemove"] as const;
+
+/**
+ * Hero ambient loop: advertises itself to the nav's mute button, then starts
+ * on the first interaction the browser accepts as a gesture, fading out while
+ * muted or scrolled away.
+ */
+function useHeroAmbient(enabled: boolean, src: string, inView: boolean) {
+  const muted = useAmbientMuted();
+
+  useEffect(() => {
+    if (!enabled) return;
+    setAmbientAvailable(true);
+    return () => {
+      setAmbientAvailable(false);
+      disposeAmbient();
+    };
+  }, [enabled, src]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    if (muted || !inView) {
+      stopAmbient();
+      return;
+    }
+    let done = false;
+    let busy = false;
+    const detach = () => {
+      for (const ev of AMBIENT_EVENTS) window.removeEventListener(ev, attempt);
+    };
+    function attempt() {
+      if (done || busy) return;
+      // Before any gesture an AudioContext can't start — don't even build one.
+      if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
+      busy = true;
+      void startAmbient(src).then((ok) => {
+        busy = false;
+        if (ok) {
+          done = true;
+          detach();
+        }
+      });
+    }
+    for (const ev of AMBIENT_EVENTS) window.addEventListener(ev, attempt, { passive: true });
+    attempt(); // already interacted (un-muting, scrolling back up) → resume at once
+    return () => {
+      done = true;
+      detach();
+    };
+  }, [enabled, src, muted, inView]);
+}
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const nameRef = useRef<HTMLSpanElement>(null);
+  const config = useHeroConfig();
+  const { features } = config;
+  const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const wordRef = useRef<HTMLDivElement>(null);
   const underlineRef = useRef<HTMLSpanElement>(null);
 
@@ -33,6 +100,11 @@ export default function Hero() {
   const rich = useMediaQuery(RICH_MOTION_QUERY);
   const [failed, setFailed] = useState(false);
   const particles = rich && !failed;
+  // The neon-grid / silhouette backdrop has its own failure flag — losing one
+  // WebGL layer shouldn't take the other down.
+  const [sceneFailed, setSceneFailed] = useState(false);
+  const [sceneReady, setSceneReady] = useState(false);
+  const scene = rich && !sceneFailed;
 
   const { scrollY } = useScroll();
   // Pinned (particle) mode: copy lifts away as the name scatters.
@@ -41,6 +113,26 @@ export default function Hero() {
   // Plain mode: the original subtle parallax (max 100px).
   const plainY = useTransform(scrollY, (v) => Math.min(v, vh()) * 0.1);
   const plainOpacity = useTransform(scrollY, (v) => 1 - clamp01(v / vh()) * 0.8);
+  // Backdrop dims (not out) behind "VIDEO / EDITOR".
+  const sceneOpacity = useTransform(scrollY, (v) => 1 - clamp01((v / vh() - 0.3) / 0.6) * 0.75);
+
+  // Cinematic bars: slide in just after load, out past 20% scroll.
+  const [loaded, setLoaded] = useState(false);
+  const [scrolledPast, setScrolledPast] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      setScrolledPast(window.scrollY > vh() * BARS_OUT_AT); // restored scroll position
+      setLoaded(true);
+    }, 150);
+    return () => window.clearTimeout(id);
+  }, []);
+  useMotionValueEvent(scrollY, "change", (v) => setScrolledPast(v > vh() * BARS_OUT_AT));
+  const barsIn = features.cinematicBars && loaded && !scrolledPast;
+
+  const heroInView = useInView(sectionRef, { once: false, rootMargin: "0px" });
+  useHeroAmbient(features.ambientSound, config.ambientSrc, heroInView);
+
+  const logos = config.logos.enabled ? config.logos.items.filter((l) => l.visible) : [];
 
   // "VIDEO / EDITOR" fades in as the particles leave.
   useEffect(() => {
@@ -113,10 +205,56 @@ export default function Hero() {
           }}
         />
 
+        {/* Static backdrop: mobile, reduced motion, no WebGL — and underneath
+            the live scene until its first frame lands, so there's no flash. */}
+        {!(scene && sceneReady) && <HeroFallback />}
+
+        {scene && (
+          <motion.div aria-hidden style={{ opacity: sceneOpacity }} className="pointer-events-none absolute inset-0">
+            <div className={cn("absolute inset-0 transition-opacity duration-1000", sceneReady ? "opacity-100" : "opacity-0")}>
+              <SafeBoundary onError={() => setSceneFailed(true)}>
+                <HeroScene config={config} onReady={() => setSceneReady(true)} />
+              </SafeBoundary>
+            </div>
+            {/* Soft scrim so the tagline + CTAs stay legible over the face and grid */}
+            <div
+              className="absolute inset-0"
+              style={{ background: "radial-gradient(38% 26% at 50% 66%, rgb(10 10 10 / 0.6), transparent 100%)" }}
+            />
+          </motion.div>
+        )}
+
         {particles && (
           <SafeBoundary onError={() => setFailed(true)}>
             <ParticleName targetRef={nameRef} />
           </SafeBoundary>
+        )}
+
+        {logos.length > 0 && (
+          <motion.div
+            style={{ opacity: particles ? pinnedOpacity : plainOpacity }}
+            className="pointer-events-none absolute inset-0 z-20"
+          >
+            <HeroLogos logos={logos} reducedMotion={reducedMotion} />
+          </motion.div>
+        )}
+
+        {/* Cinematic letterbox: 6vh bars that slide in on load and out on scroll. */}
+        {features.cinematicBars && (
+          <div aria-hidden className="pointer-events-none absolute inset-0 z-[5] overflow-hidden">
+            <div
+              className={cn(
+                "absolute inset-x-0 top-0 h-[6vh] bg-black transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                barsIn ? "translate-y-0" : "-translate-y-full",
+              )}
+            />
+            <div
+              className={cn(
+                "absolute inset-x-0 bottom-0 h-[6vh] bg-black transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                barsIn ? "translate-y-0" : "translate-y-full",
+              )}
+            />
+          </div>
         )}
 
         <motion.div
@@ -233,5 +371,55 @@ export default function Hero() {
         </motion.div>
       </div>
     </section>
+  );
+}
+
+/**
+ * No-WebGL stand-in for the hero scene: a CSS perspective grid and the
+ * silhouette, with stacked drop-shadows tracing its alpha as a cheap rim light.
+ */
+function HeroFallback() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      {/* Horizon haze */}
+      <div
+        className="absolute inset-x-0 top-[38%] h-[30%]"
+        style={{ background: "radial-gradient(50% 50% at 50% 50%, rgb(255 45 45 / 0.16), transparent 70%)" }}
+      />
+      {/* Neon floor */}
+      <div className="absolute inset-x-0 bottom-0 h-[48%] overflow-hidden [perspective:420px]">
+        <div
+          className="absolute -inset-x-1/2 bottom-0 h-[160%] origin-bottom [transform:rotateX(62deg)]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, rgb(231 254 85 / 0.45) 1px, transparent 1px), linear-gradient(to bottom, rgb(231 254 85 / 0.45) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+            maskImage: "linear-gradient(to top, black 10%, transparent 85%)",
+            WebkitMaskImage: "linear-gradient(to top, black 10%, transparent 85%)",
+          }}
+        />
+      </div>
+      {/* Silhouette */}
+      <div
+        className="absolute bottom-0 left-1/2 aspect-square h-[78svh] max-w-[150vw] -translate-x-1/2 md:h-[92svh]"
+        style={{
+          maskImage: "linear-gradient(to top, transparent 0%, black 16%)",
+          WebkitMaskImage: "linear-gradient(to top, transparent 0%, black 16%)",
+        }}
+      >
+        <Image
+          src="/hero/silhouette-900.webp"
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 768px) 92vh, 78vh"
+          className="object-contain object-bottom"
+          style={{
+            filter:
+              "brightness(0.82) drop-shadow(0 -1px 0 rgb(231 254 85 / 0.9)) drop-shadow(0 0 10px rgb(231 254 85 / 0.35)) drop-shadow(0 0 28px rgb(255 45 45 / 0.25))",
+          }}
+        />
+      </div>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import HorizontalStack from "@/components/sections/HorizontalStack";
-import VerticalMasonry from "@/components/sections/VerticalMasonry";
+import BentoGrid from "@/components/ui/BentoGrid";
+import { projectBentoItems } from "@/components/ui/projectBento";
 import SectionHeader from "@/components/ui/SectionHeader";
 import { horizontalProjects, verticalProjects } from "@/data/projects";
 import { CONTAINER, cn } from "@/lib/utils";
@@ -33,7 +33,7 @@ export default function SelectedWork() {
               </div>
             }
           />
-          <VerticalMasonry projects={verticalProjects} />
+          <BentoGrid items={projectBentoItems(verticalProjects)} />
         </div>
       </section>
 
@@ -52,7 +52,7 @@ export default function SelectedWork() {
                 </p>
               }
             />
-            <HorizontalStack projects={horizontalProjects} />
+            <BentoGrid items={projectBentoItems(horizontalProjects)} gap={6} />
           </div>
         </section>
       )}

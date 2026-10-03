@@ -29,10 +29,15 @@ export async function POST(request: Request): Promise<Response> {
       body,
       request,
       onBeforeGenerateToken: async (pathname) => {
-        if (!/^(videos|thumbnails)\/[\w.-]+$/.test(pathname)) throw new Error("Invalid upload path");
+        const folder = /^(videos|thumbnails|hero|brands)\/[\w.-]+$/.exec(pathname)?.[1];
+        if (!folder) throw new Error("Invalid upload path");
+        // Hero poses + brand logos are images only (logos may be SVG), and small.
+        const heroAsset = folder === "hero" || folder === "brands";
         return {
-          allowedContentTypes: ["video/mp4", "video/webm", "video/quicktime", "image/jpeg", "image/png", "image/webp"],
-          maximumSizeInBytes: 2 * 1024 * 1024 * 1024, // 2 GB
+          allowedContentTypes: heroAsset
+            ? ["image/png", "image/webp", "image/jpeg", ...(folder === "brands" ? ["image/svg+xml"] : [])]
+            : ["video/mp4", "video/webm", "video/quicktime", "image/jpeg", "image/png", "image/webp"],
+          maximumSizeInBytes: heroAsset ? 15 * 1024 * 1024 : 2 * 1024 * 1024 * 1024, // 15 MB / 2 GB
           addRandomSuffix: false,
           callbackUrl: callbackBase ? `${callbackBase}${ROUTE}` : undefined,
         };

@@ -196,7 +196,32 @@ html.lenis body {
   animation: nod 200ms ease-out;
 }
 
+/* Bento reels: pointer-tracked 3D tilt. JS writes --rx / --ry / --gx / --gy;
+   only fine pointers that can hover get the effect. */
+.bento-tilt {
+  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(var(--tilt-scale, 1));
+  transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.bento-tilt[data-tilting] {
+  --tilt-scale: 1.02;
+  transition-duration: 120ms;
+}
+.bento-glare {
+  background: radial-gradient(60% 60% at var(--gx, 50%) var(--gy, 50%), rgb(255 255 255 / 0.14), transparent 70%);
+}
+@media (hover: none), (pointer: coarse) {
+  .bento-tilt {
+    transform: none;
+    will-change: auto;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .bento-tilt {
+    transform: none !important;
+  }
   .marquee-track,
   .anim-gradient,
   .anim-nudge,
@@ -207,5 +232,41 @@ html.lenis body {
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Hero brand logos: fade in, then drift. Delays / durations are set inline per logo (two values each). */
+.hero-logo {
+  animation:
+    hero-logo-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both,
+    hero-logo-drift 10s ease-in-out infinite alternate;
+}
+@keyframes hero-logo-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+@keyframes hero-logo-drift {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate3d(6px, -10px, 0) rotate(3deg);
+  }
+  66% {
+    transform: translate3d(-5px, -4px, 0) rotate(-2deg);
+  }
+  100% {
+    transform: translate3d(3px, 8px, 0) rotate(1.5deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-logo {
+    animation: none;
   }
 }

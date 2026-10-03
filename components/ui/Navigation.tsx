@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import Clock from "@/components/ui/Clock";
 import NavTools from "@/components/ui/NavTools";
+import RoleCycler from "@/components/ui/RoleCycler";
 import { navLinks, site } from "@/data/site";
 import { cn, EASE_OUT } from "@/lib/utils";
 
@@ -80,6 +81,13 @@ export default function Navigation() {
             <span>
               {site.name}
               <sup className="ml-0.5 font-mono text-[8px] font-normal text-muted">™</sup>
+            </span>
+            {/* Cycling descriptor — the wordmark column only has room for it on wide screens. */}
+            <span className="hidden items-center gap-2 font-mono text-[10px] font-normal tracking-widest text-muted lg:inline-flex">
+              <span aria-hidden className="text-fg/30">
+                —
+              </span>
+              <RoleCycler />
             </span>
             <span
               aria-hidden

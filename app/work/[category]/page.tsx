@@ -3,9 +3,8 @@ import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageHeader from "@/components/ui/PageHeader";
+import BentoReels from "@/components/ui/BentoReels";
 import ProjectGrid from "@/components/ui/ProjectGrid";
-import ReelCard from "@/components/ui/ReelCard";
-import Reveal from "@/components/ui/Reveal";
 import { categories, getCategory } from "@/data/categories";
 import { getProjectsByCategory, reels } from "@/data/projects";
 import { CONTAINER, cn, pad } from "@/lib/utils";
@@ -46,11 +45,7 @@ export default async function CategoryPage(props: PageProps<"/work/[category]">)
 
       <section id="projects" className={cn(CONTAINER, "pb-24 md:pb-40")}>
         {isReels ? (
-          <Reveal stagger className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {reels.map((reel, i) => (
-              <ReelCard key={reel.id} reel={reel} index={i} />
-            ))}
-          </Reveal>
+          <BentoReels reels={reels} />
         ) : items.length > 0 ? (
           <ProjectGrid projects={items} />
         ) : (
