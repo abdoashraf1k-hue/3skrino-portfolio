@@ -81,7 +81,7 @@ export const heroConfig: HeroConfig = {
   logos: {
     enabled: true,
     items: [
-      { id: "northwind", name: "Northwind", imageUrl: "/brands/northwind.svg", size: 64, visible: true },
+      { id: "northwind", name: "Northwind", imageUrl: "/brands/northwind.svg", size: 60, visible: true },
       { id: "halcyon", name: "Halcyon", imageUrl: "/brands/halcyon.svg", size: 52, visible: true },
       { id: "vantablack", name: "Vantablack", imageUrl: "/brands/vantablack.svg", size: 72, visible: true },
       { id: "orbitra", name: "Orbitra", imageUrl: "/brands/orbitra.svg", size: 48, visible: true },
@@ -93,26 +93,26 @@ export const heroConfig: HeroConfig = {
   },
   features: {
     ambientSound: false,
-    cinematicBars: true,
-    parallax: 0.6,
+    cinematicBars: false,
+    parallax: 0.8,
     reactiveLighting: true,
     cameraShake: true,
     glitch: true,
-    chromaticAberration: 0.5,
-    bloom: 0.5,
+    chromaticAberration: 0.35,
+    bloom: 0.75,
   },
   ambientSrc: "",
   roles: {
     items: [
-      "Video Editor",
       "Director",
+      "Video Editor",
       "Colorist",
       "Content Creator",
+      "Cinematographer",
       "AI Artist",
       "Visionary",
       "Storyteller",
-      "Cinematographer",
     ],
-    interval: 3,
+    interval: 1.5,
   },
 };
