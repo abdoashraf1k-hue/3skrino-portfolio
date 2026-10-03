@@ -120,7 +120,7 @@ export const siteConfig: SiteConfig = {
   content: {
     siteTitle: "3SKRINO — Video Editor & Content Creator",
     siteDescription: "3SKRINO is a Cairo-based senior video editor and content creator with 9+ years cutting brand films, commercials, social reels and AI-driven visuals.",
-    tagline: ".",
+    tagline: "Senior Video Editor & Content Creator — 9+ years cutting brand films, commercials, social reels, and AI-driven visuals.",
     email: "hello@3skrino.com",
     location: "Cairo",
     role: "Senior Video Editor & Content Creator",
