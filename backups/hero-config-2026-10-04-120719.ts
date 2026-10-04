@@ -118,7 +118,7 @@ export const heroConfig: HeroConfig = {
         name: "ONE WORLD TOURS",
         imageUrl: "/brands/vantablack.svg",
         href: "https://framerusercontent.com/images/tTDni0LQ1FgBcERWyEXFY4GjjY.png?scale-down-to=512&width=1000&height=1000",
-        size: 80,
+        size: 72,
         visible: true,
       },
       { id: "orbitra", name: "Orbitra", imageUrl: "/brands/orbitra.svg", size: 48, visible: true },
