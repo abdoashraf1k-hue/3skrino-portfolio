@@ -5,6 +5,7 @@ import { Anton, Archivo_Black, Bebas_Neue, Inter, JetBrains_Mono, Oswald } from 
 import AnalyticsListener from "@/components/ui/AnalyticsListener";
 import CommandPalette from "@/components/ui/CommandPalette";
 import Cursor from "@/components/ui/Cursor";
+import FxRoot from "@/components/fx/FxRoot";
 import Footer from "@/components/ui/Footer";
 import Grain from "@/components/ui/Grain";
 import Navigation from "@/components/ui/Navigation";
@@ -19,6 +20,7 @@ import { siteConfig } from "@/data/site-config";
 import { jsonLd, personSchema, SITE_URL } from "@/lib/seo";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
+import "./cinematic.css";
 
 // Variable font (no fixed weights) — covers 400–900; italic powers the editorial accent words.
 // next/font self-hosts and preloads both families; no request ever goes to Google at runtime.
@@ -93,6 +95,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SmoothScroll>
           <PageTransition>
             <Grain />
+            <FxRoot />
             <Cursor />
             <Navigation />
             <main>{children}</main>

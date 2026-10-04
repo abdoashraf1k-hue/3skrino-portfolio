@@ -94,3 +94,10 @@ body:has([data-admin-root]) * {
     animation: none;
   }
 }
+
+/* Cursor Studio's test area hides the native cursor so the simulated one shows
+   (repeated attribute: outranks the cursor rules above, incl. the (0,3,1) pointer one). */
+[data-admin-root] [data-cursor-test][data-cursor-test][data-cursor-test],
+[data-admin-root] [data-cursor-test][data-cursor-test][data-cursor-test] * {
+  cursor: none !important;
+}

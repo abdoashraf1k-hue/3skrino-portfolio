@@ -9,6 +9,11 @@ export function setLenis(instance: Lenis | null): void {
   lenis = instance;
 }
 
+/** The running Lenis instance (null under reduced motion / before mount) — used by the time-remap effect. */
+export function getLenis(): Lenis | null {
+  return lenis;
+}
+
 /** Scrolls to a y offset or an element — through Lenis when it's running, else natively. */
 export function scrollToTarget(target: number | HTMLElement, offset = 0): void {
   if (lenis) {

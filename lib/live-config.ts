@@ -14,6 +14,10 @@ import { siteConfig, type SiteConfig } from "@/data/site-config";
 export const PREVIEW_MESSAGE = "3skrino:preview";
 export const PREVIEW_READY = "3skrino:preview:ready";
 export const PREVIEW_PARAM = "preview";
+/** Admin → preview frame: "play a page transition now" (Effects → Fire in preview). */
+export const PREVIEW_FX = "3skrino:preview:fx";
+/** Fired on the admin window by any tab; the preview dock forwards it to its frame. */
+export const ADMIN_PREVIEW_FX_EVENT = "3skrino:admin:preview-fx";
 
 type Draft = { hero: HeroConfig | null; site: SiteConfig | null };
 let draft: Draft = { hero: null, site: null };
@@ -31,6 +35,11 @@ function install() {
   window.addEventListener("message", (e: MessageEvent<unknown>) => {
     if (e.origin !== window.location.origin || e.source !== window.parent) return;
     const data = e.data;
+    if (typeof data === "object" && data !== null && "type" in data && data.type === PREVIEW_FX) {
+      // Same event lib/cinematic's emitFx("transition") dispatches (not imported: it depends on this module).
+      window.dispatchEvent(new CustomEvent("3skrino:fx", { detail: "transition" }));
+      return;
+    }
     if (typeof data !== "object" || data === null || !("type" in data) || data.type !== PREVIEW_MESSAGE) return;
     const next: Draft = { ...draft };
     if ("hero" in data && typeof data.hero === "object" && data.hero !== null) next.hero = data.hero as HeroConfig;

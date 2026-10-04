@@ -17,6 +17,12 @@ export type SettingsStatus = {
   vercelApi: boolean;
   deployHook: boolean;
   cronSecret: boolean;
+  /** Sprint 10 — shown on admin → Integrations. */
+  resend: boolean;
+  googleAnalytics: boolean;
+  aiGateway: boolean;
+  blobCallback: boolean;
+  siteUrl: boolean;
 };
 
 function status(): SettingsStatus {
@@ -28,6 +34,11 @@ function status(): SettingsStatus {
     vercelApi: Boolean(env.VERCEL_TOKEN && env.VERCEL_PROJECT_ID),
     deployHook: Boolean(env.VERCEL_DEPLOY_HOOK_URL),
     cronSecret: Boolean(env.CRON_SECRET),
+    resend: Boolean(env.RESEND_API_KEY),
+    googleAnalytics: Boolean(env.NEXT_PUBLIC_GA_ID),
+    aiGateway: Boolean(env.AI_GATEWAY_API_KEY || env.VERCEL_OIDC_TOKEN),
+    blobCallback: Boolean(env.VERCEL_BLOB_CALLBACK_URL),
+    siteUrl: Boolean(env.NEXT_PUBLIC_SITE_URL),
   };
 }
 

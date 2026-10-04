@@ -262,8 +262,8 @@ export default function HeroTab({ adminKey, onError, onSuccess }: Props) {
   return (
     <div>
       <TabHeader
-        title="Hero"
-        hint="9-pose head · dithered crossfade · effects · edits preview live in the dock"
+        title="Poses"
+        hint="9-pose head · dithered crossfade · the Cinematic hero's own effects · every hero variant uses these poses · edits preview live in the dock"
         actions={
           <button
             type="button"

@@ -12,10 +12,20 @@ const EVENT = "3skrino:sound";
 let ctx: AudioContext | null = null;
 
 function read(): boolean {
+  return readSoundPref() === "on";
+}
+
+/**
+ * The visitor's explicit choice: "on" / "off", or null when they never
+ * chose. Site UI sounds (admin → Sound Studio) follow the admin's switch
+ * until the visitor picks; the palette tick stays opt-in.
+ */
+export function readSoundPref(): "on" | "off" | null {
   try {
-    return localStorage.getItem(KEY) === "on";
+    const v = localStorage.getItem(KEY);
+    return v === "on" || v === "off" ? v : null;
   } catch {
-    return false;
+    return null;
   }
 }
 

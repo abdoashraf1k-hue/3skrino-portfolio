@@ -21,6 +21,12 @@ export function assertSiteImage(file: File): void {
   if (!/^image\/(png|webp|jpeg)$/.test(file.type)) throw new Error(`"${file.name}" must be a PNG, JPEG or WebP`);
 }
 
+/** UI sounds: mp3 / wav, at most 5 MB. */
+export function assertSoundFile(file: File): void {
+  if (!/^audio\/(mpeg|mp3|wav|x-wav|wave)$/.test(file.type)) throw new Error(`"${file.name}" must be an MP3 or WAV`);
+  if (file.size > 5 * 1024 * 1024) throw new Error(`"${file.name}" is over 5 MB`);
+}
+
 export function assertLogoFile(file: File): void {
   if (!LOGO_TYPES.test(file.type)) throw new Error(`"${file.name}" must be a PNG, SVG, WebP or JPEG`);
 }
@@ -36,12 +42,14 @@ const slug = (s: string) =>
 function extension(type: string): string {
   if (type === "image/svg+xml") return "svg";
   if (type === "image/jpeg") return "jpg";
+  if (type === "audio/mpeg" || type === "audio/mp3") return "mp3";
+  if (/^audio\/(wav|x-wav|wave)$/.test(type)) return "wav";
   return type.split("/")[1] ?? "png";
 }
 
 export async function uploadHeroAsset(
   file: Blob,
-  folder: "hero" | "brands" | "site",
+  folder: "hero" | "brands" | "site" | "audio",
   name: string,
   key: string,
   onProgress?: (pct: number) => void,

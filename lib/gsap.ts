@@ -9,4 +9,4 @@ if (typeof window !== "undefined") {
   }
 }
 
-export { gsap, ScrollTrigger };
+export { CustomEase, gsap, ScrollTrigger };

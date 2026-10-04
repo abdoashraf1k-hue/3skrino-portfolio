@@ -1,9 +1,10 @@
 "use client";
 
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type CSSProperties, type ReactNode } from "react";
 import DiagonalDivider, { type Tone } from "@/components/ui/DiagonalDivider";
 import { SectionContext } from "@/components/ui/SectionContext";
 import type { SectionId } from "@/data/site-config";
+import { useCinematic } from "@/lib/cinematic";
 import { useSiteConfig } from "@/lib/live-config";
 import { pad } from "@/lib/utils";
 
@@ -28,6 +29,7 @@ const UNNUMBERED = new Set<SectionId>(["marquee"]);
  */
 export default function HomeLayout({ sections }: { sections: Partial<Record<SectionId, ReactNode>> }) {
   const { layout } = useSiteConfig();
+  const fx = useCinematic().sections;
   const visible = layout.sections.filter((s) => s.visible && sections[s.id]);
   // Running chapter numbers (the marquee strip isn't one).
   const numbered = visible.filter((s) => !UNNUMBERED.has(s.id)).map((s) => s.id);
@@ -42,7 +44,15 @@ export default function HomeLayout({ sections }: { sections: Partial<Record<Sect
         return (
           <Fragment key={s.id}>
             {seam && from && <DiagonalDivider from={TONE[from]} to={TONE[s.id]} flip={i % 2 === 0} />}
-            <SectionContext.Provider value={{ index, pattern: s.pattern }}>{sections[s.id]}</SectionContext.Provider>
+            {/* data-fx-section: the cinematic layer's per-section overrides (admin → Sections) hook in here. */}
+            <div
+              data-fx-section={s.id}
+              data-fx-crt={fx[s.id]?.crt ? "" : undefined}
+              data-fx-ca={fx[s.id]?.chromatic ? "" : undefined}
+              style={fx[s.id]?.chromatic ? ({ "--fx-ca-local": `${(fx[s.id]?.chromatic ?? 0) * 4}px` } as CSSProperties) : undefined}
+            >
+              <SectionContext.Provider value={{ index, pattern: s.pattern, id: s.id }}>{sections[s.id]}</SectionContext.Provider>
+            </div>
           </Fragment>
         );
       })}

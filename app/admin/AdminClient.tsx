@@ -16,25 +16,44 @@ import CategoryGrid from "@/components/admin/CategoryGrid";
 import PreviewDock from "@/components/admin/PreviewDock";
 import ProjectEditor, { type EditorTarget } from "@/components/admin/ProjectEditor";
 import { ToastProvider, useToast } from "@/components/admin/Toast";
-import { btn, btnPrimary, micro } from "@/components/admin/ui";
+import { btn, btnPrimary, micro, SaveBar } from "@/components/admin/ui";
 import ProjectCardPreview from "@/components/ui/ProjectCard";
 import { categories } from "@/data/categories";
 import type { Project } from "@/data/projects";
 import { AuthError, adminFetch, clearStoredKey, readStoredKey, storeKey, type ProjectsResponse } from "@/lib/admin/client-api";
 import { assertUploadable } from "@/lib/admin/video-upload";
+import { dirtyIn, getIn, setIn, TAB_SLICES } from "./slices";
 import { ConfigProvider, useConfigStore } from "./store";
+import ActivityTab from "./tabs/ActivityTab";
 import AnalyticsTab from "./tabs/AnalyticsTab";
 import BackupsTab from "./tabs/BackupsTab";
 import BrandsTab from "./tabs/BrandsTab";
+import BulkTab from "./tabs/BulkTab";
+import ComponentsTab from "./tabs/ComponentsTab";
 import ContentTab from "./tabs/ContentTab";
+import CursorTab from "./tabs/CursorTab";
+import DangerTab from "./tabs/DangerTab";
 import DashboardTab from "./tabs/DashboardTab";
+import EffectsTab from "./tabs/EffectsTab";
+import ExperimentsTab from "./tabs/ExperimentsTab";
+import HeroesTab from "./tabs/HeroesTab";
 import HeroTab from "./tabs/HeroTab";
+import ImportExportTab from "./tabs/ImportExportTab";
+import IntegrationsTab from "./tabs/IntegrationsTab";
 import LayoutTab from "./tabs/LayoutTab";
 import LogsTab from "./tabs/LogsTab";
+import MediaTab from "./tabs/MediaTab";
+import MotionTab from "./tabs/MotionTab";
 import RolesTab from "./tabs/RolesTab";
+import SectionsTab from "./tabs/SectionsTab";
 import SeoTab from "./tabs/SeoTab";
 import SettingsTab from "./tabs/SettingsTab";
+import SocialTab from "./tabs/SocialTab";
+import SoundTab from "./tabs/SoundTab";
+import TagsTab from "./tabs/TagsTab";
 import ThemeTab from "./tabs/ThemeTab";
+import ThumbnailsTab from "./tabs/ThumbnailsTab";
+import TypographyTab from "./tabs/TypographyTab";
 
 const POLL_MS = 30_000;
 const TICK_MS = 15_000;
@@ -42,7 +61,10 @@ const TICK_MS = 15_000;
 type Status = { kind: "loading" } | { kind: "ready" } | { kind: "denied" } | { kind: "error"; message: string };
 type WithProject = ProjectsResponse & { project: Project };
 
-/** The control center's tabs, grouped in the sidebar. */
+/**
+ * The control center's tabs, grouped in the sidebar. Ids are URL-stable
+ * (?tab=hero is still the poses tab, now labelled "Poses").
+ */
 const NAV = [
   {
     group: "Overview",
@@ -50,22 +72,28 @@ const NAV = [
       { id: "dashboard", label: "Dashboard", icon: "◧" },
       { id: "analytics", label: "Analytics", icon: "◔" },
       { id: "logs", label: "Logs", icon: "≡" },
+      { id: "activity", label: "Activity", icon: "⋮" },
     ],
   },
   {
-    group: "Work",
+    group: "Content",
     tabs: [
       { id: "projects", label: "Projects", icon: "▦" },
-      { id: "content", label: "Content", icon: "¶" },
-      { id: "seo", label: "SEO", icon: "⌕" },
+      { id: "media", label: "Media Library", icon: "▣" },
+      { id: "tags", label: "Tags", icon: "#" },
+      { id: "thumbnails", label: "Thumbnails", icon: "▢" },
+      { id: "bulk", label: "Bulk", icon: "☰" },
+      { id: "import", label: "Import / Export", icon: "⇅" },
     ],
   },
   {
-    group: "Hero",
+    group: "Heroes",
     tabs: [
-      { id: "hero", label: "Hero", icon: "◉" },
+      { id: "heroes", label: "Heroes", icon: "◎" },
+      { id: "hero", label: "Poses", icon: "◉" },
       { id: "brands", label: "Brands", icon: "✦" },
       { id: "roles", label: "Roles", icon: "↻" },
+      { id: "effects", label: "Effects", icon: "✺" },
     ],
   },
   {
@@ -73,6 +101,26 @@ const NAV = [
     tabs: [
       { id: "layout", label: "Layout", icon: "▤" },
       { id: "theme", label: "Theme", icon: "◐" },
+      { id: "typography", label: "Typography", icon: "Aa" },
+      { id: "components", label: "Components", icon: "◫" },
+    ],
+  },
+  {
+    group: "Site",
+    tabs: [
+      { id: "sections", label: "Sections", icon: "▥" },
+      { id: "content", label: "Content", icon: "¶" },
+      { id: "seo", label: "SEO", icon: "⌕" },
+      { id: "social", label: "Social", icon: "@" },
+    ],
+  },
+  {
+    group: "Creative",
+    tabs: [
+      { id: "cursor", label: "Cursor Studio", icon: "⌖" },
+      { id: "sound", label: "Sound Studio", icon: "♪" },
+      { id: "motion", label: "Motion Lab", icon: "∿" },
+      { id: "experiments", label: "Experiment Lab", icon: "⚗" },
     ],
   },
   {
@@ -80,13 +128,31 @@ const NAV = [
     tabs: [
       { id: "backups", label: "Backups", icon: "⟲" },
       { id: "settings", label: "Settings", icon: "⚙" },
+      { id: "integrations", label: "Integrations", icon: "⌁" },
+      { id: "danger", label: "Danger Zone", icon: "⚠" },
     ],
   },
 ] as const;
 type Tab = (typeof NAV)[number]["tabs"][number]["id"];
 const TABS: readonly Tab[] = NAV.flatMap((g) => g.tabs.map((t) => t.id));
 /** Tabs that edit the configs the live preview renders — the dock follows them to the home page. */
-const HOME_PREVIEW_TABS = new Set<Tab>(["hero", "brands", "roles", "layout"]);
+const HOME_PREVIEW_TABS = new Set<Tab>([
+  "hero",
+  "brands",
+  "roles",
+  "layout",
+  "heroes",
+  "effects",
+  "experiments",
+  "cursor",
+  "sound",
+  "motion",
+  "sections",
+  "typography",
+  "components",
+]);
+/** Tabs that work without the two config files loaded. */
+const NO_CONFIG_TABS = new Set<Tab>(["dashboard", "projects", "analytics", "logs", "settings", "activity", "media", "tags", "thumbnails", "bulk", "integrations"]);
 
 export default function AdminClient({ initialParams }: { initialParams: Record<string, string> }) {
   return (
@@ -332,7 +398,12 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
         }
         return;
       }
-      if (editor || status.kind !== "ready" || tab !== "projects") return;
+      if (editor || status.kind !== "ready") return;
+      if (tab === "bulk" && k === "escape" && selected.size && !isTyping(e.target)) {
+        setSelected(new Set());
+        return;
+      }
+      if (tab !== "projects") return;
       if (mod && k === "k") {
         e.preventDefault();
         requestAnimationFrame(() => {
@@ -492,6 +563,25 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
     }
   };
 
+  /** admin → Tags: rename / merge / remove a tag across projects (one commit). */
+  const retag = async (from: string, to: string, ids: string[]) => {
+    try {
+      const res = await withAuth(runWrite(() => adminFetch<ProjectsResponse>(keyRef.current, "bulk", "POST", { action: "retag", ids, from, to })));
+      applyServer(res);
+      toast.success(to ? `#${from} → #${to} on ${ids.length} project${ids.length === 1 ? "" : "s"} — deploying…` : `#${from} removed — deploying…`);
+    } catch (err) {
+      if (!(err instanceof AuthError)) toast.error(err instanceof Error ? err.message : "Tag update failed");
+    }
+  };
+
+  /** The per-tab save bar's "Discard tab": put only this tab's slices back to what's saved. */
+  const discardTab = () => {
+    for (const sl of TAB_SLICES[tab] ?? []) {
+      if (sl.file === "hero") config.setHero((c) => setIn(c, sl.path, getIn(config.savedHero, sl.path)));
+      else config.setSite((c) => setIn(c, sl.path, getIn(config.savedSite, sl.path)));
+    }
+  };
+
   const toggleSelect = (id: string) =>
     setSelected((sel) => {
       const next = new Set(sel);
@@ -521,7 +611,13 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
   };
 
   const configReady = config.status.kind === "ready";
-  const needsConfig = !["dashboard", "projects", "analytics", "logs", "settings"].includes(tab);
+  const needsConfig = !NO_CONFIG_TABS.has(tab);
+  // Which tabs have unsaved edits (sidebar dots + save bar) — recomputed only when a config changes.
+  const dirtyByTab = useMemo(() => {
+    const pair = { hero: config.hero, site: config.site, savedHero: config.savedHero, savedSite: config.savedSite };
+    return new Map(TABS.map((t) => [t, dirtyIn(t, pair)]));
+  }, [config.hero, config.site, config.savedHero, config.savedSite]);
+  const tabDirty = dirtyByTab.get(tab) ?? [];
 
   let body: ReactNode;
   if (needsConfig && !configReady) {
@@ -572,6 +668,42 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
     body = <BackupsTab adminKey={adminKey} onRestoredProjects={applyServer} onAuthError={deny} onError={toast.error} onSuccess={toast.success} />;
   } else if (tab === "settings") {
     body = <SettingsTab adminKey={adminKey} onAuthError={deny} onError={toast.error} onSuccess={toast.success} />;
+  } else if (tab === "activity") {
+    body = <ActivityTab adminKey={adminKey} onAuthError={deny} />;
+  } else if (tab === "media") {
+    body = <MediaTab adminKey={adminKey} projects={projects} onAuthError={deny} onError={toast.error} onSuccess={toast.success} />;
+  } else if (tab === "tags") {
+    body = <TagsTab projects={projects} onRetag={retag} />;
+  } else if (tab === "thumbnails") {
+    body = <ThumbnailsTab projects={projects} onEdit={(project) => setEditor({ mode: "edit", project })} />;
+  } else if (tab === "bulk") {
+    body = <BulkTab projects={projects} selected={selected} onToggle={toggleSelect} onSelectAll={selectAll} />;
+  } else if (tab === "import") {
+    body = <ImportExportTab projects={projects} />;
+  } else if (tab === "heroes") {
+    body = <HeroesTab projects={projects} />;
+  } else if (tab === "effects") {
+    body = <EffectsTab projects={projects} />;
+  } else if (tab === "typography") {
+    body = <TypographyTab />;
+  } else if (tab === "components") {
+    body = <ComponentsTab />;
+  } else if (tab === "sections") {
+    body = <SectionsTab />;
+  } else if (tab === "social") {
+    body = <SocialTab />;
+  } else if (tab === "integrations") {
+    body = <IntegrationsTab adminKey={adminKey} onAuthError={deny} />;
+  } else if (tab === "danger") {
+    body = <DangerTab onBackupNow={backupNow} onOpenSettings={() => switchTab("settings")} onSuccess={toast.success} />;
+  } else if (tab === "cursor") {
+    body = <CursorTab />;
+  } else if (tab === "sound") {
+    body = <SoundTab adminKey={adminKey} onError={toast.error} onSuccess={toast.success} />;
+  } else if (tab === "motion") {
+    body = <MotionTab />;
+  } else if (tab === "experiments") {
+    body = <ExperimentsTab />;
   } else {
     body = (
       <>
@@ -725,24 +857,16 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
         <nav
           id="admin-nav"
           aria-label="Admin sections"
-          className={`${navOpen ? "fixed inset-x-0 top-14 bottom-0 z-[35] block overflow-y-auto bg-[#0a0a0a]" : "hidden"} w-full shrink-0 border-r border-white/10 lg:sticky lg:top-14 lg:block lg:h-[calc(100vh-3.5rem)] lg:w-52 lg:overflow-y-auto`}
+          className={`${navOpen ? "fixed inset-x-0 top-14 bottom-0 z-[35] block overflow-y-auto bg-[#0a0a0a]" : "hidden"} w-full shrink-0 border-r border-white/10 lg:sticky lg:top-14 lg:block lg:h-[calc(100vh-3.5rem)] lg:w-56 lg:overflow-y-auto`}
         >
-          <div className="flex flex-col gap-5 px-3 py-5">
+          <div className="flex flex-col gap-4 px-3 py-5">
             {NAV.map((g) => (
               <div key={g.group}>
                 <p className={`${micro} mb-1.5 px-2 text-[9px] text-white/30`}>{g.group}</p>
                 <ul className="flex flex-col">
                   {g.tabs.map((t) => {
                     const on = tab === t.id;
-                    const dirtyHere =
-                      (t.id === "hero" && config.dirty.hero.some((d) => d === "poses" || d === "hero effects" || d === "ambient sound")) ||
-                      (t.id === "brands" && config.dirty.hero.includes("brands")) ||
-                      (t.id === "roles" && config.dirty.hero.includes("roles")) ||
-                      (t.id === "layout" && config.dirty.site.includes("layout")) ||
-                      (t.id === "theme" && config.dirty.site.includes("theme")) ||
-                      (t.id === "content" && config.dirty.site.includes("content")) ||
-                      (t.id === "seo" && config.dirty.site.includes("SEO")) ||
-                      (t.id === "backups" && config.dirty.site.includes("backup schedule"));
+                    const dirtyHere = (dirtyByTab.get(t.id)?.length ?? 0) > 0;
                     return (
                       <li key={t.id}>
                         <button
@@ -769,11 +893,14 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
         </nav>
 
         <main className="min-w-0 flex-1 px-4 py-8 pb-32 md:px-8">
-          <div className="mx-auto max-w-[1500px]">{body}</div>
+          <div className="mx-auto max-w-[1500px]">
+            {body}
+            {configReady && <SaveBar names={tabDirty} saving={config.saving} onDiscard={discardTab} onSave={() => void config.saveAll()} />}
+          </div>
         </main>
       </div>
 
-      {selected.size > 0 && tab === "projects" && (
+      {selected.size > 0 && (tab === "projects" || tab === "bulk") && (
         <BulkBar count={selected.size} busy={bulkBusy} onRun={(op) => void runBulk(op)} onCancel={() => setSelected(new Set())} />
       )}
 

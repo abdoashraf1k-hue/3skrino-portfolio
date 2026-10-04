@@ -29,8 +29,17 @@ export async function POST(request: Request): Promise<Response> {
       body,
       request,
       onBeforeGenerateToken: async (pathname) => {
-        const folder = /^(videos|thumbnails|hero|brands|site)\/[\w.-]+$/.exec(pathname)?.[1];
+        const folder = /^(videos|thumbnails|hero|brands|site|audio)\/[\w.-]+$/.exec(pathname)?.[1];
         if (!folder) throw new Error("Invalid upload path");
+        // UI sounds (admin → Sound Studio): short mp3 / wav clips.
+        if (folder === "audio") {
+          return {
+            allowedContentTypes: ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/wave"],
+            maximumSizeInBytes: 5 * 1024 * 1024,
+            addRandomSuffix: false,
+            callbackUrl: callbackBase ? `${callbackBase}${ROUTE}` : undefined,
+          };
+        }
         // Hero poses, brand logos and site images (favicon / share image) are small images; logos may be SVG.
         const heroAsset = folder === "hero" || folder === "brands" || folder === "site";
         return {

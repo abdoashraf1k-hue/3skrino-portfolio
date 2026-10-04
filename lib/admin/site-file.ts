@@ -23,8 +23,9 @@ import {
   type ConfigSpec,
   bool,
 } from "./config-file";
+import { validateCinematic, validateHeroVariant } from "./cinematic-file";
 
-/** data/site-config.ts — theme, home layout, content, SEO overrides, backup schedule. */
+/** data/site-config.ts — theme, home layout, content, SEO overrides, backup schedule, hero variant, cinematic toolbox. */
 
 export const SITE_PATH = "data/site-config.ts";
 export const SECTION_IDS: readonly SectionId[] = ["marquee", "vertical", "horizontal", "fields", "ai", "about", "contact"];
@@ -130,7 +131,11 @@ export function validateSiteConfig(input: unknown): SiteConfig {
 
   const backups = { schedule: oneOf(rec(o.backups, "backups"), "schedule", "Backups", BACKUP_SCHEDULES, "weekly") };
 
-  return { theme, layout, content, seo: { projects }, backups };
+  // Sprint 10: missing in older files / backups → factory defaults.
+  const heroVariant = validateHeroVariant(o);
+  const cinematic = validateCinematic(o.cinematic);
+
+  return { theme, layout, content, seo: { projects }, backups, heroVariant, cinematic };
 }
 
 export const SITE_SPEC: ConfigSpec<SiteConfig> = {

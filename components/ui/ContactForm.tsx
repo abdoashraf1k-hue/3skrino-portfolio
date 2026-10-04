@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState, type FormEvent } from "react";
 import { site } from "@/data/site";
 import { trackCTA } from "@/lib/analytics";
+import { uiSound } from "@/lib/cinematic";
 import { cn, EASE_OUT } from "@/lib/utils";
 
 const PROJECT_TYPES = ["Brand film", "Commercial", "Social / Reels", "Tours / Travel", "AI video", "Other"];
@@ -54,9 +55,11 @@ export default function ContactForm() {
       trackCTA("contact_submit");
       setForm(EMPTY);
       setToast({ kind: "success", text: "Message sent — I'll be in touch within 24 hours." });
+      uiSound("success");
     } catch (err) {
       const reason = err instanceof Error ? err.message : "Something went wrong";
       setToast({ kind: "error", text: `${reason}. You can also email ${site.email}.` });
+      uiSound("error");
     } finally {
       setSending(false);
     }

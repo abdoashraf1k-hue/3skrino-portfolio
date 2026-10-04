@@ -50,6 +50,7 @@ export default function ProjectCard({ project, index, size: sizeProp = "md", asp
       data-cat={project.category}
       data-track="project"
       data-track-id={project.id}
+      data-lut-project={project.id}
       className={cn("group block", aspect && "size-full", className)}
     >
       <div

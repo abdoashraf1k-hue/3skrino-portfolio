@@ -9,6 +9,7 @@ import { categories } from "@/data/categories";
 import { projectHref, projects } from "@/data/projects";
 import { navLinks } from "@/data/site";
 import { readStoredKey } from "@/lib/admin/client-api";
+import { uiSound } from "@/lib/cinematic";
 import { tick, toggleSound, useSoundEnabled } from "@/lib/sound";
 import { toggleTheme, useTheme } from "@/lib/theme";
 import { cn, EASE_OUT } from "@/lib/utils";
@@ -50,6 +51,7 @@ export default function CommandPalette() {
     setQuery("");
     setActive(0);
     setOpen(true);
+    uiSound("notification");
     tick(520);
   }, []);
 

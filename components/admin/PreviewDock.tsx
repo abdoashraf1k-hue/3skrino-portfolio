@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { HeroConfig } from "@/data/hero-config";
 import type { SiteConfig } from "@/data/site-config";
-import { PREVIEW_MESSAGE, PREVIEW_PARAM, PREVIEW_READY } from "@/lib/live-config";
+import { ADMIN_PREVIEW_FX_EVENT, PREVIEW_FX, PREVIEW_MESSAGE, PREVIEW_PARAM, PREVIEW_READY } from "@/lib/live-config";
 import { btn, micro } from "./ui";
 
 const PAGES = [
@@ -121,6 +121,13 @@ export default function PreviewDock({ hero, site, dirty, focusPath }: Props) {
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
   }, [post]);
+
+  // Effects → "Fire in preview": play a page transition inside the frame.
+  useEffect(() => {
+    const fire = () => frameRef.current?.contentWindow?.postMessage({ type: PREVIEW_FX }, window.location.origin);
+    window.addEventListener(ADMIN_PREVIEW_FX_EVENT, fire);
+    return () => window.removeEventListener(ADMIN_PREVIEW_FX_EVENT, fire);
+  }, []);
 
   // Drag the top-left corner to resize (the dock is anchored bottom-right).
   const startResize = (e: ReactPointerEvent<HTMLButtonElement>) => {

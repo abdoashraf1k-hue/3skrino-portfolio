@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const CATEGORY_IDS = new Set(categories.map((c) => c.id));
 
-type Action = "feature" | "unfeature" | "category" | "delete" | "move";
+type Action = "feature" | "unfeature" | "category" | "delete" | "move" | "retag";
 
 /**
  * POST { action, ids, category?, order? } — many projects, ONE commit.
@@ -22,6 +22,8 @@ type Action = "feature" | "unfeature" | "category" | "delete" | "move";
  *  delete               — remove ids
  *  move                 — move ids to `category`, then apply `order` (a full
  *                         permutation of project ids) — used by cross-category drag
+ *  retag                — rename tag `from` to `to` on ids (admin → Tags); an empty
+ *                         `to` removes the tag. Merging = renaming onto an existing tag.
  */
 export async function POST(request: Request) {
   if (!isAuthorized(request)) return unauthorized();
@@ -29,7 +31,7 @@ export async function POST(request: Request) {
     const body = await readJson(request);
     const action = body.action as Action;
     const ids = body.ids;
-    if (!["feature", "unfeature", "category", "delete", "move"].includes(action)) {
+    if (!["feature", "unfeature", "category", "delete", "move", "retag"].includes(action)) {
       throw new ProjectsFileError("Unknown bulk action");
     }
     if (!Array.isArray(ids) || !ids.length || !ids.every((id): id is string => typeof id === "string")) {
@@ -39,6 +41,9 @@ export async function POST(request: Request) {
     if ((action === "category" || action === "move") && !CATEGORY_IDS.has(category)) {
       throw new ProjectsFileError(`Unknown category "${category}"`);
     }
+    const from = typeof body.from === "string" ? body.from.trim().toLowerCase() : "";
+    const to = typeof body.to === "string" ? body.to.trim().toLowerCase() : "";
+    if (action === "retag" && (!from || to.length > 40)) throw new ProjectsFileError('"retag" needs a "from" tag (and a "to" of 40 characters or fewer)');
     const order = Array.isArray(body.order) && body.order.every((id) => typeof id === "string") ? (body.order as string[]) : null;
 
     const res = await mutateProjects((projects) => {
@@ -50,6 +55,13 @@ export async function POST(request: Request) {
       switch (action) {
         case "delete":
           next = projects.filter((p) => !wanted.has(p.id));
+          break;
+        case "retag":
+          next = projects.map((p) => {
+            if (!wanted.has(p.id) || !p.tags?.some((t) => t.toLowerCase() === from)) return p;
+            const renamed = p.tags.map((t) => (t.toLowerCase() === from ? to : t)).filter(Boolean);
+            return validateProject({ ...p, tags: [...new Set(renamed)] });
+          });
           break;
         case "feature":
         case "unfeature":
@@ -74,6 +86,7 @@ export async function POST(request: Request) {
         unfeature: `admin: unfeature ${noun}`,
         category: `admin: move ${noun} to ${category}`,
         move: `admin: move ${noun} to ${category}`,
+        retag: to ? `admin: rename tag ${from} to ${to} in ${noun}` : `admin: remove tag ${from} from ${noun}`,
       }[action];
       return { projects: next, message, result: null };
     });

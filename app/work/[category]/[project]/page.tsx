@@ -77,6 +77,7 @@ export default async function ProjectPage(props: PageProps<"/work/[category]/[pr
       <section id="project" className={cn(CONTAINER, "pb-24 md:pb-40")}>
         <Reveal>
           <div
+            data-lut-project={project.id}
             style={{ boxShadow: `0 0 120px -40px ${project.accentColor}` }}
             className={cn(
               "relative mx-auto overflow-hidden rounded-sm bg-bg-soft",

@@ -11,6 +11,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
+import { emitFx } from "@/lib/cinematic";
 import { gsap } from "@/lib/gsap";
 import { RICH_MOTION_QUERY, useMediaQuery } from "@/lib/hooks";
 
@@ -165,6 +166,8 @@ export default function PageTransition({ children }: { children: ReactNode }) {
       busy.current = true;
       const url = new URL(anchor.href, window.location.href);
       setHasNavigated(true);
+      // Film burn / shutter flash / transition sound (admin → Effects, Sound Studio).
+      emitFx("transition");
 
       void (irisRef.current?.close() ?? Promise.resolve()).then(() => {
         setTarget(url.pathname);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 /**
  * The admin's small design system: one set of controls for every tab so the
@@ -36,12 +36,18 @@ export function Section({
   title,
   hint,
   aside,
+  onReset,
+  help,
   children,
   className = "",
 }: {
   title: string;
   hint?: ReactNode;
   aside?: ReactNode;
+  /** Shows a "Reset" button that puts just this section back to its factory default. */
+  onReset?: () => void;
+  /** A "?" tooltip beside the title. */
+  help?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
@@ -50,12 +56,22 @@ export function Section({
     <section aria-labelledby={id} className={`mb-10 ${className}`}>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-white/10 pb-2">
         <div className="min-w-0">
-          <h2 id={id} className="text-lg font-black uppercase tracking-tight">
+          <h2 id={id} className="flex items-center gap-2 text-lg font-black uppercase tracking-tight">
             {title}
+            {help && <Help>{help}</Help>}
           </h2>
           {hint && <p className={`${micro} mt-0.5 text-white/40`}>{hint}</p>}
         </div>
-        {aside}
+        {(aside || onReset) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {aside}
+            {onReset && (
+              <button type="button" className={btn} onClick={onReset} title={`Reset ${title} to its default`}>
+                ↺ Reset
+              </button>
+            )}
+          </div>
+        )}
       </div>
       {children}
     </section>
@@ -67,19 +83,26 @@ export function Toggle({
   checked,
   onChange,
   hint,
+  help,
+  disabled = false,
 }: {
   label: string;
   checked: boolean;
   onChange: (v: boolean) => void;
   hint?: string;
+  help?: ReactNode;
+  disabled?: boolean;
 }) {
   return (
-    <label className={`${card} flex cursor-pointer items-center justify-between gap-3 px-3 py-2.5`}>
+    <label className={`${card} flex cursor-pointer items-center justify-between gap-3 px-3 py-2.5 ${disabled ? "pointer-events-none opacity-40" : ""}`}>
       <span className="min-w-0">
-        <span className="block text-sm">{label}</span>
+        <span className="flex items-center gap-1.5 text-sm">
+          {label}
+          {help && <Help>{help}</Help>}
+        </span>
         {hint && <span className="block font-mono text-[9px] uppercase tracking-widest text-white/35">{hint}</span>}
       </span>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
       <span
         aria-hidden
         className="relative h-5 w-9 shrink-0 rounded-full bg-white/15 transition-colors after:absolute after:left-0.5 after:top-0.5 after:size-4 after:rounded-full after:bg-white after:transition-transform peer-checked:bg-[#e7fe55] peer-checked:after:translate-x-4 peer-checked:after:bg-[#0a0a0a] peer-focus-visible:ring-1 peer-focus-visible:ring-[#e7fe55]"
@@ -97,6 +120,7 @@ export function Slider({
   step = 0.05,
   format = (v: number) => v.toFixed(2),
   hint,
+  help,
   disabled = false,
 }: {
   label: string;
@@ -107,12 +131,16 @@ export function Slider({
   step?: number;
   format?: (v: number) => string;
   hint?: string;
+  help?: ReactNode;
   disabled?: boolean;
 }) {
   return (
     <label className={`${card} block px-3 py-2.5 ${disabled ? "opacity-40" : ""}`}>
       <span className="flex items-center justify-between gap-3 text-sm">
-        {label}
+        <span className="flex items-center gap-1.5">
+          {label}
+          {help && <Help>{help}</Help>}
+        </span>
         <span className="font-mono text-[11px] tabular-nums text-[#e7fe55]">{format(value)}</span>
       </span>
       {hint && <span className="block font-mono text-[9px] uppercase tracking-widest text-white/35">{hint}</span>}
@@ -266,6 +294,104 @@ export function ago(iso: string | null | undefined, now = Date.now()): string {
   const h = Math.round(m / 60);
   if (h < 36) return `${h}h ago`;
   return `${Math.round(h / 24)}d ago`;
+}
+
+/**
+ * A "?" that explains a non-obvious control. Hover, focus or tap shows it;
+ * it never steals the click from the control it sits in.
+ */
+export function Help({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return (
+    <span className="relative inline-flex font-sans normal-case tracking-normal">
+      <button
+        type="button"
+        aria-label="Help"
+        aria-describedby={open ? id : undefined}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen((o) => !o);
+        }}
+        className="inline-flex size-4 items-center justify-center rounded-full border border-white/25 font-mono text-[9px] font-normal text-white/50 hover:border-[#e7fe55] hover:text-[#e7fe55]"
+      >
+        ?
+      </button>
+      {open && (
+        <span
+          id={id}
+          role="tooltip"
+          className="admin-fade absolute left-1/2 top-full z-50 mt-1.5 w-64 -translate-x-1/2 border border-white/15 bg-[#151515] px-3 py-2 text-left text-xs font-normal leading-relaxed text-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.6)]"
+        >
+          {children}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** One of a handful of options as large cards (heroes, cursor styles, LUTs…). */
+export function Choice<T extends string>({
+  value,
+  options,
+  onChange,
+  label,
+  columns = "sm:grid-cols-3 xl:grid-cols-5",
+}: {
+  value: T;
+  options: readonly { value: T; label: string; preview?: ReactNode; note?: string }[];
+  onChange: (v: T) => void;
+  label: string;
+  columns?: string;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className={`grid grid-cols-2 gap-2 ${columns}`}>
+      {options.map((o) => {
+        const on = value === o.value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onChange(o.value)}
+            className={`${card} flex flex-col gap-2 p-2 text-left transition-colors ${on ? "border-[#e7fe55] bg-[#e7fe55]/[0.06]" : "hover:border-white/30"}`}
+          >
+            {o.preview && <span className="relative block overflow-hidden">{o.preview}</span>}
+            <span className={`${micro} ${on ? "text-[#e7fe55]" : "text-white/70"}`}>{o.label}</span>
+            {o.note && <span className="text-[11px] leading-snug text-white/40">{o.note}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * The per-tab save bar: shows while THIS tab has unsaved edits. "Discard tab"
+ * rolls back only what this tab edits; "Save" commits every dirty file.
+ */
+export function SaveBar({ names, saving, onDiscard, onSave }: { names: string[]; saving: boolean; onDiscard: () => void; onSave: () => void }) {
+  if (!names.length) return null;
+  return (
+    <div className="admin-clip-reveal-up sticky bottom-4 z-30 mt-10 flex flex-wrap items-center gap-3 border border-[#e7fe55]/40 bg-[#111]/95 px-4 py-3 shadow-[0_18px_60px_rgba(0,0,0,0.7)] backdrop-blur">
+      <span className="size-2 animate-pulse rounded-full bg-[#e7fe55]" />
+      <span className={`${micro} min-w-0 flex-1 truncate text-[#e7fe55]`} title={names.join(", ")}>
+        Unsaved in this tab: {names.join(", ")}
+      </span>
+      <button type="button" className={btn} disabled={saving} onClick={onDiscard}>
+        Discard tab
+      </button>
+      <button type="button" className={btnPrimary} disabled={saving} onClick={onSave}>
+        {saving ? "Saving…" : "Save & deploy"}
+      </button>
+    </div>
+  );
 }
 
 export function bytes(n: number): string {

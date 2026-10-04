@@ -28,6 +28,20 @@ const SITE_SECTIONS: Record<keyof SiteConfig, string> = {
   content: "content",
   seo: "SEO",
   backups: "backup schedule",
+  heroVariant: "hero variant",
+  cinematic: "cinematic",
+};
+/** "cinematic" is big — name the part that changed instead. */
+const CINEMATIC_PARTS: Record<keyof SiteConfig["cinematic"], string> = {
+  effects: "effects",
+  scopes: "effect scopes",
+  lutProjects: "project grades",
+  sections: "section fx",
+  cursor: "cursor",
+  sound: "sound",
+  motion: "motion",
+  experiments: "experiments",
+  heroOptions: "hero options",
 };
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -113,7 +127,12 @@ export function ConfigProvider({
   const dirty = useMemo(
     () => ({
       hero: hero && savedHero ? changed(savedHero, hero, HERO_SECTIONS) : [],
-      site: site && savedSite ? changed(savedSite, site, SITE_SECTIONS) : [],
+      site:
+        site && savedSite
+          ? changed(savedSite, site, SITE_SECTIONS).flatMap((name) =>
+              name === "cinematic" ? changed(savedSite.cinematic, site.cinematic, CINEMATIC_PARTS) : [name],
+            )
+          : [],
     }),
     [hero, savedHero, site, savedSite],
   );
