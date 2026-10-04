@@ -275,10 +275,10 @@ export const siteConfig: SiteConfig = {
   cinematic: {
     effects: {
       filmGrain: { enabled: false, intensity: 0.08, flicker: 12, dust: 0.3 },
-      chromatic: { enabled: false, strength: 1, breathing: true },
-      vhs: { enabled: false, scanlines: 1, tracking: 1, bleeding: 0.1 },
-      crt: { enabled: true, curve: 0.35, glow: 0, trails: 0 },
-      filmBurn: { enabled: true, intensity: 0.7, duration: 0.9 },
+      chromatic: { enabled: false, strength: 0.35, breathing: true },
+      vhs: { enabled: false, scanlines: 0.5, tracking: 0.4, bleeding: 0.3 },
+      crt: { enabled: false, curve: 0.5, glow: 0.4, trails: 0.3 },
+      filmBurn: { enabled: false, intensity: 0.7, duration: 0.9 },
       lightLeaks: { enabled: false, ambient: true, hover: true },
       glitch: { enabled: false, strength: 0.4, frequency: 0.25, blockSize: 24 },
       bars: { enabled: false, height: 8, opacity: 1, hideOnScroll: true },
