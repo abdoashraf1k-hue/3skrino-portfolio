@@ -236,30 +236,6 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-02T01:41:14.030Z",
   },
-  {
-    id: "frogz-edition",
-    accentColor: "#e7fe55",
-    orientation: "vertical",
-    title: "FROGZ EDITION",
-    category: "ai",
-    year: 2025,
-    client: "FROGZ ADVERTISING AGENCY",
-    role: "AI Director, Editor",
-    tools: ["Runway"],
-    duration: "00:32",
-    description: "",
-    videoUrl:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1791287344253-4da88730-443a-4ca9-8c85-38f115de5a89.mp4",
-    thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1791287426594-7ebe6ec0-bfe1-4b07-8190-a7717d25d28e.jpg",
-    featured: true,
-    filmed: false,
-    directed: true,
-    edited: true,
-    tags: ["frogz", "edition", "ai", "video"],
-    thumbnailSource: "auto",
-    createdAt: "2026-10-06T11:51:06.809Z",
-  },
 ];
 
 export type Reel = {
