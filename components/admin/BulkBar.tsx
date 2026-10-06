@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { categories } from "@/data/categories";
+import { allCategories as categories } from "@/data/categories";
 
 export type BulkAction = { action: "feature" | "unfeature" | "delete" } | { action: "category"; category: string };
 

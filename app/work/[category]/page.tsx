@@ -28,7 +28,8 @@ const tint = { "--accent": "var(--cat)", "--accent-ink": "var(--cat)" } as CSSPr
 export default async function CategoryPage(props: PageProps<"/work/[category]">) {
   const { category: id } = await props.params;
   const category = getCategory(id);
-  if (!category) notFound();
+  // Disabled in admin → Categories: the page goes away with it.
+  if (!category?.enabled) notFound();
 
   const items = getProjectsByCategory(category.id);
   const index = categories.findIndex((c) => c.id === category.id);

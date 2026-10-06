@@ -5,7 +5,9 @@ import ReorderList from "@/components/admin/ReorderList";
 import { btn, card, input, micro, Section, Slider, TabHeader } from "@/components/admin/ui";
 import MidRoleCycler from "@/components/ui/MidRoleCycler";
 import RoleCycler from "@/components/ui/RoleCycler";
+import type { RoleStyle } from "@/data/hero-config";
 import { DEFAULT_ROLES } from "@/data/hero-defaults";
+import { BrandIcon } from "@/lib/brand";
 import { useConfigStore } from "../store";
 
 let seq = 0;
@@ -13,7 +15,7 @@ const rowId = () => `role-${++seq}`;
 
 /** Roles for the nav cycler, the mid-screen cycler and the marquee under the hero. */
 export default function RolesTab() {
-  const { hero, setHero } = useConfigStore();
+  const { hero, setHero, brand } = useConfigStore();
   const [keys, setKeys] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
   if (!hero) return null;
@@ -23,9 +25,27 @@ export default function RolesTab() {
   const ids = items.map((_, i) => keys[i] ?? `k-${i}`);
   const rows = items.map((text, i) => ({ id: ids[i], text }));
   const setRows = (next: { id: string; text: string }[]) => {
+    // Styles are keyed by the role text — carry each row's style over when its text changes.
+    const before = new Map(rows.map((r) => [r.id, r.text]));
     setKeys(next.map((r) => r.id));
-    setHero((c) => ({ ...c, roles: { ...c.roles, items: next.map((r) => r.text) } }));
+    setHero((c) => {
+      const styles: Record<string, RoleStyle> = {};
+      for (const r of next) {
+        const old = c.roles.styles[before.get(r.id) ?? r.text] ?? c.roles.styles[r.text];
+        if (old) styles[r.text.trim()] = old;
+      }
+      return { ...c, roles: { ...c.roles, items: next.map((r) => r.text), styles } };
+    });
   };
+  const setStyle = (text: string, patch: Partial<RoleStyle>) =>
+    setHero((c) => {
+      const cur = c.roles.styles[text] ?? { icon: "", weight: 900, color: "" };
+      const next = { ...cur, ...patch };
+      const styles = { ...c.roles.styles };
+      if (!next.icon && !next.color && next.weight === 900) delete styles[text];
+      else styles[text] = next;
+      return { ...c, roles: { ...c.roles, styles } };
+    });
   const add = () => {
     const text = draft.trim();
     if (!text || rows.length >= 20) return;
@@ -47,7 +67,7 @@ export default function RolesTab() {
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,520px)]">
         <div className="min-w-0">
-          <Section title="Roles" hint="drag the ⋮⋮ handle (or Alt ↑/↓) to reorder · max 20 · 32 characters each">
+          <Section title="Roles" hint="drag the ⋮⋮ handle (or Alt ↑/↓) to reorder · max 20 · 32 characters each · icon = a glyph or icon:<id> from Icons · weight + colour per role">
             <ReorderList
               label="Roles"
               handle
@@ -56,7 +76,7 @@ export default function RolesTab() {
               onChange={setRows}
               className="mb-3 flex flex-col gap-1.5"
               render={(role, i, move) => (
-                <div className={`${card} flex items-center gap-2 p-1.5`}>
+                <div className={`${card} flex flex-wrap items-center gap-2 p-1.5`}>
                   <span data-drag-handle className="cursor-grab select-none px-1 text-white/30 active:cursor-grabbing" aria-hidden>
                     ⋮⋮
                   </span>
@@ -67,7 +87,42 @@ export default function RolesTab() {
                     maxLength={32}
                     onChange={(e) => setRows(rows.map((r) => (r.id === role.id ? { ...r, text: e.target.value } : r)))}
                     className={`${input} uppercase`}
+                    style={{ color: hero.roles.styles[role.text]?.color || undefined, fontWeight: hero.roles.styles[role.text]?.weight }}
                   />
+                  <span className="flex size-7 shrink-0 items-center justify-center text-[#e7fe55]" aria-hidden>
+                    <BrandIcon value={hero.roles.styles[role.text]?.icon ?? ""} size={16} />
+                  </span>
+                  <input
+                    aria-label={`Icon for ${role.text}`}
+                    list="role-icons"
+                    placeholder="icon"
+                    value={hero.roles.styles[role.text]?.icon ?? ""}
+                    maxLength={60}
+                    onChange={(e) => setStyle(role.text, { icon: e.target.value.trim() })}
+                    className={`${input} w-24 font-mono text-[11px]`}
+                  />
+                  <select
+                    aria-label={`Weight for ${role.text}`}
+                    value={hero.roles.styles[role.text]?.weight ?? 900}
+                    onChange={(e) => setStyle(role.text, { weight: Number(e.target.value) })}
+                    className={`${input} w-20 text-[11px]`}
+                  >
+                    {[100, 200, 300, 400, 500, 600, 700, 800, 900].map((w) => (
+                      <option key={w} value={w}>
+                        {w}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="color"
+                    aria-label={`Colour for ${role.text}`}
+                    value={hero.roles.styles[role.text]?.color || "#ffffff"}
+                    onChange={(e) => setStyle(role.text, { color: e.target.value })}
+                    className="h-8 w-8 shrink-0 cursor-pointer border border-white/15 bg-transparent"
+                  />
+                  <button type="button" className={btn} aria-label={`Clear style for ${role.text}`} disabled={!hero.roles.styles[role.text]} onClick={() => setStyle(role.text, { icon: "", weight: 900, color: "" })}>
+                    ↺
+                  </button>
                   <button type="button" className={btn} aria-label="Move up" disabled={i === 0} onClick={() => move(-1)}>
                     ↑
                   </button>
@@ -98,6 +153,12 @@ export default function RolesTab() {
               </button>
             </form>
           </Section>
+
+          <datalist id="role-icons">
+            {["✦", "◉", "▣", "⬢", "◆", "✧", ...(brand?.icons ?? []).map((i) => `icon:${i.id}`)].map((v) => (
+              <option key={v} value={v} />
+            ))}
+          </datalist>
 
           <Section title="Timing">
             <div className="max-w-md">

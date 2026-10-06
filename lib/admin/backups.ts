@@ -16,11 +16,12 @@ export const BACKUP_TARGETS = {
   projects: "data/projects.ts",
   "hero-config": "data/hero-config.ts",
   "site-config": "data/site-config.ts",
+  brand: "data/brand.ts",
 } as const;
 export type BackupTarget = keyof typeof BACKUP_TARGETS;
 const TARGET_NAMES = Object.keys(BACKUP_TARGETS) as BackupTarget[];
 
-const NAME = /^(projects|hero-config|site-config)-(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})\.ts$/;
+const NAME = /^(projects|hero-config|site-config|brand)-(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})\.ts$/;
 
 export type Backup = { path: string; name: string; size: number; createdAt: string; target: BackupTarget; file: string };
 

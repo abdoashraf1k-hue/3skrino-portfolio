@@ -2,11 +2,9 @@
 
 import Image from "next/image";
 import { useEffect, useRef, type MouseEvent } from "react";
-import type { BrandLogo } from "@/data/hero-config";
+import { LOGO_SIZE, type BrandLogo } from "@/data/hero-config";
+import { useNumbers } from "@/lib/brand";
 import { heroSignals } from "@/lib/hero-signals";
-
-/** Ring tilt (deg) opposite the pointer, and its smoothing per frame (0–1). */
-const TILT = { yaw: 9, pitch: 6, ease: 0.07 };
 
 /**
  * Slot i of n on two side arcs (left / right of the silhouette), skipping the
@@ -27,7 +25,18 @@ function slot(i: number, n: number) {
   return { x, y, z };
 }
 
-type Props = { logos: BrandLogo[]; reducedMotion: boolean };
+/** The automatic slot, unless the logo was placed by hand (admin → Brands → Place). */
+function place(logo: BrandLogo, i: number, n: number) {
+  const auto = slot(i, n);
+  return {
+    x: logo.x ?? auto.x,
+    y: logo.y ?? auto.y,
+    z: logo.depth ?? auto.z,
+    angle: logo.angle ?? 0,
+  };
+}
+
+type Props = { logos: BrandLogo[]; reducedMotion: boolean; /** Whole-ring size multiplier (admin → Brands). */ scale?: number };
 
 /**
  * Brand logos floating around the hero silhouette. A DOM layer (not WebGL)
@@ -36,8 +45,14 @@ type Props = { logos: BrandLogo[]; reducedMotion: boolean };
  * drifts on its own CSS loop. Hover / click brighten the silhouette's rim
  * via heroSignals. Clicks never navigate — just a pulse.
  */
-export default function HeroLogos({ logos, reducedMotion }: Props) {
+export default function HeroLogos({ logos, reducedMotion, scale = 1 }: Props) {
   const ringRef = useRef<HTMLDivElement>(null);
+  // Ring tilt (deg) opposite the pointer, its smoothing per frame, and the depth spread — admin → Numbers.
+  const num = useNumbers();
+  const yaw = num("logos.tiltYaw");
+  const pitch = num("logos.tiltPitch");
+  const ease = num("logos.tiltEase");
+  const depth = num("logos.depth");
 
   useEffect(() => {
     const ring = ringRef.current;
@@ -50,9 +65,9 @@ export default function HeroLogos({ logos, reducedMotion }: Props) {
       target.y = -((e.clientY / window.innerHeight) * 2 - 1);
     };
     const tick = () => {
-      cur.x += (target.x - cur.x) * TILT.ease;
-      cur.y += (target.y - cur.y) * TILT.ease;
-      ring.style.transform = `rotateY(${(-cur.x * TILT.yaw).toFixed(3)}deg) rotateX(${(-cur.y * TILT.pitch).toFixed(3)}deg)`;
+      cur.x += (target.x - cur.x) * ease;
+      cur.y += (target.y - cur.y) * ease;
+      ring.style.transform = `rotateY(${(-cur.x * yaw).toFixed(3)}deg) rotateX(${(-cur.y * pitch).toFixed(3)}deg)`;
       raf = requestAnimationFrame(tick);
     };
     window.addEventListener("pointermove", onMove, { passive: true });
@@ -61,7 +76,7 @@ export default function HeroLogos({ logos, reducedMotion }: Props) {
       window.removeEventListener("pointermove", onMove);
       cancelAnimationFrame(raf);
     };
-  }, [reducedMotion]);
+  }, [reducedMotion, yaw, pitch, ease]);
 
   // A hovered logo that unmounts must not leave the rim stuck bright.
   useEffect(
@@ -97,8 +112,8 @@ export default function HeroLogos({ logos, reducedMotion }: Props) {
       {/* Decorative: clicks never navigate, so the buttons stay out of the tab order. */}
       <div ref={ringRef} aria-hidden className="absolute inset-0 [transform-style:preserve-3d]">
         {logos.map((logo, i) => {
-          const { x, y, z } = slot(i, logos.length);
-          const size = Math.min(80, Math.max(40, logo.size ?? 56));
+          const { x, y, z, angle } = place(logo, i, logos.length);
+          const size = Math.round(Math.min(LOGO_SIZE.max, Math.max(LOGO_SIZE.min, logo.size ?? 56)) * Math.min(4, Math.max(0.25, scale)));
           const opacity = 0.5 + ((z + 1) / 2) * 0.4; // far → 0.5, near → 0.9
           return (
             <div
@@ -107,7 +122,7 @@ export default function HeroLogos({ logos, reducedMotion }: Props) {
               style={{
                 left: `${x}%`,
                 top: `${y}%`,
-                transform: `translate(-50%, -50%) translateZ(${(z * 140).toFixed(1)}px)`,
+                transform: `translate(-50%, -50%) translateZ(${(z * depth).toFixed(1)}px) rotate(${angle}deg)`,
               }}
             >
               <div

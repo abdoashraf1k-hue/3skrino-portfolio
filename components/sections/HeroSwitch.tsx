@@ -9,6 +9,8 @@ const SplitHero = dynamic(() => import("@/components/heroes/SplitHero"));
 const GalleryHero = dynamic(() => import("@/components/heroes/GalleryHero"));
 const TimelineHero = dynamic(() => import("@/components/heroes/TimelineHero"));
 const MirrorHero = dynamic(() => import("@/components/heroes/MirrorHero"));
+const ConfrontationHero = dynamic(() => import("@/components/heroes/ConfrontationHero"));
+const InterviewHero = dynamic(() => import("@/components/heroes/InterviewHero"));
 
 /**
  * Renders the hero picked in admin → Heroes (data/site-config.ts →
@@ -24,6 +26,10 @@ export default function HeroSwitch() {
       return <TimelineHero />;
     case "mirror":
       return <MirrorHero />;
+    case "confrontation":
+      return <ConfrontationHero />;
+    case "interview":
+      return <InterviewHero />;
     default:
       return <Hero />;
   }

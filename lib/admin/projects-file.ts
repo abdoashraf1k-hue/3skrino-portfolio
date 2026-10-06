@@ -1,4 +1,4 @@
-import { categories } from "@/data/categories";
+import { allCategories as categories } from "@/data/categories";
 import type { Project } from "@/data/projects";
 import { snapshotChanges } from "./backups";
 import { commitFiles, getFile, getFileAt, getHead, GitHubError } from "./github";

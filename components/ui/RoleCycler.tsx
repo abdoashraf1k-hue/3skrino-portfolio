@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { HeroConfig } from "@/data/hero-config";
+import { BrandIcon, roleStyle } from "@/lib/brand";
 import { useHeroConfig } from "@/lib/live-config";
 import { useMediaQuery } from "@/lib/hooks";
 import { cn, EASE_OUT } from "@/lib/utils";
@@ -51,7 +52,9 @@ export default function RoleCycler({ className, roles: rolesProp }: { className?
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           exit={{ opacity: 0, y: "-0.7em", filter: "blur(3px)" }}
           transition={{ duration: 0.5, ease: EASE_OUT }}
+          style={roleStyle(roles.styles?.[current])}
         >
+          {roles.styles?.[current]?.icon && <BrandIcon value={roles.styles[current].icon} size={11} className="mr-1.5 inline-flex align-[-1px]" />}
           {current}
         </motion.span>
       </AnimatePresence>

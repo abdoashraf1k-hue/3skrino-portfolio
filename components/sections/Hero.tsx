@@ -19,6 +19,7 @@ import {
   stopAmbient,
   useAmbientMuted,
 } from "@/lib/hero-ambient";
+import { T } from "@/lib/brand";
 import { useHeroConfig, useSiteConfig } from "@/lib/live-config";
 import { RICH_MOTION_QUERY, useInView, useMediaQuery } from "@/lib/hooks";
 import { CONTAINER, cn, EASE_OUT } from "@/lib/utils";
@@ -238,7 +239,7 @@ export default function Hero() {
             style={{ opacity: particles ? pinnedOpacity : plainOpacity }}
             className="pointer-events-none absolute inset-0 z-20"
           >
-            <HeroLogos logos={logos} reducedMotion={reducedMotion} />
+            <HeroLogos logos={logos} reducedMotion={reducedMotion} scale={config.logos.scale} />
           </motion.div>
         )}
 
@@ -269,7 +270,7 @@ export default function Hero() {
             className="mb-8 flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted"
           >
             <span className="size-1.5 rounded-full bg-accent" />
-            Available for work — 2026
+            <T k="home.hero.kicker" />
             <span aria-hidden className="anim-nudge ml-1 text-accent">
               ↓
             </span>
@@ -320,9 +321,10 @@ export default function Hero() {
               href="/vertical-cuts"
               data-track="cta"
               data-track-id="hero_view_work"
+        data-magnetic
               className="border border-fg px-8 py-4 font-mono text-[11px] uppercase tracking-widest transition-colors duration-300 hover:bg-fg hover:text-bg"
             >
-              View work
+              <T k="home.hero.ctaWork" />
             </Link>
             <Link
               href="/vertical-cuts?view=player"
@@ -330,7 +332,7 @@ export default function Hero() {
               data-track-id="hero_showreel"
               className="group flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted transition-colors duration-300 hover:text-fg"
             >
-              Showreel
+              <T k="home.hero.ctaReel" />
               <span className="inline-flex size-6 items-center justify-center rounded-full border border-line text-[8px] transition-colors duration-300 group-hover:border-accent group-hover:text-accent">
                 ▶
               </span>

@@ -6,12 +6,21 @@ import { HERO_VARIANTS } from "@/data/cinematic-defaults";
 import type { HeroConfig, HeroPose } from "@/data/hero-config";
 import { projects, type Project } from "@/data/projects";
 import type { HeroVariant } from "@/data/site-config";
+import { T } from "@/lib/brand";
 import { useSiteConfig } from "@/lib/live-config";
 
 /** Every pose in story order: up, the left → right ladder, down (9). */
 export function heroPoses(config: HeroConfig): HeroPose[] {
   return [config.poses.up, ...config.poses.ladder, config.poses.down];
 }
+
+/** Every pose by id — the ladder, up / down and the expressions (Sprint 11). */
+export function poseMap(config: HeroConfig): Map<string, HeroPose> {
+  return new Map([...heroPoses(config), ...(config.expressions ?? [])].map((p) => [p.id, p]));
+}
+
+/** Poses whose lenses sit where the centre pose's do (the glint can draw on them). */
+export const isFrontal = (p: HeroPose | undefined, centerId: string) => Boolean(p && (p.id === centerId || p.tags?.includes("frontal")));
 
 export const HERO_VARIANT_PARAM = "heroVariant";
 
@@ -78,9 +87,10 @@ export function HeroCtas({ className = "" }: { className?: string }) {
         href="/vertical-cuts"
         data-track="cta"
         data-track-id="hero_view_work"
+        data-magnetic
         className="border border-fg px-7 py-3.5 font-mono text-[11px] uppercase tracking-widest transition-colors duration-300 hover:bg-fg hover:text-bg"
       >
-        View work
+        <T k="home.hero.ctaWork" />
       </Link>
       <Link
         href="/vertical-cuts?view=player"
@@ -88,7 +98,7 @@ export function HeroCtas({ className = "" }: { className?: string }) {
         data-track-id="hero_showreel"
         className="group flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted transition-colors duration-300 hover:text-fg"
       >
-        Showreel
+        <T k="home.hero.ctaReel" />
         <span className="inline-flex size-6 items-center justify-center rounded-full border border-line text-[8px] transition-colors duration-300 group-hover:border-accent group-hover:text-accent">
           ▶
         </span>

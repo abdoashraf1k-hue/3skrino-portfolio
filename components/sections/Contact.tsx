@@ -3,14 +3,15 @@
 import Reveal from "@/components/ui/Reveal";
 import { useSectionInfo } from "@/components/ui/SectionContext";
 import SocialLinks from "@/components/ui/SocialLinks";
+import { parseHeadline, useText } from "@/lib/brand";
 import { useSiteConfig } from "@/lib/live-config";
 import { CONTAINER, cn } from "@/lib/utils";
-
-const HEADLINE = ["Let's", "Create."];
 
 export default function Contact() {
   const { content } = useSiteConfig();
   const index = useSectionInfo()?.index;
+  const t = useText();
+  const HEADLINE = parseHeadline(t("home.contact.headline")).map((l) => (typeof l === "string" ? l : l.text));
 
   return (
     <section id="contact" data-section="Contact" className="relative flex min-h-[90svh] items-center overflow-hidden py-20 md:py-32">
@@ -26,7 +27,8 @@ export default function Contact() {
         <Reveal>
           <p className="mb-10 flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted">
             <span className="size-1.5 rounded-full bg-accent" />
-            {index && <>({index}) </>}Available for new projects
+            {index && <>({index}) </>}
+            {t("home.contact.status")}
           </p>
         </Reveal>
         {/* Letters crystallise in: rise, fade and sharpen from an 8px blur. */}
@@ -46,6 +48,7 @@ export default function Contact() {
         <Reveal stagger delay={0.2} className="flex flex-col items-center">
           <a
             href={`mailto:${content.email}`}
+            data-magnetic
             className="mt-12 text-[clamp(1.5rem,4.5vw,4rem)] font-medium tracking-normal transition-[color,letter-spacing] duration-400 ease-out hover:tracking-[0.02em] hover:text-accent"
           >
             {content.email}

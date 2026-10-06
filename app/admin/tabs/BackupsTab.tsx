@@ -11,6 +11,7 @@ const TARGET_LABEL: Record<BackupTarget, string> = {
   projects: "Projects",
   "hero-config": "Hero",
   "site-config": "Site",
+  brand: "Brand",
 };
 const SCHEDULES: { value: BackupSchedule; label: string }[] = [
   { value: "off", label: "Off" },
@@ -161,6 +162,7 @@ export default function BackupsTab({ adminKey, onRestoredProjects, onAuthError, 
                 { value: "projects", label: "Projects" },
                 { value: "hero-config", label: "Hero" },
                 { value: "site-config", label: "Site" },
+                { value: "brand", label: "Brand" },
               ]}
               onChange={setFilter}
             />

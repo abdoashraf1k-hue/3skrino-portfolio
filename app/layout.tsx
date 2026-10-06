@@ -14,6 +14,7 @@ import PwaManager from "@/components/ui/PwaManager";
 import ScrollTop from "@/components/ui/ScrollTop";
 import SectionRail from "@/components/ui/SectionRail";
 import SiteStyle from "@/components/ui/SiteStyle";
+import SignatureMoments from "@/components/ui/SignatureMoments";
 import SmoothScroll from "@/components/ui/SmoothScroll";
 import { site } from "@/data/site";
 import { siteConfig } from "@/data/site-config";
@@ -104,6 +105,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <PwaManager />
             <SectionRail />
             <ScrollTop />
+            <SignatureMoments />
           </PageTransition>
         </SmoothScroll>
         <AnalyticsListener />

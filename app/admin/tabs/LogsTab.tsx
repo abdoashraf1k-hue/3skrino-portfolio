@@ -16,7 +16,7 @@ const KIND: Record<LogEntry["kind"], string> = {
 };
 
 /** Data files an undo can touch (backups/ changes ride along and aren't undone). */
-const DATA = /^data\/(projects|hero-config|site-config)\.ts$/;
+const DATA = /^data\/(projects|hero-config|site-config|brand)\.ts$/;
 
 function Diff({ patch }: { patch?: string }) {
   if (!patch) return <p className={`${micro} px-3 py-2 text-white/30`}>No text diff (binary or too large)</p>;

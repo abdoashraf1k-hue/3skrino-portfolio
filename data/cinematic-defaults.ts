@@ -20,7 +20,7 @@ import type {
  * reproduce the site exactly as it looked before Sprint 10.
  */
 
-export const HERO_VARIANTS: readonly HeroVariant[] = ["cinematic", "split", "gallery", "timeline", "mirror"];
+export const HERO_VARIANTS: readonly HeroVariant[] = ["cinematic", "split", "gallery", "timeline", "mirror", "confrontation", "interview"];
 export const LUT_PRESETS: readonly LutPreset[] = ["none", "teal-orange", "bleach", "kodak", "noir", "warm", "cool", "vintage"];
 export const ASPECT_RATIOS: readonly AspectRatio[] = ["2.39:1", "16:9", "4:3", "1:1"];
 export const EFFECT_SCOPES: readonly EffectScope[] = ["global", "hero", "sections", "specific"];

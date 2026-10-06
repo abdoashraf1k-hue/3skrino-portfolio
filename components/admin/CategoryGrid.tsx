@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { categories } from "@/data/categories";
+import { allCategories as categories } from "@/data/categories";
 import type { Project } from "@/data/projects";
 import { assertUploadable } from "@/lib/admin/video-upload";
 import DropZone, { isFileDrag } from "./DropZone";

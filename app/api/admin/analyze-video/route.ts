@@ -1,5 +1,5 @@
 import { generateText, jsonSchema, Output } from "ai";
-import { categories } from "@/data/categories";
+import { allCategories as categories } from "@/data/categories";
 import { isAuthorized, unauthorized } from "@/lib/admin/auth";
 import { errorResponse, readJson } from "@/lib/admin/projects-file";
 

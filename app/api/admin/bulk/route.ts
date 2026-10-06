@@ -1,4 +1,4 @@
-import { categories } from "@/data/categories";
+import { allCategories as categories } from "@/data/categories";
 import type { Project } from "@/data/projects";
 import { isAuthorized, unauthorized } from "@/lib/admin/auth";
 import { ProjectsFileError, errorResponse, mutateProjects, readJson, validateProject } from "@/lib/admin/projects-file";

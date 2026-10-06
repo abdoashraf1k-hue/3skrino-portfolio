@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 type MarqueeProps = {
@@ -12,6 +12,8 @@ type MarqueeProps = {
   alternateItalic?: boolean;
   className?: string;
   itemClassName?: string;
+  /** Per-item look (admin → Roles: icon, weight, colour). */
+  decorate?: (label: string) => { style?: CSSProperties; icon?: ReactNode };
 };
 
 /**
@@ -28,6 +30,7 @@ export default function Marquee({
   alternateItalic = false,
   className,
   itemClassName,
+  decorate,
 }: MarqueeProps) {
   const style = {
     "--marquee-duration": `${speed}s`,
@@ -36,8 +39,11 @@ export default function Marquee({
 
   const group = (hidden: boolean) => (
     <ul aria-hidden={hidden || undefined} className="flex shrink-0 items-center">
-      {items.map((label, i) => (
+      {items.map((label, i) => {
+        const deco = decorate?.(label);
+        return (
         <li key={label} className="flex shrink-0 items-center whitespace-nowrap">
+          {deco?.icon && <span className="mr-3 inline-flex text-accent md:mr-4">{deco.icon}</span>}
           <span
             data-hover
             className={cn(
@@ -45,6 +51,7 @@ export default function Marquee({
               alternateItalic && i % 2 === 1 && "md:italic",
               itemClassName,
             )}
+            style={deco?.style}
           >
             {label}
           </span>
@@ -52,7 +59,8 @@ export default function Marquee({
             {separator}
           </span>
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 

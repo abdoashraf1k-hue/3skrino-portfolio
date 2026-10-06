@@ -67,7 +67,7 @@ export type BackupSchedule = "off" | "daily" | "weekly" | "monthly";
 /* ------------------------------------------------------------------ */
 
 /** Which hero the home page opens with (admin → Heroes). */
-export type HeroVariant = "cinematic" | "split" | "gallery" | "timeline" | "mirror";
+export type HeroVariant = "cinematic" | "split" | "gallery" | "timeline" | "mirror" | "confrontation" | "interview";
 
 /** Colour-grade presets applied to the site's images and videos. */
 export type LutPreset = "none" | "teal-orange" | "bleach" | "kodak" | "noir" | "warm" | "cool" | "vintage";

@@ -72,3 +72,35 @@ export function tick(freq = 660): void {
     // no audio device / blocked autoplay — silent is fine
   }
 }
+
+/**
+ * A short intake of breath: band-passed noise with a fast swell — the
+ * Confrontation hero's surprise. Same opt-in as tick().
+ */
+export function gasp(): void {
+  if (!read() || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  try {
+    ctx ??= new AudioContext();
+    const t = ctx.currentTime;
+    const len = Math.floor(ctx.sampleRate * 0.32);
+    const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const band = ctx.createBiquadFilter();
+    band.type = "bandpass";
+    band.frequency.setValueAtTime(900, t);
+    band.frequency.exponentialRampToValueAtTime(2400, t + 0.25);
+    band.Q.value = 0.9;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.09, t + 0.06);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    src.connect(band).connect(gain).connect(ctx.destination);
+    src.start(t);
+    src.stop(t + 0.32);
+  } catch {
+    // no audio device / blocked autoplay — silent is fine
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { brandConfig, type BrandConfig } from "@/data/brand";
 import { heroConfig, type HeroConfig } from "@/data/hero-config";
 import { siteConfig, type SiteConfig } from "@/data/site-config";
 
@@ -19,8 +20,8 @@ export const PREVIEW_FX = "3skrino:preview:fx";
 /** Fired on the admin window by any tab; the preview dock forwards it to its frame. */
 export const ADMIN_PREVIEW_FX_EVENT = "3skrino:admin:preview-fx";
 
-type Draft = { hero: HeroConfig | null; site: SiteConfig | null };
-let draft: Draft = { hero: null, site: null };
+type Draft = { hero: HeroConfig | null; site: SiteConfig | null; brand: BrandConfig | null };
+let draft: Draft = { hero: null, site: null, brand: null };
 const listeners = new Set<() => void>();
 let installed = false;
 
@@ -44,6 +45,7 @@ function install() {
     const next: Draft = { ...draft };
     if ("hero" in data && typeof data.hero === "object" && data.hero !== null) next.hero = data.hero as HeroConfig;
     if ("site" in data && typeof data.site === "object" && data.site !== null) next.site = data.site as SiteConfig;
+    if ("brand" in data && typeof data.brand === "object" && data.brand !== null) next.brand = data.brand as BrandConfig;
     draft = next;
     for (const l of listeners) l();
   });
@@ -72,5 +74,13 @@ export function useSiteConfig(): SiteConfig {
     subscribe,
     () => draft.site ?? siteConfig,
     () => siteConfig,
+  );
+}
+
+export function useBrandConfig(): BrandConfig {
+  return useSyncExternalStore(
+    subscribe,
+    () => draft.brand ?? brandConfig,
+    () => brandConfig,
   );
 }

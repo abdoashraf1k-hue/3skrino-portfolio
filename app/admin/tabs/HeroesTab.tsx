@@ -44,6 +44,20 @@ const HEROES: { id: HeroVariant; name: string; idea: string; fallback: string; t
     fallback: "A still arc of mirror panes (hover still swaps).",
     tech: "WebGL · R3F",
   },
+  {
+    id: "confrontation",
+    name: "The Confrontation",
+    idea: "He sees you. The portrait tracks the pointer, holds eye contact when you hover, smiles if you linger, gasps when clicked, turns away when you leave. A shader glint slides inside his lenses. Tune it in Poses → Confrontation.",
+    fallback: "Phones / reduced motion: one still (the static pose).",
+    tech: "DOM · WebGL glint",
+  },
+  {
+    id: "interview",
+    name: "The Interview",
+    idea: "A late-night TV set. Visitors pick or type questions; he answers out loud with subtitles, lip-flap and a waveform. Three answers, then “Thank you for watching”. Script it in Interview.",
+    fallback: "Phones / reduced motion: same flow, text only, no CRT.",
+    tech: "DOM · Web Speech",
+  },
 ];
 
 const PREVIEWS_KEY = "3skrino-admin-hero-previews";

@@ -1,4 +1,4 @@
-import { categories } from "@/data/categories";
+import { allCategories as categories } from "@/data/categories";
 import type {
   BackupSchedule,
   BentoPattern,

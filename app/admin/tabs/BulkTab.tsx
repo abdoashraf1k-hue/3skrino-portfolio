@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { btn, card, Empty, input, micro, TabHeader } from "@/components/admin/ui";
-import { categories, getCategory } from "@/data/categories";
+import { allCategories as categories, getCategory } from "@/data/categories";
 import type { Project } from "@/data/projects";
 
 type Props = {

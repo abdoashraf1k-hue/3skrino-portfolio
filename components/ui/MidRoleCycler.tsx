@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { HeroConfig } from "@/data/hero-config";
 import { useMediaQuery } from "@/lib/hooks";
+import { BrandIcon, roleStyle } from "@/lib/brand";
 import { useHeroConfig } from "@/lib/live-config";
 import { cn, EASE_OUT } from "@/lib/utils";
 
@@ -49,7 +50,13 @@ export default function MidRoleCycler({ className, roles: rolesProp }: { classNa
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           exit={{ opacity: 0, y: "-0.3em", filter: "blur(10px)" }}
           transition={{ duration: 0.7, ease: EASE_OUT }}
+          style={roleStyle(roles.styles?.[current])}
         >
+          {roles.styles?.[current]?.icon && (
+            <span className="mb-[0.08em] flex justify-center text-accent">
+              <BrandIcon value={roles.styles[current].icon} size={48} />
+            </span>
+          )}
           {rest.length ? (
             <>
               {first} <span className="text-accent">/</span>

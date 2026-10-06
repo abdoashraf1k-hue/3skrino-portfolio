@@ -38,6 +38,9 @@
 }
 
 @theme inline {
+  /* Brand motion (data/brand.ts → SiteStyle): every transition without an explicit duration / easing follows it. */
+  --default-transition-duration: var(--dur-base, 320ms);
+  --default-transition-timing-function: var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
   --color-bg: var(--bg);
   --color-bg-soft: var(--bg-soft);
   --color-fg: var(--fg);
@@ -348,5 +351,164 @@ html.lenis body {
   .card-featured::after {
     animation: none;
     --border-angle: 135deg;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Sprint 11 — Confrontation + Interview heroes                        */
+/* ------------------------------------------------------------------ */
+
+/* Breathing: a slow rise of the shoulders; amplitude from admin (0–1). */
+@keyframes confront-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  45% {
+    transform: translateY(calc(var(--breath-amp, 0.5) * -0.6%)) scale(calc(1 + var(--breath-amp, 0.5) * 0.008));
+  }
+}
+.confront-breathe {
+  transform-origin: 50% 100%;
+  animation: confront-breathe var(--breath, 4.2s) var(--ease-in-out, ease-in-out) infinite;
+}
+
+/* Typographic punctuation over an expression (Strategy 3 overlays). */
+@keyframes confront-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.7) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.confront-pop {
+  animation: confront-pop var(--dur-base, 320ms) var(--ease-out, ease-out) both;
+}
+
+/* The CRT: scanlines, a faint roll, glass glare, barrel-ish vignette. */
+.interview-crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 0.28) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 90% at 50% 50%, transparent 60%, rgb(0 0 0 / 0.55) 100%),
+    linear-gradient(115deg, rgb(255 255 255 / 0.06) 0%, transparent 35%);
+  mix-blend-mode: multiply;
+  animation: crt-flicker 6s steps(60) infinite;
+}
+.interview-crt::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: -20%;
+  height: 20%;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgb(255 255 255 / 0.05), transparent);
+  animation: crt-roll 7s linear infinite;
+}
+.interview-tv {
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.04),
+    0 40px 120px rgb(0 0 0 / 0.6);
+}
+@keyframes crt-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.94;
+  }
+}
+@keyframes crt-roll {
+  to {
+    transform: translateY(600%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confront-breathe,
+  .confront-pop,
+  .interview-crt::after,
+  .interview-crt::before {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Sprint 11 — brand states + signature moments (tokens: data/brand.ts) */
+/* ------------------------------------------------------------------ */
+
+/* One press pattern for every control. `scale` (not transform) so it never fights component transforms. */
+:where(button, [role="button"], a[data-magnetic]):not(:disabled):active {
+  scale: var(--press-scale, 0.97);
+}
+:where(button, [role="button"], a[data-magnetic]) {
+  transition-property: color, background-color, border-color, opacity, scale, translate;
+}
+[data-magnetic] {
+  transition: translate var(--dur-base, 320ms) var(--ease-out, ease-out), scale var(--dur-fast, 160ms) var(--ease-out, ease-out);
+}
+
+/* Rack focus: the ring pulls in from wide + soft to tight + sharp. */
+html[data-rack-focus] :focus-visible {
+  outline: var(--focus-width, 2px) solid var(--accent);
+  outline-offset: var(--focus-offset, 3px);
+  animation: rack-focus var(--dur-base, 320ms) var(--ease-out, ease-out);
+}
+@keyframes rack-focus {
+  from {
+    outline-offset: calc(var(--focus-offset, 3px) + 8px);
+    outline-color: transparent;
+    filter: blur(1.5px);
+  }
+}
+
+/* Slate wipe: clapper stripes over a black slate. */
+.slate-band {
+  will-change: transform;
+}
+.slate-stripes {
+  height: 18px;
+  background: repeating-linear-gradient(-45deg, #f5f5f5 0 22px, #0b0b0b 22px 44px);
+}
+
+/* Leader countdown */
+.leader-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: conic-gradient(rgb(255 255 255 / 0.18) var(--sweep, 0deg), transparent 0);
+  animation: leader-sweep 420ms linear infinite;
+}
+@property --sweep {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes leader-sweep {
+  to {
+    --sweep: 360deg;
+  }
+}
+.leader-num {
+  animation: confront-pop 160ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-rack-focus] :focus-visible,
+  .leader-ring::before,
+  .leader-num {
+    animation: none;
+  }
+  :where(button, [role="button"], a[data-magnetic]):not(:disabled):active {
+    scale: none;
   }
 }

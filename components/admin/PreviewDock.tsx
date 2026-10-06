@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import type { BrandConfig } from "@/data/brand";
 import type { HeroConfig } from "@/data/hero-config";
 import type { SiteConfig } from "@/data/site-config";
 import { ADMIN_PREVIEW_FX_EVENT, PREVIEW_FX, PREVIEW_MESSAGE, PREVIEW_PARAM, PREVIEW_READY } from "@/lib/live-config";
@@ -46,6 +47,7 @@ function load(): Saved {
 type Props = {
   hero: HeroConfig | null;
   site: SiteConfig | null;
+  brand: BrandConfig | null;
   dirty: boolean;
   /** Tabs can ask the dock to show a page (e.g. Hero → "/"). */
   focusPath?: string;
@@ -57,7 +59,7 @@ type Props = {
  * brands, layout, content) as you edit. On phones it collapses to a button
  * that opens a full-screen sheet.
  */
-export default function PreviewDock({ hero, site, dirty, focusPath }: Props) {
+export default function PreviewDock({ hero, site, brand, dirty, focusPath }: Props) {
   // Defaults on the server / first render; the stored layout applies after mount.
   const [state, setState] = useState<Saved>(DEFAULTS);
   const [mounted, setMounted] = useState(false);
@@ -103,9 +105,9 @@ export default function PreviewDock({ hero, site, dirty, focusPath }: Props) {
 
   const post = useCallback(() => {
     const win = frameRef.current?.contentWindow;
-    if (!win || (!hero && !site)) return;
-    win.postMessage({ type: PREVIEW_MESSAGE, hero, site }, window.location.origin);
-  }, [hero, site]);
+    if (!win || (!hero && !site && !brand)) return;
+    win.postMessage({ type: PREVIEW_MESSAGE, hero, site, brand }, window.location.origin);
+  }, [hero, site, brand]);
 
   useEffect(() => {
     const id = window.setTimeout(post, 90);

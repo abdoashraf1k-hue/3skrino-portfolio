@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import ReorderList from "@/components/admin/ReorderList";
-import { btn, card, Empty, input, micro, Section, TabHeader, Toggle } from "@/components/admin/ui";
+import { NumberField } from "@/components/admin/fields";
+import { btn, card, Empty, input, micro, Section, Slider, TabHeader, Toggle } from "@/components/admin/ui";
 import HeroLogos from "@/components/sections/HeroLogos";
-import type { BrandLogo } from "@/data/hero-config";
+import { LOGO_SIZE, type BrandLogo } from "@/data/hero-config";
 import { assertLogoFile, uploadHeroAsset } from "@/lib/admin/hero-assets";
 import { useConfigStore } from "../store";
 
@@ -68,6 +69,7 @@ function MiniHero({ children, still }: { children: ReactNode; still: string }) {
 export default function BrandsTab({ adminKey, onError }: Props) {
   const { hero, setHero } = useConfigStore();
   const [busy, setBusy] = useState<Record<string, string>>({});
+  const [placing, setPlacing] = useState<string | null>(null);
   if (!hero) return null;
 
   const items = hero.logos.items;
@@ -134,12 +136,22 @@ export default function BrandsTab({ adminKey, onError }: Props) {
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
         <div className="min-w-0">
-          <div className="mb-4 max-w-sm">
+          <div className="mb-4 grid max-w-2xl gap-2 sm:grid-cols-2">
             <Toggle
               label="Floating logos"
               hint="master switch"
               checked={hero.logos.enabled}
               onChange={(v) => setHero((c) => ({ ...c, logos: { ...c.logos, enabled: v } }))}
+            />
+            <Slider
+              label="Whole-ring scale"
+              hint="multiplies every logo size"
+              min={0.25}
+              max={4}
+              step={0.05}
+              format={(v) => `${v.toFixed(2)}×`}
+              value={hero.logos.scale}
+              onChange={(scale) => setHero((c) => ({ ...c, logos: { ...c.logos, scale } }))}
             />
           </div>
           {uploading.map(([k, label]) => (
@@ -188,18 +200,33 @@ export default function BrandsTab({ adminKey, onError }: Props) {
                     Size
                     <input
                       type="range"
-                      min={40}
-                      max={80}
+                      min={LOGO_SIZE.min}
+                      max={LOGO_SIZE.slider}
                       step={2}
-                      value={logo.size ?? 56}
+                      value={Math.min(LOGO_SIZE.slider, logo.size ?? 56)}
                       onChange={(e) => setLogo(logo.id, { size: Number(e.target.value) })}
-                      className="w-20 accent-[#e7fe55]"
+                      className="w-24 accent-[#e7fe55]"
                     />
-                    <span className="w-6 tabular-nums text-white/70">{logo.size ?? 56}</span>
+                    <input
+                      type="number"
+                      aria-label={`${logo.name} size in px`}
+                      min={LOGO_SIZE.min}
+                      max={LOGO_SIZE.max}
+                      value={logo.size ?? 56}
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        if (Number.isFinite(v)) setLogo(logo.id, { size: Math.min(LOGO_SIZE.max, Math.max(LOGO_SIZE.min, Math.round(v))) });
+                      }}
+                      className="w-16 border border-white/10 bg-black/40 px-1.5 py-0.5 text-right font-mono tabular-nums text-white/80 focus:border-[#e7fe55]/60 focus:outline-none"
+                    />
+                    px
                   </label>
                   <span className="flex gap-1">
                     <button type="button" className={btn} aria-pressed={logo.visible} onClick={() => setLogo(logo.id, { visible: !logo.visible })}>
                       {logo.visible ? "On" : "Off"}
+                    </button>
+                    <button type="button" className={`${btn} ${logo.x !== undefined ? "border-[#e7fe55]/50 text-[#e7fe55]" : ""}`} aria-expanded={placing === logo.id} onClick={() => setPlacing(placing === logo.id ? null : logo.id)}>
+                      Place
                     </button>
                     <label className={`${btn} cursor-pointer`}>
                       Image
@@ -219,6 +246,17 @@ export default function BrandsTab({ adminKey, onError }: Props) {
                       Remove
                     </button>
                   </span>
+                  {placing === logo.id && (
+                    <div className="grid basis-full gap-2 border-t border-white/10 pt-2 sm:grid-cols-2">
+                      <NumberField label="X" unit="%" min={0} max={100} step={0.5} value={logo.x ?? 50} onChange={(x) => setLogo(logo.id, { x, y: logo.y ?? 50 })} />
+                      <NumberField label="Y" unit="%" min={0} max={100} step={0.5} value={logo.y ?? 50} onChange={(y) => setLogo(logo.id, { y, x: logo.x ?? 50 })} />
+                      <NumberField label="Angle" unit="°" min={-180} max={180} value={logo.angle ?? 0} onChange={(angle) => setLogo(logo.id, { angle })} />
+                      <NumberField label="Depth" hint="-1 far · 1 near" min={-1} max={1} step={0.05} value={logo.depth ?? 0} onChange={(depth) => setLogo(logo.id, { depth })} />
+                      <button type="button" className={`${btn} sm:col-span-2`} onClick={() => setLogo(logo.id, { x: undefined, y: undefined, angle: undefined, depth: undefined })}>
+                        ↺ Automatic placement
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             />
@@ -228,7 +266,7 @@ export default function BrandsTab({ adminKey, onError }: Props) {
         <aside className="min-w-0 xl:sticky xl:top-24 xl:self-start">
           <Section title="Mini hero" hint="the ring as it floats on the site — move your mouse">
             <MiniHero still={hero.poses.ladder[3]?.src ?? "/hero/silhouette-900.webp"}>
-              <HeroLogos logos={shown} reducedMotion={false} />
+              <HeroLogos logos={shown} reducedMotion={false} scale={hero.logos.scale} />
             </MiniHero>
             {!shown.length && (
               <p className={`${micro} mt-2 text-white/40`}>{hero.logos.enabled ? "No visible logos" : "Floating logos are switched off"}</p>

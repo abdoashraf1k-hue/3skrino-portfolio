@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import ProjectBadges from "@/components/ui/ProjectBadges";
 import PublicProjectCard from "@/components/ui/ProjectCard";
-import { categories } from "@/data/categories";
+import { allCategories as categories } from "@/data/categories";
 import type { Project } from "@/data/projects";
 import { tools as knownTools } from "@/data/site";
 import type { AnalyzeResponse } from "@/app/api/admin/analyze-video/route";

@@ -18,11 +18,11 @@ import ProjectEditor, { type EditorTarget } from "@/components/admin/ProjectEdit
 import { ToastProvider, useToast } from "@/components/admin/Toast";
 import { btn, btnPrimary, micro, SaveBar } from "@/components/admin/ui";
 import ProjectCardPreview from "@/components/ui/ProjectCard";
-import { categories } from "@/data/categories";
+import { allCategories as categories } from "@/data/categories";
 import type { Project } from "@/data/projects";
 import { AuthError, adminFetch, clearStoredKey, readStoredKey, storeKey, type ProjectsResponse } from "@/lib/admin/client-api";
 import { assertUploadable } from "@/lib/admin/video-upload";
-import { dirtyIn, getIn, setIn, TAB_SLICES } from "./slices";
+import { dirtyIn, getIn, pairOf, setIn, TAB_SLICES } from "./slices";
 import { ConfigProvider, useConfigStore } from "./store";
 import ActivityTab from "./tabs/ActivityTab";
 import AnalyticsTab from "./tabs/AnalyticsTab";
@@ -54,6 +54,12 @@ import TagsTab from "./tabs/TagsTab";
 import ThemeTab from "./tabs/ThemeTab";
 import ThumbnailsTab from "./tabs/ThumbnailsTab";
 import TypographyTab from "./tabs/TypographyTab";
+import BrandTab from "./tabs/BrandTab";
+import CategoriesTab from "./tabs/CategoriesTab";
+import IconsTab from "./tabs/IconsTab";
+import InterviewTab from "./tabs/InterviewTab";
+import NumbersTab from "./tabs/NumbersTab";
+import TextTab from "./tabs/TextTab";
 
 const POLL_MS = 30_000;
 const TICK_MS = 15_000;
@@ -80,6 +86,7 @@ const NAV = [
     tabs: [
       { id: "projects", label: "Projects", icon: "▦" },
       { id: "media", label: "Media Library", icon: "▣" },
+      { id: "categories", label: "Categories", icon: "▧" },
       { id: "tags", label: "Tags", icon: "#" },
       { id: "thumbnails", label: "Thumbnails", icon: "▢" },
       { id: "bulk", label: "Bulk", icon: "☰" },
@@ -93,16 +100,19 @@ const NAV = [
       { id: "hero", label: "Poses", icon: "◉" },
       { id: "brands", label: "Brands", icon: "✦" },
       { id: "roles", label: "Roles", icon: "↻" },
+      { id: "interview", label: "Interview", icon: "◙" },
       { id: "effects", label: "Effects", icon: "✺" },
     ],
   },
   {
     group: "Design",
     tabs: [
+      { id: "brand", label: "Brand", icon: "◈" },
       { id: "layout", label: "Layout", icon: "▤" },
       { id: "theme", label: "Theme", icon: "◐" },
       { id: "typography", label: "Typography", icon: "Aa" },
       { id: "components", label: "Components", icon: "◫" },
+      { id: "icons", label: "Icons", icon: "✧" },
     ],
   },
   {
@@ -110,6 +120,8 @@ const NAV = [
     tabs: [
       { id: "sections", label: "Sections", icon: "▥" },
       { id: "content", label: "Content", icon: "¶" },
+      { id: "text", label: "Text", icon: "T" },
+      { id: "numbers", label: "Numbers", icon: "№" },
       { id: "seo", label: "SEO", icon: "⌕" },
       { id: "social", label: "Social", icon: "@" },
     ],
@@ -138,6 +150,12 @@ const TABS: readonly Tab[] = NAV.flatMap((g) => g.tabs.map((t) => t.id));
 /** Tabs that edit the configs the live preview renders — the dock follows them to the home page. */
 const HOME_PREVIEW_TABS = new Set<Tab>([
   "hero",
+  "interview",
+  "brand",
+  "categories",
+  "text",
+  "numbers",
+  "icons",
   "brands",
   "roles",
   "layout",
@@ -260,7 +278,7 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
   const filtering = isFiltering(filters);
   const visible = useFilteredProjects(projects, filters);
   const years = useMemo(() => [...new Set(projects.map((p) => p.year))].sort((a, b) => b - a), [projects]);
-  const dirtyNames = [...config.dirty.hero, ...config.dirty.site];
+  const dirtyNames = [...config.dirty.hero, ...config.dirty.site, ...config.dirty.brand];
 
   const applyServer = useCallback((res: ProjectsResponse) => {
     setProjects(res.projects);
@@ -392,7 +410,7 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
       const mod = e.metaKey || e.ctrlKey;
       const k = e.key.toLowerCase();
       if (mod && k === "s" && !editor) {
-        if (config.dirty.hero.length + config.dirty.site.length) {
+        if (config.dirty.hero.length + config.dirty.site.length + config.dirty.brand.length) {
           e.preventDefault();
           void config.saveAll();
         }
@@ -577,8 +595,10 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
   /** The per-tab save bar's "Discard tab": put only this tab's slices back to what's saved. */
   const discardTab = () => {
     for (const sl of TAB_SLICES[tab] ?? []) {
-      if (sl.file === "hero") config.setHero((c) => setIn(c, sl.path, getIn(config.savedHero, sl.path)));
-      else config.setSite((c) => setIn(c, sl.path, getIn(config.savedSite, sl.path)));
+      const [saved] = pairOf(sl.file, config);
+      if (sl.file === "hero") config.setHero((c) => setIn(c, sl.path, getIn(saved, sl.path)));
+      else if (sl.file === "site") config.setSite((c) => setIn(c, sl.path, getIn(saved, sl.path)));
+      else config.setBrand((c) => setIn(c, sl.path, getIn(saved, sl.path)));
     }
   };
 
@@ -614,9 +634,16 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
   const needsConfig = !NO_CONFIG_TABS.has(tab);
   // Which tabs have unsaved edits (sidebar dots + save bar) — recomputed only when a config changes.
   const dirtyByTab = useMemo(() => {
-    const pair = { hero: config.hero, site: config.site, savedHero: config.savedHero, savedSite: config.savedSite };
+    const pair = {
+      hero: config.hero,
+      site: config.site,
+      brand: config.brand,
+      savedHero: config.savedHero,
+      savedSite: config.savedSite,
+      savedBrand: config.savedBrand,
+    };
     return new Map(TABS.map((t) => [t, dirtyIn(t, pair)]));
-  }, [config.hero, config.site, config.savedHero, config.savedSite]);
+  }, [config.hero, config.site, config.brand, config.savedHero, config.savedSite, config.savedBrand]);
   const tabDirty = dirtyByTab.get(tab) ?? [];
 
   let body: ReactNode;
@@ -704,6 +731,18 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
     body = <MotionTab />;
   } else if (tab === "experiments") {
     body = <ExperimentsTab />;
+  } else if (tab === "brand") {
+    body = <BrandTab adminKey={adminKey} onError={toast.error} onSuccess={toast.success} />;
+  } else if (tab === "categories") {
+    body = <CategoriesTab projects={projects} />;
+  } else if (tab === "text") {
+    body = <TextTab />;
+  } else if (tab === "numbers") {
+    body = <NumbersTab />;
+  } else if (tab === "icons") {
+    body = <IconsTab adminKey={adminKey} onError={toast.error} />;
+  } else if (tab === "interview") {
+    body = <InterviewTab />;
   } else {
     body = (
       <>
@@ -907,6 +946,7 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
       <PreviewDock
         hero={config.hero}
         site={config.site}
+        brand={config.brand}
         dirty={dirtyNames.length > 0}
         focusPath={HOME_PREVIEW_TABS.has(tab) ? "/" : undefined}
       />

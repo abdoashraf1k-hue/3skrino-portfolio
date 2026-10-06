@@ -1,7 +1,8 @@
 "use client";
 
 import { siteConfig as committed, type DisplayFont, type SiteTheme } from "@/data/site-config";
-import { useSiteConfig } from "@/lib/live-config";
+import { brandCss } from "@/lib/brand";
+import { useBrandConfig, useSiteConfig } from "@/lib/live-config";
 
 /** Each face at the weight it was drawn for (Anton / Bebas / Archivo Black ship one weight). */
 export const FONT_FACES: Record<DisplayFont, { family: string; weight: number; label: string }> = {
@@ -44,8 +45,11 @@ export function themeCss(theme: SiteTheme): string {
  */
 export default function SiteStyle() {
   const { theme } = useSiteConfig();
+  const brand = useBrandConfig();
   return (
     <>
+      {/* Brand tokens (data/brand.ts): spacing, type scale, motion, states, default category colours. */}
+      <style id="brand-tokens" dangerouslySetInnerHTML={{ __html: brandCss(brand, theme.categoryColors) }} />
       <style id="site-theme" dangerouslySetInnerHTML={{ __html: themeCss(theme) }} />
       {/* Vignette: darkens the screen edges; strength from the theme. */}
       <div

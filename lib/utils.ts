@@ -23,7 +23,8 @@ export function pad(n: number, length = 2): string {
 export const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 /** Container classes used by every section. */
-export const CONTAINER = "mx-auto w-full max-w-[1600px] px-6 md:px-12 lg:px-20";
+/** Page container — max width from the brand grid (admin → Brand → Grid). */
+export const CONTAINER = "mx-auto w-full max-w-[var(--grid-max,1600px)] px-6 md:px-12 lg:px-20";
 
 export function formatCairoTime(date: Date): string {
   return new Intl.DateTimeFormat("en-GB", {

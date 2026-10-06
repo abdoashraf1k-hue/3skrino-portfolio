@@ -1,8 +1,10 @@
 "use client";
 
-import { btn, ColorField, micro, Section, Slider, TabHeader } from "@/components/admin/ui";
+import { useState } from "react";
+import { slugify, uniqueId } from "@/components/admin/fields";
+import { btn, card, ColorField, input, micro, Section, Slider, TabHeader } from "@/components/admin/ui";
 import { FONT_FACES } from "@/components/ui/SiteStyle";
-import { categories } from "@/data/categories";
+import type { BrandPalette } from "@/data/brand";
 import { siteConfig as committed, type DisplayFont, type SiteTheme } from "@/data/site-config";
 import { useConfigStore } from "../store";
 
@@ -54,10 +56,41 @@ function FontPicker({ label, value, onChange, sample }: { label: string; value: 
 }
 
 export default function ThemeTab() {
-  const { site, setSite } = useConfigStore();
-  if (!site) return null;
+  const { site, setSite, brand, setBrand } = useConfigStore();
+  const [name, setName] = useState("");
+  if (!site || !brand) return null;
   const t = site.theme;
   const set = <K extends keyof SiteTheme>(k: K, v: SiteTheme[K]) => setSite((c) => ({ ...c, theme: { ...c.theme, [k]: v } }));
+  const categories = brand.categories;
+  const palettes = brand.palettes;
+  const fromTheme = (id: string, label: string): BrandPalette => ({
+    id,
+    name: label,
+    bg: t.bg,
+    bgSoft: t.bgSoft,
+    fg: t.fg,
+    accent: t.accent,
+    accent2: t.accent2,
+    categoryColors: { ...t.categoryColors },
+  });
+  /** Instant switch: the palette's colours (and any per-category colours it carries) become the theme. */
+  const apply = (p: BrandPalette) => {
+    setSite((c) => ({
+      ...c,
+      theme: {
+        ...c.theme,
+        bg: p.bg,
+        bgSoft: p.bgSoft,
+        fg: p.fg,
+        accent: p.accent,
+        accent2: p.accent2,
+        categoryColors: Object.keys(p.categoryColors).length ? { ...p.categoryColors } : c.theme.categoryColors,
+      },
+    }));
+    setBrand((c) => ({ ...c, palettes: { ...c.palettes, active: p.id } }));
+  };
+  const setPalettes = (fn: (items: BrandPalette[]) => BrandPalette[]) => setBrand((c) => ({ ...c, palettes: { ...c.palettes, items: fn(c.palettes.items) } }));
+  const isLive = (p: BrandPalette) => p.bg === t.bg && p.fg === t.fg && p.accent === t.accent && p.accent2 === t.accent2 && p.bgSoft === t.bgSoft;
 
   return (
     <div>
@@ -71,7 +104,57 @@ export default function ThemeTab() {
         }
       />
 
-      <Section title="Palette" hint="presets replace the five colours below">
+      <Section title="Palettes" hint="your saved palettes (data/brand.ts) · Apply switches the whole site instantly, category colours included">
+        <div className="mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {palettes.items.map((p) => (
+            <div key={p.id} className={`${card} flex flex-col gap-2 p-3 ${isLive(p) ? "border-[#e7fe55]/60" : ""}`}>
+              <div className="flex h-10 overflow-hidden">
+                {[p.bg, p.bgSoft, p.fg, p.accent, p.accent2].map((c, i) => (
+                  <span key={i} className="flex-1" style={{ background: c }} />
+                ))}
+              </div>
+              {Object.keys(p.categoryColors).length > 0 && (
+                <div className="flex h-2 overflow-hidden" title="category colours">
+                  {Object.values(p.categoryColors).map((c, i) => (
+                    <span key={i} className="flex-1" style={{ background: c }} />
+                  ))}
+                </div>
+              )}
+              <input aria-label="Palette name" className={input} value={p.name} maxLength={40} onChange={(e) => setPalettes((l) => l.map((x) => (x.id === p.id ? { ...x, name: e.target.value } : x)))} />
+              <div className="flex flex-wrap gap-1">
+                <button type="button" className={`${btn} ${isLive(p) ? "border-[#e7fe55] text-[#e7fe55]" : ""}`} onClick={() => apply(p)}>
+                  {isLive(p) ? "Live" : "Apply"}
+                </button>
+                <button type="button" className={btn} title="Overwrite with the current theme colours" onClick={() => setPalettes((l) => l.map((x) => (x.id === p.id ? fromTheme(p.id, p.name) : x)))}>
+                  Update
+                </button>
+                <button type="button" className={`${btn} hover:border-[#ff2d2d] hover:text-[#ff6b6b]`} disabled={palettes.items.length <= 1} onClick={() => setPalettes((l) => l.filter((x) => x.id !== p.id))}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <form
+          className="flex max-w-md gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const label = name.trim();
+            if (!label) return;
+            const id = uniqueId(slugify(label, "palette"), new Set(palettes.items.map((p) => p.id)));
+            setPalettes((l) => [...l, fromTheme(id, label)]);
+            setBrand((c) => ({ ...c, palettes: { ...c.palettes, active: id } }));
+            setName("");
+          }}
+        >
+          <input className={input} value={name} maxLength={40} placeholder="Save current colours as…" onChange={(e) => setName(e.target.value)} />
+          <button type="submit" className={btn} disabled={!name.trim() || palettes.items.length >= 24}>
+            Save palette
+          </button>
+        </form>
+      </Section>
+
+      <Section title="Colours" hint="quick presets replace the five colours below">
         <div className="mb-4 flex flex-wrap gap-2">
           {PRESETS.map((p) => (
             <button
@@ -138,13 +221,13 @@ export default function ThemeTab() {
         </div>
       </Section>
 
-      <Section title="Category colours" hint="each field's signature colour — cards, category pages, chips">
+      <Section title="Category colours" hint="overrides on top of each category's own colour (admin → Categories) · saved into palettes">
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
           {categories.map((c) => (
             <ColorField
               key={c.id}
               label={c.name}
-              value={t.categoryColors[c.id] ?? t.accent}
+              value={t.categoryColors[c.id] ?? c.color}
               onChange={(v) => setSite((s) => ({ ...s, theme: { ...s.theme, categoryColors: { ...s.theme.categoryColors, [c.id]: v } } }))}
             />
           ))}

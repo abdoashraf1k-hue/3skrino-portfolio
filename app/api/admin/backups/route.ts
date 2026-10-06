@@ -8,6 +8,7 @@ import {
   snapshotAll,
   type BackupTarget,
 } from "@/lib/admin/backups";
+import { parseBrandFile } from "@/lib/admin/brand-file";
 import { parseHeroFile } from "@/lib/admin/hero-file";
 import { ProjectsFileError, errorResponse, parseProjectsFile, readJson, readProjects } from "@/lib/admin/projects-file";
 import { parseSiteFile } from "@/lib/admin/site-file";
@@ -19,6 +20,7 @@ export const dynamic = "force-dynamic";
 function check(target: BackupTarget, content: string) {
   if (target === "projects") parseProjectsFile(content);
   else if (target === "hero-config") parseHeroFile(content);
+  else if (target === "brand") parseBrandFile(content);
   else parseSiteFile(content);
 }
 

@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Reveal from "@/components/ui/Reveal";
 import { useSectionInfo } from "@/components/ui/SectionContext";
+import { parseHeadline, useText } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 /** `italic` sets the line in the editorial accent: italic + accent colour. */
@@ -11,8 +12,13 @@ export type HeadlineLine = string | { text: string; className?: string; italic?:
 type SectionHeaderProps = {
   /** Fallback number; on the home page the layout's running number wins. */
   index?: string;
-  label: string;
-  lines: HeadlineLine[];
+  /**
+   * admin → Text keys: `${textKey}.label` and `${textKey}.headline` replace
+   * `label` / `lines` (which then needn't be passed).
+   */
+  textKey?: string;
+  label?: string;
+  lines?: HeadlineLine[];
   aside?: ReactNode;
   className?: string;
 };
@@ -26,8 +32,11 @@ type SectionHeaderProps = {
  * sticky bar is bounded by its parent, so that's what keeps it pinned for
  * the whole section.
  */
-export default function SectionHeader({ index: indexProp = "", label, lines, aside, className }: SectionHeaderProps) {
+export default function SectionHeader({ index: indexProp = "", textKey, label: labelProp = "", lines: linesProp = [], aside, className }: SectionHeaderProps) {
   const index = useSectionInfo()?.index ?? indexProp;
+  const t = useText();
+  const label = textKey ? t(`${textKey}.label`) : labelProp;
+  const lines: HeadlineLine[] = textKey ? parseHeadline(t(`${textKey}.headline`)) : linesProp;
 
   return (
     <>

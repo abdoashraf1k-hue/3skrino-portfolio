@@ -4,23 +4,23 @@ import { projectBentoItems } from "@/components/ui/projectBento";
 import Reveal from "@/components/ui/Reveal";
 import SectionHeader from "@/components/ui/SectionHeader";
 import { aiProjects } from "@/data/projects";
+import { T } from "@/lib/brand";
+import { staticNumber } from "@/lib/brand-core";
 import { CONTAINER } from "@/lib/utils";
 
 /** Home: AI Cuts — generated sequences, directed and cut like real productions. */
 export default function AIShowcase() {
-  const aiWork = aiProjects.slice(0, 4);
+  const aiWork = aiProjects.slice(0, staticNumber("home.aiCount"));
 
   return (
     <section id="ai-cuts" data-section="AI Cuts" data-cat="ai" className="py-16 md:py-24">
       <div className={CONTAINER}>
-        <SectionHeader label="AI Cuts" lines={[{ text: "AI", italic: true }, "Cuts."]} />
+        <SectionHeader textKey="home.ai" />
 
         <div className="grid grid-cols-12 gap-x-6 gap-y-12">
           <Reveal stagger className="col-span-12 flex flex-col justify-between gap-10 lg:col-span-5">
             <p className="max-w-lg text-lg leading-relaxed text-muted md:text-xl">
-              Beyond traditional editing — I direct AI-generated sequences for brands
-              that want to push visual language further. From concept to final cut,
-              using the latest generative tools.
+              <T k="home.ai.blurb" />
             </p>
             <div className="flex flex-col gap-8">
               <ul className="flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-widest text-muted">

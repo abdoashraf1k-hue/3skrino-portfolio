@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type ChangeEvent } from "react";
+import ConfrontationSection from "./ConfrontationSection";
+import ExpressionsSection from "./ExpressionsSection";
 import ReorderList from "@/components/admin/ReorderList";
 import { btn, btnDanger, card, Field, input, micro, Section, Segmented, Slider, TabHeader, Toggle } from "@/components/admin/ui";
 import type { HeroFeatures, HeroFilter, HeroPose } from "@/data/hero-config";
@@ -263,7 +265,7 @@ export default function HeroTab({ adminKey, onError, onSuccess }: Props) {
     <div>
       <TabHeader
         title="Poses"
-        hint="9-pose head · dithered crossfade · the Cinematic hero's own effects · every hero variant uses these poses · edits preview live in the dock"
+        hint="9-pose head + expressions · Confrontation hero settings · dithered crossfade · the Cinematic hero's own effects · every hero variant uses these poses · edits preview live in the dock"
         actions={
           <button
             type="button"
@@ -312,6 +314,10 @@ export default function HeroTab({ adminKey, onError, onSuccess }: Props) {
           {poseCard("down")}
         </div>
       </Section>
+
+      <ExpressionsSection adminKey={adminKey} onError={onError} />
+
+      <ConfrontationSection />
 
       <Section title="Crossfade & framing">
         <div className="grid gap-2 sm:grid-cols-2">

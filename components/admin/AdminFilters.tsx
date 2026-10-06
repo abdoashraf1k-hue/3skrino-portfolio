@@ -2,7 +2,7 @@
 
 import Fuse from "fuse.js";
 import { useMemo, type ReactNode, type Ref } from "react";
-import { categories } from "@/data/categories";
+import { allCategories as categories } from "@/data/categories";
 import { projectCredits, type Project } from "@/data/projects";
 
 export type Filters = {
