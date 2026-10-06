@@ -330,28 +330,6 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-06T14:00:28.404Z",
   },
-  {
-    id: "tagoury-house",
-    accentColor: "#e7fe55",
-    orientation: "vertical",
-    title: "TAGOURY HOUSE",
-    category: "furniture",
-    year: 2025,
-    client: "DOWNTOWN MALL",
-    role: "Editor",
-    tools: [],
-    duration: "00:31",
-    description: "",
-    videoUrl:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1791295150491-771491ae-97ca-4bdc-a4a9-31e69af67c34.mp4",
-    thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1791295182507-d42adcf8-69bd-4554-8793-ec9ace5622d2.jpg",
-    filmed: true,
-    directed: true,
-    edited: true,
-    thumbnailSource: "auto",
-    createdAt: "2026-10-06T14:03:38.656Z",
-  },
 ];
 
 export type Reel = {
