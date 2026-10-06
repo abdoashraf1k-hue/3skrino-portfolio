@@ -260,27 +260,6 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-06T11:51:06.809Z",
   },
-  {
-    id: "black-friday-in-downtown-mall",
-    accentColor: "#e7fe55",
-    orientation: "vertical",
-    title: "BLACK FRIDAY IN DOWNTOWN MALL",
-    category: "corporate",
-    year: 2026,
-    client: "DOWNTOWN MALL",
-    role: "Editor",
-    tools: ["Premiere Pro", "After Effects"],
-    duration: "00:09",
-    description: "",
-    videoUrl: "",
-    thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1791287842173-598f6176-dd6c-43fe-b723-8b1edb216116.jpg",
-    filmed: true,
-    directed: true,
-    edited: true,
-    thumbnailSource: "auto",
-    createdAt: "2026-10-06T11:58:30.947Z",
-  },
 ];
 
 export type Reel = {
