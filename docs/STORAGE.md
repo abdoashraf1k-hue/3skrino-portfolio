@@ -141,53 +141,43 @@ Your browser uploads straight to B2, so the bucket must allow your site's
 origins. It must also **expose the `ETag` header**: the uploader needs each
 part's ETag to finish a multipart upload.
 
-The simple CORS options in B2's web UI **can't expose ETag**. Use the B2
-command-line tool instead (or the S3 `PutBucketCors` API).
+The simple CORS options in B2's web UI **can't expose ETag**, so set the rules
+through the API. Two ways:
 
-1. Install the CLI. On Windows, either `pip install b2`, or download
-   `b2-windows.exe` from <https://github.com/Backblaze/B2_Command_Line_Tool/releases>.
-2. Sign in with a key that's allowed to change bucket settings (`writeBuckets`).
-   The restricted site key from Step 2 can't do this. Use your master key, or a
-   separate admin key, just for this step:
+**Option A (recommended): the setup script.** Python 3 only, no other installs,
+and it works the same in PowerShell, Git Bash or cmd:
 
-   ```bash
-   b2 account authorize <keyID> <applicationKey>
-   ```
+```bash
+python scripts/setup-b2.py --key-id <keyID> --app-key <applicationKey> --bucket 3skrino-videos-2026
+```
 
-3. Apply the CORS rule and the lifecycle rule (Step 4) in one command. Run it in
-   **Git Bash**, because PowerShell mangles the JSON quotes:
+- It reads `B2_KEY_ID` / `B2_APP_KEY` / `B2_BUCKET_NAME` (and `B2_API_ENDPOINT`,
+  default `https://api003.backblazeb2.com`) from the shell or `.env.local` when
+  you leave the flags out. Typing the key as a flag keeps it out of every file.
+- It sets the CORS rule and the lifecycle rule (Step 4) in one call, then prints
+  the rules that are now live and checks that `ETag` is exposed.
+- `python scripts/setup-b2.py --check` only prints the live rules.
+- Changing bucket settings needs the `writeBuckets` capability. If your key
+  lacks it, the script says so; run it once with your master key instead.
+- It uses B2's native API. Other providers (Cloudflare R2, AWS) set CORS with
+  the S3 `PutBucketCors` call instead.
 
-   ```bash
-   b2 bucket update \
-     --cors-rules '[
-       {
-         "corsRuleName": "admin-uploads",
-         "allowedOrigins": ["https://3skrino.com", "https://www.3skrino.com", "http://localhost:3000"],
-         "allowedOperations": ["s3_put", "s3_get", "s3_head"],
-         "allowedHeaders": ["content-type", "range"],
-         "exposeHeaders": ["ETag", "Content-Length", "Content-Range"],
-         "maxAgeSeconds": 3600
-       }
-     ]' \
-     --lifecycle-rule '{"fileNamePrefix":"videos/","daysFromHidingToDeleting":null,"daysFromUploadingToHiding":null,"daysFromStartingToCancelingUnfinishedLargeFiles":1}' \
-     3skrino-videos allPrivate
-   ```
+**Option B: the `b2` CLI (v5).** `pip install b2`, then
+`b2 account authorize <keyID> <applicationKey>`, then:
 
-   - Replace `3skrino-videos` with your bucket's name.
-   - Older CLI versions spell the second flag `--lifecycle-rules '[ {...} ]'` and take a JSON **array**. Run `b2 bucket update --help` to see which one yours has.
-   - **Check the operation names** against B2's CORS docs:
-     <https://www.backblaze.com/docs/cloud-storage-cross-origin-resource-sharing-rules>.
-     B2 maps each operation to an HTTP method. `s3_put` covers single PUTs and
-     multipart part uploads. `s3_get` and `s3_head` cover playback and checks. If
-     B2 rejects a name, use the one its docs list for that method.
+```bash
+b2 bucket update \
+  --cors-rules '[{"corsRuleName":"admin-uploads","allowedOrigins":["https://3skrino-portfolio.vercel.app","https://3skrino.com","https://www.3skrino.com","http://localhost:3000"],"allowedOperations":["s3_put","s3_get","s3_head"],"allowedHeaders":["*"],"exposeHeaders":["ETag"],"maxAgeSeconds":3600}]' \
+  --lifecycle-rule '{"fileNamePrefix":"","daysFromHidingToDeleting":null,"daysFromUploadingToHiding":null,"daysFromStartingToCancelingUnfinishedLargeFiles":1}' \
+  3skrino-videos-2026 allPrivate
+```
 
-4. Check that the rules were saved:
-
-   ```bash
-   b2 bucket get 3skrino-videos
-   ```
-
-   The output should show `corsRules` with `admin-uploads`, and a `lifecycleRules` entry for `videos/`.
+- Run it in **Git Bash**. v5 has no `--cors-rules-file`; the JSON goes inline.
+- **Windows PowerShell 5.1 strips the double quotes** inside the JSON when it
+  calls a native program, so B2 receives broken JSON. PowerShell 7.3+ passes
+  them through. If you're stuck in PowerShell, use Option A.
+- Check with `b2 bucket get 3skrino-videos-2026`: look for `corsRules` with
+  `admin-uploads`, and the lifecycle rule.
 
 **Important:** once you set CORS rules with the CLI, **don't** change CORS in
 the B2 web UI afterwards. The UI's simple options overwrite your custom rules.
@@ -199,11 +189,11 @@ the B2 web UI afterwards. The UI's simple options overwrite your custom rules.
   CORS unless you add that exact origin. Upload from the production admin or
   from localhost instead.
 
-### Step 4: Lifecycle rule (included in the command above)
+### Step 4: Lifecycle rule (set together with CORS in Step 3)
 
 ```json
 {
-  "fileNamePrefix": "videos/",
+  "fileNamePrefix": "",
   "daysFromHidingToDeleting": null,
   "daysFromUploadingToHiding": null,
   "daysFromStartingToCancelingUnfinishedLargeFiles": 1
@@ -213,6 +203,10 @@ the B2 web UI afterwards. The UI's simple options overwrite your custom rules.
 If an upload is interrupted (browser closed, laptop asleep), its finished parts
 stay in the bucket as an "unfinished large file". They **count against your
 10 GB**, even though no video uses them. This rule cleans them up after one day.
+
+Only use `daysFromStartingToCancelingUnfinishedLargeFiles` here. **Don't** set
+`daysFromUploadingToHiding`: that hides every finished video after that many
+days, and `daysFromHidingToDeleting` then deletes it.
 
 ### Step 5: Turn on Caps & Alerts
 
@@ -233,11 +227,12 @@ in `.env.local`.
 | `B2_REGION` | `eu-central-003` | The middle part of the endpoint. |
 | `B2_KEY_ID` | `004a1b2c...0000000003` | keyID from Step 2. **Secret.** |
 | `B2_APP_KEY` | `K004...` | applicationKey from Step 2. **Secret.** |
-| `B2_BUCKET_NAME` | `3skrino-videos` | The bucket name. |
+| `B2_BUCKET_NAME` | `3skrino-videos-2026` | The bucket name. |
+| `B2_API_ENDPOINT` | `https://api003.backblazeb2.com` | Only for `scripts/setup-b2.py` (the one-time CORS setup). Not needed on Vercel. |
 | `NEXT_PUBLIC_CDN_URL` | *(leave empty)* | Leave this empty while the bucket is private. Only set it if a public bucket sits behind a CDN later, for example an R2 custom domain. |
 | `NEXT_PUBLIC_STORAGE_PROVIDER` | `b2` or `vercel-blob` | Optional. Settings → Storage overrides it unless it's on Auto. Leave it empty for "auto". |
 | `BLOB_READ_WRITE_TOKEN` | *(already set)* | Still needed for images, thumbnails and old videos. |
-| `NEXT_PUBLIC_SITE_URL` | `https://3skrino.com` | Video URLs are saved as absolute links built from this, so it must be the **production** `https://` origin in every environment, including localhost and previews (or leave it unset: the default is `https://3skrino.com`). An `http://localhost` value makes project saves fail. If the domain ever changes, stored URLs need rewriting. |
+| `NEXT_PUBLIC_SITE_URL` | `https://3skrino.com` | Video URLs are saved as absolute links built from this, so it must be the **production** `https://` origin in every environment, including localhost and previews. The default is `https://3skrino.com`, so **while that domain doesn't serve this site, set it to `https://3skrino-portfolio.vercel.app`**, or every new video gets a dead link. An `http://localhost` value makes project saves fail. If the domain ever changes, stored URLs need rewriting. |
 
 After saving the variables:
 
