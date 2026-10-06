@@ -40,6 +40,7 @@ export const TAB_SLICES: Record<string, readonly Slice[]> = {
   social: [site(["content", "socials"], "social links")],
   seo: [site(["seo"], "SEO")],
   backups: [site(["backups"], "backup schedule")],
+  settings: [site(["storage"], "storage")],
   brand: [
     brand(["identity"], "identity"),
     brand(["voice"], "voice"),

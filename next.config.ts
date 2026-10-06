@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
       // Cloudinary — legacy uploads that are still referenced in data/projects.ts
       { protocol: "https", hostname: "res.cloudinary.com" },
+      // The site's own /media/<key> redirects (thumbnails stored in a private bucket)
+      { protocol: "https", hostname: "3skrino.com" },
+      { protocol: "https", hostname: "www.3skrino.com" },
     ],
   },
 };

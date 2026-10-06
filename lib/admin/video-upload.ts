@@ -1,12 +1,19 @@
 "use client";
 
 import { upload } from "@vercel/blob/client";
+import { adminFetch, ApiError, AuthError } from "@/lib/admin/client-api";
+import { uploadToStore, xhrPut, type Api } from "@/lib/admin/multipart";
+import { isBlobUrl, type ConfigResponse, type DeleteResponse, type UploadRequest } from "@/lib/admin/storage/contract";
 
 /**
- * Client-side media helpers for the admin: direct-to-Vercel-Blob uploads with
- * real progress (the file never passes through our server — the route only
- * mints a short-lived client token), plus local frame capture for automatic
- * thumbnails.
+ * Client-side media helpers for the admin: direct-to-storage uploads with
+ * real progress (the file never passes through our server — the routes only
+ * mint short-lived tokens / presigned URLs), plus local frame capture for
+ * automatic thumbnails.
+ *
+ * Sprint 12: videos go to the S3-compatible bucket (B2) when the server says
+ * so (action "config"), else to Vercel Blob as before. Small images stay on
+ * Blob and spill over to B2 only when Blob is full or missing.
  */
 
 export const MAX_VIDEO_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB
@@ -41,12 +48,167 @@ function uid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+/* ------------------------------------------------------------------ */
+/* Provider selection + the B2 API                                     */
+/* ------------------------------------------------------------------ */
+
+const STORE_PATH = "b2-upload";
+const CONFIG_TTL_MS = 60_000;
+let configCache: { at: number; value: ConfigResponse } | null = null;
+
+function storeApi(key: string): Api {
+  return <T,>(body: UploadRequest) => adminFetch<T>(key, STORE_PATH, "POST", body);
+}
+
+/** Which store takes new videos (cached 60 s). Null when the server can't say; AuthError propagates. */
+async function storeConfig(key: string): Promise<ConfigResponse | null> {
+  if (configCache && Date.now() - configCache.at < CONFIG_TTL_MS) return configCache.value;
+  try {
+    const value = await adminFetch<ConfigResponse>(key, STORE_PATH, "POST", { action: "config" } satisfies UploadRequest);
+    configCache = { at: Date.now(), value };
+    return value;
+  } catch (err) {
+    if (err instanceof AuthError) throw err;
+    console.warn("[upload] storage config unavailable — using Vercel Blob", err);
+    return null;
+  }
+}
+
+const isAbort = (err: unknown) => err instanceof DOMException && err.name === "AbortError";
+
+/**
+ * The bucket isn't there right now (503: not configured / busy) or our API was
+ * unreachable — worth trying Vercel Blob. A rejected file (4xx) or bad B2
+ * credentials (502) is surfaced instead of silently filling the Blob quota.
+ */
+function storeUnavailable(err: unknown): boolean {
+  if (err instanceof ApiError) return err.status === 503;
+  return err instanceof TypeError; // fetch() network failure
+}
+
+/** Blob store full, suspended, missing or not configured — worth trying the bucket instead. */
+function blobUnavailable(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  return /quota|storage|suspended|exceeded|limit|not ?found|token|configured|BLOB_READ_WRITE/i.test(`${err.name} ${err.message}`);
+}
+
 export async function uploadVideo(
   file: File,
   onProgress: Progress,
   { key, signal }: UploadOpts,
 ): Promise<{ videoUrl: string; duration: number }> {
   assertUploadable(file);
+  const config = await storeConfig(key);
+  if (config?.provider !== "b2") return uploadVideoToBlob(file, onProgress, { key, signal });
+
+  let started = false;
+  try {
+    return await uploadVideoToStore(file, onProgress, { key, signal, onStarted: () => (started = true) });
+  } catch (err) {
+    // Degrade only if the bucket never accepted the upload — never silently re-send 2 GB.
+    if (started || isAbort(err) || signal?.aborted || !storeUnavailable(err)) throw err;
+    console.warn("[upload] B2 unavailable — falling back to Vercel Blob", err);
+    configCache = null;
+    onProgress(0);
+    return uploadVideoToBlob(file, onProgress, { key, signal });
+  }
+}
+
+async function uploadVideoToStore(
+  file: File,
+  onProgress: Progress,
+  { key, signal, onStarted }: UploadOpts & { onStarted: () => void },
+): Promise<{ videoUrl: string; duration: number }> {
+  // Same watchdog as the Blob path, re-armed on every raw progress event.
+  const ctrl = new AbortController();
+  let stalled = false;
+  let watchdog = 0;
+  const arm = () => {
+    window.clearTimeout(watchdog);
+    watchdog = window.setTimeout(() => {
+      stalled = true;
+      ctrl.abort();
+    }, STALL_MS);
+  };
+  const onCallerAbort = () => ctrl.abort();
+  if (signal?.aborted) ctrl.abort();
+  signal?.addEventListener("abort", onCallerAbort, { once: true });
+  arm();
+
+  try {
+    const duration = getVideoDuration(file);
+    const stored = await uploadToStore(file, {
+      folder: "videos",
+      api: storeApi(key),
+      put: xhrPut,
+      signal: ctrl.signal,
+      onProgress,
+      onActivity: arm,
+      onStarted: () => {
+        arm();
+        onStarted();
+      },
+    });
+    return { videoUrl: stored.publicUrl, duration: await duration };
+  } catch (err) {
+    console.error("[upload] B2 upload failed", err);
+    if (stalled) throw new Error(`No upload progress for ${STALL_MS / 1000}s — check your connection and retry`);
+    throw err;
+  } finally {
+    window.clearTimeout(watchdog);
+    signal?.removeEventListener("abort", onCallerAbort);
+  }
+}
+
+export async function uploadImage(
+  file: Blob,
+  onProgress: Progress,
+  { key, signal, name = "thumb.jpg" }: UploadOpts & { name?: string },
+): Promise<{ url: string }> {
+  try {
+    return await uploadImageToBlob(file, onProgress, { key, signal, name });
+  } catch (err) {
+    if (err instanceof AuthError || isAbort(err) || signal?.aborted || !blobUnavailable(err)) throw err;
+    const config = await storeConfig(key);
+    if (!config?.configured.b2) throw err;
+    console.warn("[upload] Vercel Blob unavailable — storing the image in B2", err);
+    const typed = file.type ? file : new Blob([file], { type: "image/jpeg" });
+    const stored = await uploadToStore(typed, {
+      folder: "thumbnails",
+      api: storeApi(key),
+      put: xhrPut,
+      signal,
+      onProgress,
+      filename: name,
+    });
+    return { url: stored.publicUrl };
+  }
+}
+
+/**
+ * Deletes a file this admin uploaded to the bucket. Blob and Cloudinary URLs
+ * are left alone (they're cleaned up elsewhere); a URL the bucket doesn't own
+ * or an object that's already gone is not an error.
+ */
+export async function deleteStoredMedia(url: string, key: string): Promise<void> {
+  if (!url || isBlobUrl(url) || /^https:\/\/res\.cloudinary\.com\//i.test(url)) return;
+  try {
+    await adminFetch<DeleteResponse>(key, STORE_PATH, "POST", { action: "delete", url } satisfies UploadRequest);
+  } catch (err) {
+    if (err instanceof Error && /not a url from this store/i.test(err.message)) return;
+    throw err;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Vercel Blob (pre-Sprint-12 path, unchanged)                         */
+/* ------------------------------------------------------------------ */
+
+async function uploadVideoToBlob(
+  file: File,
+  onProgress: Progress,
+  { key, signal }: UploadOpts,
+): Promise<{ videoUrl: string; duration: number }> {
   const pathname = `videos/${Date.now()}-${uid()}.${extension(file.name, "mp4")}`;
 
   // Watchdog: abort if no progress arrives for STALL_MS. (Reset on every
@@ -100,7 +262,7 @@ export async function uploadVideo(
   }
 }
 
-export async function uploadImage(
+async function uploadImageToBlob(
   file: Blob,
   onProgress: Progress,
   { key, signal, name = "thumb.jpg" }: UploadOpts & { name?: string },
@@ -144,6 +306,21 @@ export function getVideoDuration(file: File, timeoutMs = 8000): Promise<number> 
 }
 
 /**
+ * Stored B2 URLs are absolute (https://3skrino.com/media/<key>). Loaded with
+ * crossOrigin from another origin (localhost, a preview deploy) that redirect
+ * hop has no CORS headers and the canvas can't be read — so load the same
+ * /media path from the admin's own origin; the bucket's CORS covers the next hop.
+ */
+function viaThisOrigin(url: string): string {
+  try {
+    const u = new URL(url, window.location.href);
+    return u.pathname.startsWith("/media/") ? `${window.location.origin}${u.pathname}${u.search}` : url;
+  } catch {
+    return url;
+  }
+}
+
+/**
  * Grabs one frame as a JPEG. `source` is a local File or a remote URL (remote
  * URLs must send CORS headers — Vercel Blob and Cloudinary both do). The seek
  * is clamped so a clip shorter than `at` still yields its middle frame.
@@ -152,7 +329,7 @@ export function captureFrame(source: File | string, at = 1, maxEdge = 1280): Pro
   return new Promise((resolve, reject) => {
     const video = document.createElement("video");
     const local = typeof source !== "string";
-    const src = local ? URL.createObjectURL(source) : source;
+    const src = local ? URL.createObjectURL(source) : viaThisOrigin(source);
     const cleanup = () => {
       if (local) URL.revokeObjectURL(src);
       video.removeAttribute("src");
@@ -221,7 +398,7 @@ export function captureFrames(
 ): Promise<CapturedFrame[]> {
   const video = document.createElement("video");
   const local = typeof source !== "string";
-  const src = local ? URL.createObjectURL(source) : source;
+  const src = local ? URL.createObjectURL(source) : viaThisOrigin(source);
   video.muted = true;
   video.playsInline = true;
   video.preload = "auto";

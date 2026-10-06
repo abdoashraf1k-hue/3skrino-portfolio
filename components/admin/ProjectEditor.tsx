@@ -207,6 +207,9 @@ export default function ProjectEditor({ target, adminKey, onClose, onSubmit, onD
   const [phase, setPhase] = useState<Phase>("idle");
   const [uploading, setUploading] = useState(false);
   const [tab, setTab] = useState<"edit" | "preview">("edit");
+  /** Set once onSubmit succeeds — the uploader keeps its uploads only then. */
+  const savedRef = useRef(false);
+  const wasSaved = useCallback(() => savedRef.current, []);
 
   const isEdit = target.mode === "edit";
   const busy = phase !== "idle";
@@ -258,9 +261,13 @@ export default function ProjectEditor({ target, adminKey, onClose, onSubmit, onD
     const problem = validate();
     if (problem) return onError(problem);
     setPhase("saving");
+    // Raised BEFORE onSubmit: a successful submit may unmount the editor before
+    // this function resumes, and the uploader must then keep the saved video.
+    savedRef.current = true;
     try {
       await onSubmit(toProject());
     } catch (err) {
+      savedRef.current = false;
       setPhase("idle");
       onError(err instanceof Error ? err.message : "Save failed");
     }
@@ -418,6 +425,7 @@ export default function ProjectEditor({ target, adminKey, onClose, onSubmit, onD
             onThumbnail={onThumbnail}
             onBusyChange={setUploading}
             onError={onError}
+            wasSaved={wasSaved}
           />
 
           <fieldset disabled={busy && phase !== "analyzing"} className="grid grid-cols-2 content-start gap-4 disabled:opacity-60">

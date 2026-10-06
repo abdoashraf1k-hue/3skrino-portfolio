@@ -41,6 +41,9 @@ yarn-error.log*
 next-env.d.ts
 .gstack/
 
+# Sprint 12 — state files written by the media migration script
+/.migration/
+
 .vercel
 .env*
 

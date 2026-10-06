@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isBlobUrl } from "@/lib/admin/storage/contract";
 import {
   assertImage,
   assertUploadable,
   captureFrame,
   captureFrames,
+  deleteStoredMedia,
   formatDuration,
   uploadImage,
   uploadVideo,
@@ -27,6 +29,12 @@ type Props = {
   /** True while any upload (video or still) is running — the editor blocks Save. */
   onBusyChange: (busy: boolean) => void;
   onError: (message: string) => void;
+  /**
+   * Asked when the uploader unmounts: false means the editor closed without
+   * saving, so videos uploaded in this session are deleted from storage
+   * (nothing references them). Omitted → they're kept.
+   */
+  wasSaved?: () => boolean;
 };
 
 /** A locally captured still — uploaded only once it's picked. */
@@ -39,11 +47,16 @@ const btn =
   "shrink-0 border border-white/15 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-white/80 hover:border-white/40 disabled:opacity-40";
 
 /**
- * Video goes straight to Vercel Blob the moment it's picked (real progress,
- * cancellable). Meanwhile four stills (25 / 50 / 75 / 95%) are grabbed locally
+ * Video goes straight to storage (B2 or Vercel Blob) the moment it's picked
+ * (real progress, cancellable). Meanwhile four stills (25 / 50 / 75 / 95%) are grabbed locally
  * into a gallery; the first is uploaded and set as an "auto" thumbnail —
  * unless a manual one is already in place. Picking another frame uploads that
  * one instead; "New frames" re-samples around the same points.
+ *
+ * Videos uploaded in this editor session and then superseded (replaced or
+ * removed) are deleted from storage, best effort. The saved project's video is
+ * never deleted here — it stays live on the site until the project is saved.
+ * Closing the editor without saving deletes this session's uploads too.
  */
 export default function VideoUploader({
   adminKey,
@@ -57,6 +70,7 @@ export default function VideoUploader({
   onThumbnail,
   onBusyChange,
   onError,
+  wasSaved,
 }: Props) {
   const videoInput = useRef<HTMLInputElement>(null);
   const imageInput = useRef<HTMLInputElement>(null);
@@ -75,6 +89,29 @@ export default function VideoUploader({
   const uploadedRef = useRef(new Map<string, string>());
   /** Bumped per extraction; a stale (superseded / unmounted) one drops its result. */
   const extractGen = useRef(0);
+  /** Video URLs uploaded in this session — the only ones safe to delete here. */
+  const sessionVideos = useRef(new Set<string>());
+  /** Latest videoUrl prop, for upload callbacks that finish after a re-render. */
+  const videoUrlRef = useRef(videoUrl);
+  /** Latest key / save probe, for the unmount cleanup. */
+  const adminKeyRef = useRef(adminKey);
+  const wasSavedRef = useRef(wasSaved);
+  useEffect(() => {
+    videoUrlRef.current = videoUrl;
+    adminKeyRef.current = adminKey;
+    wasSavedRef.current = wasSaved;
+  }, [videoUrl, adminKey, wasSaved]);
+
+  /** Deletes a video only if this session uploaded it. Fire-and-forget. */
+  const discardSessionVideo = useCallback(
+    (url: string) => {
+      if (!url || !sessionVideos.current.delete(url)) return;
+      deleteStoredMedia(url, adminKey).catch((err: unknown) =>
+        console.warn("[uploader] couldn't delete superseded video", url, err),
+      );
+    },
+    [adminKey],
+  );
 
   const busy = progress !== null || thumbBusy;
   useEffect(() => onBusyChange(busy), [busy, onBusyChange]);
@@ -94,6 +131,14 @@ export default function VideoUploader({
     () => () => {
       abortRef.current?.abort();
       extractGen.current++;
+      // Closed without saving: this session's uploads are referenced by nothing.
+      if (wasSavedRef.current?.() !== false) return;
+      for (const url of sessionVideos.current) {
+        deleteStoredMedia(url, adminKeyRef.current).catch((err: unknown) =>
+          console.warn("[uploader] couldn't delete unsaved video", url, err),
+        );
+      }
+      sessionVideos.current.clear();
     },
     [],
   );
@@ -187,6 +232,9 @@ export default function VideoUploader({
 
       try {
         const result = await uploadVideo(file, setProgress, { key: adminKey, signal: ctrl.signal });
+        const previous = videoUrlRef.current;
+        sessionVideos.current.add(result.videoUrl);
+        if (previous !== result.videoUrl) discardSessionVideo(previous);
         onVideo(result);
       } catch (err) {
         if (ctrl.signal.aborted) return;
@@ -200,7 +248,7 @@ export default function VideoUploader({
         }
       }
     },
-    [adminKey, extract, onError, onVideo, thumbnailSource],
+    [adminKey, discardSessionVideo, extract, onError, onVideo, thumbnailSource],
   );
 
   // A file dropped on a category card uploads as soon as the editor opens.
@@ -217,6 +265,22 @@ export default function VideoUploader({
     const timer = window.setTimeout(() => void startRef.current(initialFile), 0);
     return () => window.clearTimeout(timer);
   }, [initialFile]);
+
+  /**
+   * Clears the video field. Deletes the object only if this session uploaded
+   * it; the saved project's video keeps playing on the site until Save.
+   */
+  const removeVideo = () => {
+    abortRef.current?.abort();
+    extractGen.current++;
+    setLocal(null);
+    setFrames([]);
+    setSelectedId(null);
+    setFramesBusy(false);
+    setFramesError(null);
+    discardSessionVideo(videoUrl);
+    onVideo({ videoUrl: "", duration: 0 });
+  };
 
   const recapture = async () => {
     const source = local?.file ?? videoUrl;
@@ -269,7 +333,7 @@ export default function VideoUploader({
         {progress !== null && (
           <div className="absolute inset-x-0 bottom-0 bg-black/75 px-3 py-2">
             <div className="mb-1 flex justify-between font-mono text-[10px] uppercase tracking-widest text-white/70">
-              <span>Uploading to Blob</span>
+              <span>Uploading</span>
               <span className="tabular-nums">{progress}%</span>
             </div>
             <div className="h-1 w-full bg-white/10">
@@ -292,6 +356,17 @@ export default function VideoUploader({
           <button type="button" disabled={disabled || progress !== null} onClick={() => videoInput.current?.click()} className={btn}>
             {src ? "Replace video" : "Choose video"}
           </button>
+          {videoUrl && progress === null && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={removeVideo}
+              title="Clears the field. A video uploaded in this session is also deleted from storage; the saved one stays live until you save"
+              className={`${btn} text-[#ff5a5a]`}
+            >
+              Remove video
+            </button>
+          )}
         </div>
         <input
           ref={videoInput}
@@ -476,11 +551,19 @@ function FrameGallery({
   );
 }
 
+const CDN_BASE = (process.env.NEXT_PUBLIC_CDN_URL ?? "").replace(/\/+$/, "");
+
+/** Where a stored video lives, for the meta line. */
 function hostOf(url: string): string {
+  if (CDN_BASE && url.startsWith(`${CDN_BASE}/`)) return "B2 · CDN";
+  if (isBlobUrl(url)) return "Vercel Blob";
   try {
-    return new URL(url).hostname;
+    const { hostname, pathname } = new URL(url);
+    if (pathname.startsWith("/media/")) return "B2 · private";
+    if (hostname === "res.cloudinary.com") return "Cloudinary";
+    return hostname;
   } catch {
-    return url;
+    return url.startsWith("/media/") ? "B2 · private" : url;
   }
 }
 

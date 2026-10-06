@@ -14,6 +14,16 @@ export class AuthError extends Error {
   }
 }
 
+/** A non-401 error response from /api/admin/*, with its HTTP status. */
+export class ApiError extends Error {
+  readonly status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 export type ProjectsResponse = { projects: Project[]; sha: string };
 
 export function readStoredKey(): string {
@@ -63,7 +73,7 @@ export async function adminFetch<T>(key: string, path: string, method: string, b
       typeof data === "object" && data !== null && "error" in data && typeof data.error === "string"
         ? data.error
         : `Request failed (${res.status})`;
-    throw new Error(msg);
+    throw new ApiError(msg, res.status);
   }
   return data as T;
 }

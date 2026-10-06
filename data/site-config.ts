@@ -4,6 +4,8 @@
  * Types, constants and comments are kept verbatim.
  */
 
+import type { ProviderSetting } from "@/lib/admin/storage/contract";
+
 /** Home sections that can be reordered / hidden. The hero always comes first. */
 export type SectionId = "marquee" | "vertical" | "horizontal" | "fields" | "ai" | "about" | "contact";
 
@@ -198,6 +200,12 @@ export type SiteConfig = {
   backups: { schedule: BackupSchedule };
   heroVariant: HeroVariant;
   cinematic: CinematicConfig;
+  /**
+   * Sprint 12 — media storage (admin → Settings → Storage). videoProvider:
+   * where new video uploads go; "auto" = Backblaze B2 when its server env vars
+   * are set, else Vercel Blob. Missing in older files → "auto".
+   */
+  storage: { videoProvider: ProviderSetting };
 };
 
 export const SECTION_LABELS: Record<SectionId, string> = {
@@ -327,4 +335,5 @@ export const siteConfig: SiteConfig = {
     },
     heroOptions: { splitReel: "", galleryCount: 30, mirrorCount: 7, timelineAutoplay: true },
   },
+  storage: { videoProvider: "auto" },
 };

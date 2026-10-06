@@ -24,6 +24,7 @@ import {
   bool,
 } from "./config-file";
 import { validateCinematic, validateHeroVariant } from "./cinematic-file";
+import { PROVIDER_SETTINGS } from "./storage/contract";
 
 /** data/site-config.ts — theme, home layout, content, SEO overrides, backup schedule, hero variant, cinematic toolbox. */
 
@@ -135,7 +136,12 @@ export function validateSiteConfig(input: unknown): SiteConfig {
   const heroVariant = validateHeroVariant(o);
   const cinematic = validateCinematic(o.cinematic);
 
-  return { theme, layout, content, seo: { projects }, backups, heroVariant, cinematic };
+  // Sprint 12: missing in older files / backups → "auto".
+  const storage = {
+    videoProvider: oneOf(rec(o.storage ?? {}, "storage"), "videoProvider", "Storage", PROVIDER_SETTINGS, "auto"),
+  };
+
+  return { theme, layout, content, seo: { projects }, backups, heroVariant, cinematic, storage };
 }
 
 export const SITE_SPEC: ConfigSpec<SiteConfig> = {

@@ -476,6 +476,12 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
     }
   };
 
+  /** Settings → Storage: point a project at its migrated video (same PUT as the editor). */
+  const setVideoUrl = async (id: string, videoUrl: string) => {
+    const res = await withAuth(runWrite(() => adminFetch<ProjectsResponse>(keyRef.current, "projects", "PUT", { id, patch: { videoUrl } })));
+    applyServer(res);
+  };
+
   /** Optimistic: gone from the list at once; restored if the commit fails. */
   const deleteProject = async (id: string) => {
     const before = projects;
@@ -694,7 +700,16 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
   } else if (tab === "backups") {
     body = <BackupsTab adminKey={adminKey} onRestoredProjects={applyServer} onAuthError={deny} onError={toast.error} onSuccess={toast.success} />;
   } else if (tab === "settings") {
-    body = <SettingsTab adminKey={adminKey} onAuthError={deny} onError={toast.error} onSuccess={toast.success} />;
+    body = (
+      <SettingsTab
+        adminKey={adminKey}
+        projects={projects}
+        onSetVideoUrl={setVideoUrl}
+        onAuthError={deny}
+        onError={toast.error}
+        onSuccess={toast.success}
+      />
+    );
   } else if (tab === "activity") {
     body = <ActivityTab adminKey={adminKey} onAuthError={deny} />;
   } else if (tab === "media") {

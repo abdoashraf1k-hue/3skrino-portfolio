@@ -8,10 +8,18 @@ export function cn(...classes: ClassValue[]): string {
 /**
  * Legacy Cloudinary URLs are already optimised at the source, and re-fetching
  * them through next/image times out upstream — render those `unoptimized`.
+ * `/media/…` URLs (private bucket) answer with a 302 to a short-lived
+ * presigned URL, which the optimiser can't follow or cache — also `unoptimized`.
  * Vercel Blob (and everything else) still goes through the optimiser.
  */
 export function skipImageOptimizer(src: string): boolean {
-  return src.startsWith("https://res.cloudinary.com");
+  if (src.startsWith("https://res.cloudinary.com")) return true;
+  if (src.startsWith("/media/")) return true;
+  try {
+    return new URL(src).pathname.startsWith("/media/");
+  } catch {
+    return false;
+  }
 }
 
 /** Zero-padded index label: 1 → "01". */

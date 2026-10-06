@@ -34,6 +34,7 @@ const SITE_SECTIONS: Record<keyof SiteConfig, string> = {
   backups: "backup schedule",
   heroVariant: "hero variant",
   cinematic: "cinematic",
+  storage: "storage",
 };
 /** "cinematic" is big — name the part that changed instead. */
 const CINEMATIC_PARTS: Record<keyof SiteConfig["cinematic"], string> = {
