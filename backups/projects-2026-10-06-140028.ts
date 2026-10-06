@@ -308,28 +308,6 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-06T13:53:39.404Z",
   },
-  {
-    id: "downtown-mall",
-    accentColor: "#e7fe55",
-    orientation: "vertical",
-    title: "DOWNTOWN MALL",
-    category: "corporate",
-    year: 2025,
-    client: "DOWNTOWN MALL",
-    role: "Editor",
-    tools: [],
-    duration: "00:36",
-    description: "",
-    videoUrl:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1791295004478-e5246221-ba36-4b9c-a361-34875a2fefa1.mp4",
-    thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1791295094754-d5c239ce-03e1-4d78-a00b-f845ecd2aac8.jpg",
-    filmed: true,
-    directed: true,
-    edited: true,
-    thumbnailSource: "auto",
-    createdAt: "2026-10-06T14:00:28.404Z",
-  },
 ];
 
 export type Reel = {
