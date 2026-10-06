@@ -286,28 +286,6 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-06T11:58:30.947Z",
   },
-  {
-    id: "waw-designs",
-    accentColor: "#e7fe55",
-    orientation: "vertical",
-    title: "WAW DESIGNS",
-    category: "furniture",
-    year: 2025,
-    client: "DOWNTOWN MALL",
-    role: "Editor",
-    tools: ["Premiere Pro"],
-    duration: "00:30",
-    description: "",
-    videoUrl:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1791294683935-d530da66-c665-4aa0-a7a8-6cf987719e8a.mp4",
-    thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1791294740547-4f67aa1c-14bd-414b-9461-3b00859bb687.jpg",
-    filmed: true,
-    directed: true,
-    edited: true,
-    thumbnailSource: "auto",
-    createdAt: "2026-10-06T13:53:39.404Z",
-  },
 ];
 
 export type Reel = {
