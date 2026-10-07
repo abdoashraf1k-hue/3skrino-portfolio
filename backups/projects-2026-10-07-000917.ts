@@ -394,27 +394,6 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-07T00:07:13.541Z",
   },
-  {
-    id: "tokyo-x-one-world-tours",
-    accentColor: "#e7fe55",
-    orientation: "vertical",
-    title: "TOKYO X ONE WORLD TOURS",
-    category: "tours",
-    year: 2025,
-    client: "ONE WORLD TOURS",
-    role: "Editor",
-    tools: [],
-    duration: "00:31",
-    description: "",
-    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1791331667567-938fxcdz1w9e.mp4",
-    thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1791331748977-obqo372jytce.jpg",
-    filmed: false,
-    directed: false,
-    edited: true,
-    thumbnailSource: "auto",
-    createdAt: "2026-10-07T00:09:17.518Z",
-  },
 ];
 
 export type Reel = {
