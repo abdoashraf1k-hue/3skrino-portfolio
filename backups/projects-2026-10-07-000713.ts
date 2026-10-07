@@ -373,27 +373,6 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-07T00:01:09.194Z",
   },
-  {
-    id: "one-world-tours",
-    accentColor: "#e7fe55",
-    orientation: "vertical",
-    title: "ONE WORLD TOURS",
-    category: "tours",
-    year: 2025,
-    client: "ONE WORLD TOURS",
-    role: "Editor",
-    tools: [],
-    duration: "00:34",
-    description: "",
-    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1791331499669-x66u5298e2dl.mp4",
-    thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1791331627126-izw6y4vxwjbv.jpg",
-    filmed: false,
-    directed: false,
-    edited: true,
-    thumbnailSource: "auto",
-    createdAt: "2026-10-07T00:07:13.541Z",
-  },
 ];
 
 export type Reel = {
