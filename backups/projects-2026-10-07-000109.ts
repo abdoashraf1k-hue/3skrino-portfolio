@@ -352,27 +352,6 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-06T14:03:38.656Z",
   },
-  {
-    id: "ariika",
-    accentColor: "#e7fe55",
-    orientation: "vertical",
-    title: "ARIIKA",
-    category: "furniture",
-    year: 2026,
-    client: "DOWNTOWN MALL",
-    role: "",
-    tools: ["Premiere Pro"],
-    duration: "00:36",
-    description: "",
-    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1791330938180-hmui87lx6h5i.mp4",
-    thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1791331253970-ggtty8xpz984.jpg",
-    filmed: true,
-    directed: true,
-    edited: true,
-    thumbnailSource: "auto",
-    createdAt: "2026-10-07T00:01:09.194Z",
-  },
 ];
 
 export type Reel = {
