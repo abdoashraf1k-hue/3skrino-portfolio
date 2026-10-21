@@ -164,7 +164,7 @@ export const projects: Project[] = [
     videoUrl:
       "https://res.cloudinary.com/gnstqf5t/video/upload/v1790767481/ywy46evz68uqpfjrwmyx.mp4",
     thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1791293652835-ec84c31d-0d20-48df-9c8b-42f18a2f90b5.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792622030613-vitswcpa80du.jpg",
     featured: true,
     filmed: false,
     directed: false,
