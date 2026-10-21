@@ -118,7 +118,7 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792622110245-i915hxfhza2y.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792622181039-gn2sfmnvfoan.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792622590165-lxqiuvv5zhv3.jpg",
     featured: true,
     filmed: false,
     directed: false,
