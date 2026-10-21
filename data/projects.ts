@@ -96,10 +96,9 @@ export const projects: Project[] = [
     tools: ["HIGGSFIELD", "Premiere Pro", "After Effects"],
     duration: "00:18",
     description: "",
-    videoUrl:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1790783137369-1886a927-c6d7-4f58-b77c-228fcec58c43.mp4",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792620417377-y8v0z0998y3i.mp4",
     thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1790783278733-eec604d5-0bbb-458f-98be-f5e78911ee1e.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792620427098-0rheup99v1wz.jpg",
     filmed: false,
     directed: true,
     edited: true,
