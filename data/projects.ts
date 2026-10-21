@@ -204,10 +204,9 @@ export const projects: Project[] = [
     tools: ["Premiere Pro", "After Effects"],
     duration: "00:55",
     description: "",
-    videoUrl:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1790905188602-a9ed15aa-b7f8-4710-8ef2-095d117f5e36.mp4",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792620969630-omcx1czjinss.mp4",
     thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1790905188963-24b43179-fe17-401c-872d-69937da3c55f.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792621022575-77uex598if14.jpg",
     filmed: false,
     directed: true,
     edited: true,
