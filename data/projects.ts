@@ -252,7 +252,7 @@ export const projects: Project[] = [
     videoUrl:
       "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1791288011776-63240552-62dd-41b6-871b-f642d30a957a.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792622711273-4x9liqoyyc36.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792625146392-kj2f6n6eqeu7.jpg",
     filmed: true,
     directed: true,
     edited: true,
