@@ -638,6 +638,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-24T19:56:24.717Z",
   },
+  {
+    id: "tokyo",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "TOKYO",
+    category: "tours",
+    year: 2025,
+    client: "ONE WORLD TOURS",
+    role: "Editor",
+    tools: [],
+    duration: "00:31",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792871815196-avjgtc50ta9h.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792871878173-4yu3fntr3p3j.jpg",
+    filmed: false,
+    directed: false,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-24T19:58:06.634Z",
+  },
 ];
 
 export type Reel = {
