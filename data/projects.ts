@@ -659,6 +659,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-24T19:58:06.634Z",
   },
+  {
+    id: "qadya",
+    accentColor: "#e7fe55",
+    orientation: "horizontal",
+    title: "QADYA",
+    category: "sports",
+    year: 2025,
+    client: "QADYA",
+    role: "Editor",
+    tools: [],
+    duration: "01:22",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792871977254-ubisuylvrb22.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792872082517-3tcqgid5hloj.jpg",
+    filmed: true,
+    directed: true,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-24T20:01:31.100Z",
+  },
 ];
 
 export type Reel = {
