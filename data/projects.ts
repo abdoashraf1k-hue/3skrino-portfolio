@@ -225,10 +225,9 @@ export const projects: Project[] = [
     tools: ["Runway"],
     duration: "00:32",
     description: "",
-    videoUrl:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/videos/1791287344253-4da88730-443a-4ca9-8c85-38f115de5a89.mp4",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792872476392-32ik9u5yh2dy.mp4",
     thumbnail:
-      "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/thumbnails/1791287426594-7ebe6ec0-bfe1-4b07-8190-a7717d25d28e.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792872482532-u6pxg4yfp8r1.jpg",
     featured: true,
     filmed: false,
     directed: true,
