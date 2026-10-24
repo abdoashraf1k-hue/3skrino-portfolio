@@ -533,6 +533,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-24T19:46:11.274Z",
   },
+  {
+    id: "2023-recap-one-world-tours",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "2023 RECAP ONE WORLD TOURS",
+    category: "tours",
+    year: 2026,
+    client: "ONE WORLD TOURS",
+    role: "Editor",
+    tools: [],
+    duration: "01:00",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792871211354-yljtmuq73xcs.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792871256668-eebryduq1254.jpg",
+    filmed: false,
+    directed: false,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-24T19:48:35.098Z",
+  },
 ];
 
 export type Reel = {
