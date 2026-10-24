@@ -471,6 +471,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-24T15:06:19.695Z",
   },
+  {
+    id: "noun-furniture",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "NOUN FURNITURE",
+    category: "furniture",
+    year: 2026,
+    client: "DOWNTOWN MALL",
+    role: "Editor",
+    tools: [],
+    duration: "00:30",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792854505233-8ggz2jvtkjza.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792854532207-iw96q3cgne1z.jpg",
+    filmed: true,
+    directed: true,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-24T15:09:31.482Z",
+  },
 ];
 
 export type Reel = {
