@@ -680,6 +680,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-24T20:01:31.100Z",
   },
+  {
+    id: "ibiza",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "IBIZA",
+    category: "tours",
+    year: 2025,
+    client: "ONE WORLD TOURS",
+    role: "Editor",
+    tools: [],
+    duration: "00:27",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792872114075-0ifnkn7hj7s1.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792872223449-y3kibq4v5llp.jpg",
+    filmed: true,
+    directed: false,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-24T20:03:49.467Z",
+  },
 ];
 
 export type Reel = {
