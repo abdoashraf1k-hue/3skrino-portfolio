@@ -554,6 +554,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-24T19:48:35.098Z",
   },
+  {
+    id: "china",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "CHINA",
+    category: "tours",
+    year: 2023,
+    client: "ONE WORLD TOURS",
+    role: "Editor",
+    tools: [],
+    duration: "00:47",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792871333214-rgvkyw2trz17.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792871368708-fh60sy1y62p9.jpg",
+    filmed: false,
+    directed: false,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-24T19:49:34.750Z",
+  },
 ];
 
 export type Reel = {
