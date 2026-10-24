@@ -701,6 +701,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-24T20:03:49.467Z",
   },
+  {
+    id: "nissan-qashqai",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "Nissan Qashqai",
+    category: "automotive",
+    year: 2025,
+    client: "Nissan",
+    role: "Editor",
+    tools: [],
+    duration: "00:22",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792872315066-hudc338sfe80.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792872393749-e682j4fhlc7a.jpg",
+    filmed: false,
+    directed: false,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-24T20:06:56.379Z",
+  },
 ];
 
 export type Reel = {
