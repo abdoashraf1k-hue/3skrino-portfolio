@@ -741,6 +741,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-24T20:12:06.775Z",
   },
+  {
+    id: "black-friday",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "BLACK FRIDAY",
+    category: "corporate",
+    year: 2026,
+    client: "DOWNTOWN MALL",
+    role: "Editor",
+    tools: [],
+    duration: "01:00",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792872743603-bi6h69kkae5k.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792872783317-i8wc3pwbsrtu.jpg",
+    filmed: true,
+    directed: true,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-24T20:13:12.465Z",
+  },
 ];
 
 export type Reel = {
