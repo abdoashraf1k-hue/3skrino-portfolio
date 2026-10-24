@@ -720,6 +720,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-24T20:06:56.379Z",
   },
+  {
+    id: "burberry",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "BURBERRY",
+    category: "fashion",
+    year: 2025,
+    client: "DOWNTOWN MALL",
+    role: "Editor",
+    tools: [],
+    duration: "00:42",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792872629370-yx025xeknnsk.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792872723077-ralz999w83pp.jpg",
+    filmed: true,
+    directed: true,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-24T20:12:06.775Z",
+  },
 ];
 
 export type Reel = {
