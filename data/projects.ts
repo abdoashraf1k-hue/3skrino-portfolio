@@ -429,6 +429,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-21T22:31:33.577Z",
   },
+  {
+    id: "mint-x-riseup",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "MINT x RISEUP",
+    category: "reels",
+    year: 2025,
+    client: "MINT-EGBANK",
+    role: "Editor",
+    tools: ["Premiere Pro"],
+    duration: "00:23",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792853356686-kbrj7z3h45r3.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792853435192-5ffon9owcfsp.jpg",
+    filmed: true,
+    directed: true,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-24T14:50:38.587Z",
+  },
 ];
 
 export type Reel = {
