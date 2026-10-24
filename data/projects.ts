@@ -450,6 +450,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-24T14:50:38.587Z",
   },
+  {
+    id: "nespresso",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "nespresso",
+    category: "reels",
+    year: 2025,
+    client: "DOWNTOWN MALL",
+    role: "Editor",
+    tools: [],
+    duration: "00:45",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792854292464-579rxx13vqy1.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792854376488-h55qdu14jrp2.jpg",
+    filmed: true,
+    directed: true,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-24T15:06:19.695Z",
+  },
 ];
 
 export type Reel = {
