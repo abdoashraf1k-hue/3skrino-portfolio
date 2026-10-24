@@ -512,6 +512,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-24T19:44:52.558Z",
   },
+  {
+    id: "nevermind",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "Nevermind",
+    category: "restaurants",
+    year: 2023,
+    client: "Nevermind Burger",
+    role: "Editor",
+    tools: [],
+    duration: "00:24",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792871117790-0hiiq4985td3.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792871160037-g66jeoammovi.jpg",
+    filmed: false,
+    directed: false,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-24T19:46:11.274Z",
+  },
 ];
 
 export type Reel = {
