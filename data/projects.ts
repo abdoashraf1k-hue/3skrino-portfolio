@@ -491,6 +491,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-24T15:09:31.482Z",
   },
+  {
+    id: "motorsports-festival",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "motorsports festival",
+    category: "sports",
+    year: 2023,
+    client: "REDBULL UAE",
+    role: "Editor",
+    tools: [],
+    duration: "00:56",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792870957682-gj0rk3dcijon.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792871080347-6sndkixc28t6.jpg",
+    filmed: false,
+    directed: false,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-24T19:44:52.558Z",
+  },
 ];
 
 export type Reel = {
