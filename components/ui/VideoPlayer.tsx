@@ -5,6 +5,7 @@ import { useRef, useState, type SyntheticEvent } from "react";
 import { trackVideoPlay } from "@/lib/analytics";
 import { useInView } from "@/lib/hooks";
 import { skipImageOptimizer } from "@/lib/utils";
+import { playbackUrl } from "@/lib/video/urls";
 
 type VideoPlayerProps = {
   projectId: string;
@@ -42,20 +43,29 @@ function withBuster(src: string, stamp: number): string {
  * outlive it (a seek after expiry fails), so on error the player re-requests
  * the src with a cache-busting param — which mints a fresh presigned URL —
  * and resumes at the same time. At most MAX_RETRIES per src.
+ *
+ * With NEXT_PUBLIC_B2_PROXY_URL set, B2 sources play through the Cloudflare
+ * Worker (workers/b2-proxy) instead of /media — see lib/video/urls.ts.
  */
 export default function VideoPlayer({ projectId, src, poster, title, sizes = "(min-width: 1024px) 70vw, 100vw" }: VideoPlayerProps) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { rootMargin: "300px" });
   const played = useRef(false);
   const [retry, setRetry] = useState<Retry | null>(null);
+  /** The src that ran out of retries — shown as a message instead of the browser's codec error. */
+  const [failed, setFailed] = useState<string | null>(null);
 
   // A retry only applies to the src it was made for — a new src starts clean.
   const current = retry && retry.for === src ? retry : null;
-  const videoSrc = current ? withBuster(src, current.stamp) : src;
+  const mp4 = playbackUrl(src);
+  const videoSrc = current ? withBuster(mp4, current.stamp) : mp4;
 
   const onError = (e: SyntheticEvent<HTMLVideoElement>) => {
     const count = current && Date.now() - current.stamp < RETRY_BUDGET_RESET_MS ? current.count : 0;
-    if (count >= MAX_RETRIES) return;
+    if (count >= MAX_RETRIES) {
+      setFailed(src);
+      return;
+    }
     const v = e.currentTarget;
     setRetry({
       for: src,
@@ -84,7 +94,9 @@ export default function VideoPlayer({ projectId, src, poster, title, sizes = "(m
           poster={poster || undefined}
           controls
           playsInline
-          preload="metadata"
+          // With a poster nothing needs fetching until play — each metadata
+          // probe is bucket transactions + bytes against the daily cap.
+          preload={poster ? "none" : "metadata"}
           aria-label={title}
           onError={onError}
           onLoadedMetadata={onLoadedMetadata}
@@ -95,6 +107,11 @@ export default function VideoPlayer({ projectId, src, poster, title, sizes = "(m
           }}
           className="absolute inset-0 h-full w-full object-cover"
         />
+      )}
+      {failed === src && (
+        <p role="status" className="absolute inset-0 flex items-center justify-center bg-black/70 p-6 text-center font-mono text-xs uppercase tracking-widest text-white/70">
+          Video temporarily unavailable — try again later
+        </p>
       )}
     </div>
   );

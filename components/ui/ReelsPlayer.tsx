@@ -7,6 +7,7 @@ import ProjectBadges from "@/components/ui/ProjectBadges";
 import type { Reel } from "@/data/projects";
 import { trackVideoPlay } from "@/lib/analytics";
 import { cn, EASE_OUT } from "@/lib/utils";
+import { playbackUrl } from "@/lib/video/urls";
 
 type Props = {
   reels: Reel[];
@@ -210,7 +211,7 @@ export default function ReelsPlayer({ reels, start, onIndex, onClose }: Props) {
                     ref={(el) => {
                       videos.current[i] = el;
                     }}
-                    src={Math.abs(i - index) <= 1 ? r.videoUrl : undefined}
+                    src={Math.abs(i - index) <= 1 ? playbackUrl(r.videoUrl) : undefined}
                     poster={r.poster}
                     playsInline
                     muted={muted}

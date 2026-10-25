@@ -7,6 +7,7 @@ import Placeholder from "@/components/ui/Placeholder";
 import ProjectBadges from "@/components/ui/ProjectBadges";
 import type { Reel } from "@/data/projects";
 import { cn } from "@/lib/utils";
+import { playbackUrl } from "@/lib/video/urls";
 
 /** Desktop-class pointer with motion allowed — gates hover previews. */
 const HOVER_QUERY = "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)";
@@ -65,7 +66,7 @@ function ReelTile({ reel, index, big, onOpen }: { reel: Reel; index: number; big
       {previewMounted && reel.videoUrl && (
         <video
           ref={videoRef}
-          src={reel.videoUrl}
+          src={playbackUrl(reel.videoUrl)}
           muted
           loop
           playsInline

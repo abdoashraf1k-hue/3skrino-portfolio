@@ -20,6 +20,7 @@ import { useHeroConfig, useSiteConfig } from "@/lib/live-config";
 import { getLenis } from "@/lib/scroll";
 import { cn } from "@/lib/utils";
 import { HeroCtas, pickReel, useTrackProgress, useTypewriter } from "./shared";
+import { playbackUrl } from "@/lib/video/urls";
 
 /** Where the seam may be dragged (share of the width given to the left page). */
 const SEAM = { min: 0.26, max: 0.74, rest: 0.5, magnet: 0.07, keyStep: 0.02 };
@@ -127,7 +128,7 @@ export default function SplitHero() {
     reel?.videoUrl ? (
       <video
         key={controls ? "full" : "loop"}
-        src={reel.videoUrl}
+        src={playbackUrl(reel.videoUrl)}
         poster={reel.thumbnail || undefined}
         autoPlay={!reduced || controls}
         muted={!controls}

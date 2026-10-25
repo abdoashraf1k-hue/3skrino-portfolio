@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { playbackUrl } from "@/lib/video/urls";
 
 /** Desktop-class pointer with motion allowed — gates hover previews. */
 const HOVER_QUERY = "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)";
@@ -52,7 +53,7 @@ export default function HoverPreview({ src, className }: { src: string; classNam
       {mounted && (
         <video
           ref={videoRef}
-          src={src}
+          src={playbackUrl(src)}
           muted
           loop
           playsInline
