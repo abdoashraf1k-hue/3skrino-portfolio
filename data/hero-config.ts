@@ -474,7 +474,7 @@ export const heroConfig: HeroConfig = {
     floatingType: "fish",
     rotateSpeed: 0.5,
     count: 320,
-    seed: 1337,
+    seed: 1283890489,
     postFx: true,
   },
 };
