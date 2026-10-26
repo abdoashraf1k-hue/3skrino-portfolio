@@ -279,7 +279,7 @@ export const siteConfig: SiteConfig = {
   },
   seo: { projects: {} },
   backups: { schedule: "weekly" },
-  heroVariant: "model3d",
+  heroVariant: "cinematic",
   cinematic: {
     effects: {
       filmGrain: { enabled: false, intensity: 0.08, flicker: 12, dust: 0.3 },
