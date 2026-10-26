@@ -452,7 +452,7 @@ export const heroConfig: HeroConfig = {
     waveform: true,
   },
   model3d: {
-    sequenceImages: [{ url: "https://3skrino.com/media/hero/1793051212734-d5plqnw9w8vo.png", angle: 0 }],
+    sequenceImages: [{ url: "https://3skrino.com/media/hero/1793051292020-fn0jmyri9cod.png", angle: 0 }],
     theme: { primary: "#e7fe55", secondary: "#ff2d2d", background: "#0a0a0a" },
     floatingType: "fish",
     rotateSpeed: 0.5,
