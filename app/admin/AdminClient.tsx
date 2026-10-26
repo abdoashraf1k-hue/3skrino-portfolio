@@ -971,6 +971,7 @@ function Shell({ initialParams, adminKey, status, setStatus, deny }: ShellProps)
           key={editor.mode === "edit" ? editor.project.id : `new-${editor.category}-${editor.file?.name ?? ""}`}
           target={editor}
           adminKey={adminKey}
+          brands={config.hero?.logos.items ?? []}
           onClose={() => setEditor(null)}
           onSubmit={saveProject}
           onDelete={deleteProject}

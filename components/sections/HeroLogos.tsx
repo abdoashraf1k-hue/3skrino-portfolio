@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, type MouseEvent } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { brandHref, buildBrands } from "@/data/brands";
 import { LOGO_SIZE, type BrandLogo } from "@/data/hero-config";
 import { useNumbers } from "@/lib/brand";
 import { heroSignals } from "@/lib/hero-signals";
@@ -36,17 +38,30 @@ function place(logo: BrandLogo, i: number, n: number) {
   };
 }
 
-type Props = { logos: BrandLogo[]; reducedMotion: boolean; /** Whole-ring size multiplier (admin → Brands). */ scale?: number };
+type Props = {
+  logos: BrandLogo[];
+  reducedMotion: boolean;
+  /** Whole-ring size multiplier (admin → Brands). */
+  scale?: number;
+  /** False in admin previews: every logo renders inert, so nothing navigates away from the admin. */
+  linkable?: boolean;
+};
 
 /**
  * Brand logos floating around the hero silhouette. A DOM layer (not WebGL)
  * so they're crisp, hoverable and focusable over a canvas that ignores the
  * pointer. The whole ring yaws / pitches opposite the pointer; each logo
  * drifts on its own CSS loop. Hover / click brighten the silhouette's rim
- * via heroSignals. Clicks never navigate — just a pulse.
+ * via heroSignals.
+ *
+ * Sprint 13: a brand with projects (project.brandId) is a link to
+ * /reels?brand=<id>; a brand without any stays visible but inert (default
+ * cursor, no link, no hover lift). The visual ring is aria-hidden, so the
+ * screen-reader list carries the real, focusable links.
  */
-export default function HeroLogos({ logos, reducedMotion, scale = 1 }: Props) {
+export default function HeroLogos({ logos, reducedMotion, scale = 1, linkable = true }: Props) {
   const ringRef = useRef<HTMLDivElement>(null);
+  const counts = useMemo(() => new Map(buildBrands(logos).map((b) => [b.id, b.projectIds.length])), [logos]);
   // Ring tilt (deg) opposite the pointer, its smoothing per frame, and the depth spread — admin → Numbers.
   const num = useNumbers();
   const yaw = num("logos.tiltYaw");
@@ -88,8 +103,7 @@ export default function HeroLogos({ logos, reducedMotion, scale = 1 }: Props) {
 
   if (!logos.length) return null;
 
-  const pulse = (e: MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
+  const pulse = (e: MouseEvent<HTMLElement>) => {
     heroSignals.pulseAt = performance.now();
     if (reducedMotion) return;
     e.currentTarget.animate(
@@ -106,10 +120,12 @@ export default function HeroLogos({ logos, reducedMotion, scale = 1 }: Props) {
     <div className="pointer-events-none absolute inset-0 hidden [perspective:1100px] md:block">
       <ul className="sr-only" aria-label="Selected clients">
         {logos.map((logo) => (
-          <li key={logo.id}>{logo.name}</li>
+          <li key={logo.id}>
+            {linkable && counts.get(logo.id) ? <Link href={brandHref(logo.id)}>{`${logo.name} — view their work`}</Link> : logo.name}
+          </li>
         ))}
       </ul>
-      {/* Decorative: clicks never navigate, so the buttons stay out of the tab order. */}
+      {/* The visual ring: out of the a11y tree and tab order — the list above has the links. */}
       <div ref={ringRef} aria-hidden className="absolute inset-0 [transform-style:preserve-3d]">
         {logos.map((logo, i) => {
           const { x, y, z, angle } = place(logo, i, logos.length);
@@ -132,18 +148,10 @@ export default function HeroLogos({ logos, reducedMotion, scale = 1 }: Props) {
                   animationDuration: `0.9s, ${9 + (i % 4) * 2.2}s`,
                 }}
               >
-                <button
-                  type="button"
-                  onClick={pulse}
-                  onPointerEnter={() => {
-                    heroSignals.hover += 1;
-                  }}
-                  onPointerLeave={() => {
-                    heroSignals.hover = Math.max(0, heroSignals.hover - 1);
-                  }}
-                  tabIndex={-1}
-                  title={logo.name}
-                  className="pointer-events-auto block cursor-pointer rounded-full transition-[transform,opacity] duration-300 ease-out hover:scale-110 hover:!opacity-100 motion-reduce:transition-none"
+                <LogoMark
+                  href={linkable && counts.get(logo.id) ? brandHref(logo.id) : null}
+                  name={logo.name}
+                  onPulse={pulse}
                   style={{ width: size, height: size, opacity }}
                 >
                   <Image
@@ -155,12 +163,61 @@ export default function HeroLogos({ logos, reducedMotion, scale = 1 }: Props) {
                     draggable={false}
                     className="size-full select-none object-contain"
                   />
-                </button>
+                </LogoMark>
               </div>
             </div>
           );
         })}
       </div>
     </div>
+  );
+}
+
+const hover = {
+  onPointerEnter: () => {
+    heroSignals.hover += 1;
+  },
+  onPointerLeave: () => {
+    heroSignals.hover = Math.max(0, heroSignals.hover - 1);
+  },
+};
+
+/**
+ * One logo: a link (pointer cursor, hover lift, a pulse as it navigates) when
+ * the brand has projects to show, else an inert mark that still answers the
+ * rim light on hover but has no cursor change and no click.
+ */
+function LogoMark({
+  href,
+  name,
+  onPulse,
+  style,
+  children,
+}: {
+  href: string | null;
+  name: string;
+  onPulse: (e: MouseEvent<HTMLElement>) => void;
+  style: CSSProperties;
+  children: ReactNode;
+}) {
+  if (href) {
+    return (
+      <Link
+        href={href}
+        onClick={onPulse}
+        {...hover}
+        tabIndex={-1}
+        title={`${name} — view their work`}
+        className="pointer-events-auto block cursor-pointer rounded-full transition-[transform,opacity,filter] duration-300 ease-out hover:scale-110 hover:!opacity-100 hover:drop-shadow-[0_0_14px_rgb(231_254_85/0.45)] motion-reduce:transition-none"
+        style={style}
+      >
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <span {...hover} title={name} className="pointer-events-auto block cursor-default rounded-full" style={style}>
+      {children}
+    </span>
   );
 }

@@ -58,6 +58,13 @@ const HEROES: { id: HeroVariant; name: string; idea: string; fallback: string; t
     fallback: "Phones / reduced motion: same flow, text only, no CRT.",
     tech: "DOM · Web Speech",
   },
+  {
+    id: "model3d",
+    name: "3D model",
+    idea: "Your own 360° photo sequence: the mouse (or a sideways drag on touch) turns you frame by frame while a school of glowing fish circles your head — bloom, depth of field, grain. Brand logos float around and open their reels. Upload the frames in Poses → Hero 3D controls.",
+    fallback: "No sequence: the centre pose as a still. No WebGL: the sequence on a static gradient stage, no orbit.",
+    tech: "Canvas 2D · WebGL · R3F",
+  },
 ];
 
 const PREVIEWS_KEY = "3skrino-admin-hero-previews";

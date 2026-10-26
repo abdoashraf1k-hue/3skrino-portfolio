@@ -12,8 +12,8 @@ import { isBlobUrl, type ConfigResponse, type DeleteResponse, type UploadRequest
  * automatic thumbnails.
  *
  * Sprint 12: videos go to the S3-compatible bucket (B2) when the server says
- * so (action "config"), else to Vercel Blob as before. Small images stay on
- * Blob and spill over to B2 only when Blob is full or missing.
+ * so (action "config"), else to Vercel Blob as before. Sprint 13: images
+ * (thumbnails) always go to B2.
  */
 
 export const MAX_VIDEO_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB
@@ -86,12 +86,6 @@ function storeUnavailable(err: unknown): boolean {
   return err instanceof TypeError; // fetch() network failure
 }
 
-/** Blob store full, suspended, missing or not configured — worth trying the bucket instead. */
-function blobUnavailable(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  return /quota|storage|suspended|exceeded|limit|not ?found|token|configured|BLOB_READ_WRITE/i.test(`${err.name} ${err.message}`);
-}
-
 export async function uploadVideo(
   file: File,
   onProgress: Progress,
@@ -160,29 +154,25 @@ async function uploadVideoToStore(
   }
 }
 
+/**
+ * Thumbnails / stills → the bucket's thumbnails/ folder (Sprint 13: B2 only —
+ * Vercel Blob is no longer an upload target for images).
+ */
 export async function uploadImage(
   file: Blob,
   onProgress: Progress,
   { key, signal, name = "thumb.jpg" }: UploadOpts & { name?: string },
 ): Promise<{ url: string }> {
-  try {
-    return await uploadImageToBlob(file, onProgress, { key, signal, name });
-  } catch (err) {
-    if (err instanceof AuthError || isAbort(err) || signal?.aborted || !blobUnavailable(err)) throw err;
-    const config = await storeConfig(key);
-    if (!config?.configured.b2) throw err;
-    console.warn("[upload] Vercel Blob unavailable — storing the image in B2", err);
-    const typed = file.type ? file : new Blob([file], { type: "image/jpeg" });
-    const stored = await uploadToStore(typed, {
-      folder: "thumbnails",
-      api: storeApi(key),
-      put: xhrPut,
-      signal,
-      onProgress,
-      filename: name,
-    });
-    return { url: stored.publicUrl };
-  }
+  const typed = file.type ? file : new Blob([file], { type: "image/jpeg" });
+  const stored = await uploadToStore(typed, {
+    folder: "thumbnails",
+    api: storeApi(key),
+    put: xhrPut,
+    signal,
+    onProgress,
+    filename: name,
+  });
+  return { url: stored.publicUrl };
 }
 
 /**
@@ -260,23 +250,6 @@ async function uploadVideoToBlob(
     window.clearTimeout(watchdog);
     signal?.removeEventListener("abort", onCallerAbort);
   }
-}
-
-async function uploadImageToBlob(
-  file: Blob,
-  onProgress: Progress,
-  { key, signal, name = "thumb.jpg" }: UploadOpts & { name?: string },
-): Promise<{ url: string }> {
-  const pathname = `thumbnails/${Date.now()}-${uid()}.${extension(name, "jpg")}`;
-  const blob = await upload(pathname, file, {
-    access: "public",
-    handleUploadUrl: HANDLE_UPLOAD_URL,
-    headers: { Authorization: `Bearer ${key}` },
-    contentType: file.type || "image/jpeg",
-    abortSignal: signal,
-    onUploadProgress: ({ percentage }) => onProgress(Math.round(percentage)),
-  });
-  return { url: blob.url };
 }
 
 /**

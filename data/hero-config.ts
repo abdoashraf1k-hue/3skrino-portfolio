@@ -162,6 +162,38 @@ export type HeroFeatures = {
   cursorRipple: boolean;
 };
 
+/** Sprint 13 — what orbits the 3D hero's head (one InstancedMesh, any of these shapes). */
+export type HeroFloatingType = "fish" | "orbs" | "shards" | "cubes";
+
+export type Hero3DTheme = {
+  /** Key light, the model's main material and the near end of the orbit gradient. */
+  primary: string;
+  /** Rim light and the far end of the orbit gradient. */
+  secondary: string;
+  /** Canvas clear colour + fog. */
+  background: string;
+};
+
+/** The "3D model" hero (admin → Poses → Hero 3D controls). */
+export type Hero3DConfig = {
+  /**
+   * The 360° image sequence: one photo per step of the turn, in rotation
+   * order (pose-001 … pose-036). Mouse X / touch drag scrubs through them.
+   * Empty → the hero shows the centre pose of the ladder as a still.
+   */
+  sequenceImages: string[];
+  theme: Hero3DTheme;
+  floatingType: HeroFloatingType;
+  /** Extra drift of the floating orbit around the photo: 0 = none, 5 max. */
+  rotateSpeed: number;
+  /** Instances in the orbit (100–500). */
+  count: number;
+  /** Orbit layout seed — "Regenerate" picks a new one; the same seed always draws the same orbit. */
+  seed: number;
+  /** Bloom, depth of field, film grain and vignette. */
+  postFx: boolean;
+};
+
 export type HeroConfig = {
   poses: {
     /** Left → right. The middle entry is the resting (centre) pose. Always 7. */
@@ -180,6 +212,7 @@ export type HeroConfig = {
   roles: { items: string[]; interval: number; styles: Record<string, RoleStyle> };
   confrontation: ConfrontationConfig;
   interview: InterviewConfig;
+  model3d: Hero3DConfig;
 };
 
 export const LADDER_SIZE = 7;
@@ -263,35 +296,35 @@ export const heroConfig: HeroConfig = {
       {
         id: "northwind",
         name: "Northwind",
-        imageUrl: "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/brands/northwind-musp1gt2.png",
+        imageUrl: "/brands/northwind.svg",
         size: 238,
         visible: true,
       },
       {
         id: "halcyon",
         name: "Halcyon",
-        imageUrl: "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/brands/halcyon-muwq6560.png",
+        imageUrl: "/brands/halcyon.svg",
         size: 222,
         visible: true,
       },
       {
         id: "vantablack",
         name: "GAD",
-        imageUrl: "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/brands/one-world-tours-muwq9409.png",
+        imageUrl: "/brands/gad.svg",
         size: 324,
         visible: true,
       },
       {
         id: "orbitra",
         name: "Orbitra",
-        imageUrl: "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/brands/orbitra-muwqe1ma.png",
+        imageUrl: "/brands/orbitra.svg",
         size: 122,
         visible: true,
       },
       {
         id: "kinetic",
         name: "Kinetic",
-        imageUrl: "https://ugluqj98dbjzamqi.public.blob.vercel-storage.com/brands/kinetic-muwqgomp.png",
+        imageUrl: "/brands/kinetic.svg",
         size: 182,
         visible: true,
       },
@@ -444,5 +477,14 @@ export const heroConfig: HeroConfig = {
     crt: true,
     subtitles: true,
     waveform: true,
+  },
+  model3d: {
+    sequenceImages: [],
+    theme: { primary: "#e7fe55", secondary: "#ff2d2d", background: "#0a0a0a" },
+    floatingType: "fish",
+    rotateSpeed: 0.5,
+    count: 320,
+    seed: 1337,
+    postFx: true,
   },
 };

@@ -7,7 +7,10 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/work", destination: "/", permanent: true },
-      { source: "/reels", destination: "/vertical-cuts", permanent: true },
+      // Sprint 13: /reels?brand=<id> is the brand-filtered reels page, so only the
+      // legacy reel-player links (?view= / ?reel=) still go to Vertical Cuts.
+      { source: "/reels", has: [{ type: "query", key: "view" }], destination: "/vertical-cuts", permanent: true },
+      { source: "/reels", has: [{ type: "query", key: "reel" }], destination: "/vertical-cuts", permanent: true },
       { source: "/ai", destination: "/ai-cuts", permanent: true },
     ];
   },

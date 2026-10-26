@@ -11,6 +11,7 @@ const TimelineHero = dynamic(() => import("@/components/heroes/TimelineHero"));
 const MirrorHero = dynamic(() => import("@/components/heroes/MirrorHero"));
 const ConfrontationHero = dynamic(() => import("@/components/heroes/ConfrontationHero"));
 const InterviewHero = dynamic(() => import("@/components/heroes/InterviewHero"));
+const Hero3D = dynamic(() => import("@/components/heroes/Hero3D"));
 
 /**
  * Renders the hero picked in admin → Heroes (data/site-config.ts →
@@ -30,6 +31,8 @@ export default function HeroSwitch() {
       return <ConfrontationHero />;
     case "interview":
       return <InterviewHero />;
+    case "model3d":
+      return <Hero3D />;
     default:
       return <Hero />;
   }

@@ -1,13 +1,20 @@
 "use client";
 
-import { upload } from "@vercel/blob/client";
+import { adminFetch } from "@/lib/admin/client-api";
+import { uploadToStore, xhrPut } from "@/lib/admin/multipart";
+import type { UploadRequest } from "@/lib/admin/storage/contract";
 
 /**
- * Admin helpers for hero assets: direct-to-Vercel-Blob uploads (poses under
- * hero/, logos under brands/) and an in-browser upscaler for low-res poses.
+ * Admin helpers for hero assets: direct-to-B2 uploads through presigned PUTs
+ * (poses under hero/, logos under brands/, site images, sounds) and an
+ * in-browser upscaler for low-res poses.
+ *
+ * Sprint 13: Vercel Blob is out of the upload path entirely. The browser asks
+ * /api/admin/b2-upload (admin key) for a short-lived signed PUT, sends the
+ * bytes straight to the bucket and stores the returned public URL
+ * (<site>/media/<key>, which redirects to a signed GET — the bucket stays private).
  */
 
-const HANDLE_UPLOAD_URL = "/api/admin/blob-upload";
 export const POSE_MAX_EDGE = 1600;
 
 const POSE_TYPES = /^image\/(png|webp)$/;
@@ -54,15 +61,14 @@ export async function uploadHeroAsset(
   key: string,
   onProgress?: (pct: number) => void,
 ): Promise<string> {
-  const pathname = `${folder}/${slug(name)}-${Date.now().toString(36)}.${extension(file.type)}`;
-  const blob = await upload(pathname, file, {
-    access: "public",
-    handleUploadUrl: HANDLE_UPLOAD_URL,
-    headers: { Authorization: `Bearer ${key}` },
-    contentType: file.type,
-    onUploadProgress: ({ percentage }) => onProgress?.(Math.round(percentage)),
+  const stored = await uploadToStore(file, {
+    folder,
+    api: <T,>(body: UploadRequest) => adminFetch<T>(key, "b2-upload", "POST", body),
+    put: xhrPut,
+    onProgress,
+    filename: `${slug(name)}.${extension(file.type)}`,
   });
-  return blob.url;
+  return stored.publicUrl;
 }
 
 /* ------------------------------------------------------------------ */

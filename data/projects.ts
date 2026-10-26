@@ -28,6 +28,8 @@ export type Project = {
   thumbnailSource?: "auto" | "manual";
   /** ISO timestamp, set by the admin when the project is created. */
   createdAt?: string;
+  /** Sprint 13: the hero logo (data/hero-config.ts → logos.items[].id) this project belongs to. */
+  brandId?: string;
 };
 
 export type ProjectCredits = { filmed: boolean; directed: boolean; edited: boolean };
@@ -90,6 +92,7 @@ export const projects: Project[] = [
     category: "restaurants",
     year: 2026,
     client: "GAD RESTAURANT",
+    brandId: "vantablack",
     role: "Editor+DIRECTING+SHOOTING",
     tools: ["Premiere Pro"],
     duration: "00:28",

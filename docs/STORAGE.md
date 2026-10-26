@@ -12,7 +12,7 @@ console.
 
 ## 1. The short version
 
-- **Small files** (hero poses, logos, site images, thumbnails) stay on **Vercel Blob**, the same as before.
+- **Small files** (hero poses, brand logos, site images, sounds, thumbnails) go to the **same private B2 bucket** (Sprint 13), in the folders `hero/`, `brands/`, `site/`, `audio/` and `thumbnails/`. Vercel Blob is no longer an upload target for them (it was suspended over quota); old Blob URLs keep working.
 - **Videos** go to a **private Backblaze B2 bucket**: 10 GB free, and no credit card needed to sign up.
 - Videos go **straight from your browser to B2** when you upload them, and **straight from B2 to the visitor** when they watch. The site only hands out short-lived signed links.
 - If B2 isn't set up, or can't be reached, **everything falls back to Vercel Blob** as it did before.

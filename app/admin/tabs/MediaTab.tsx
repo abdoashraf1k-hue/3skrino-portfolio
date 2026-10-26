@@ -225,12 +225,12 @@ function Thumb({ item, kind }: { item: MediaItem; kind: Kind }) {
     // eslint-disable-next-line @next/next/no-img-element -- arbitrary blob URLs, admin only
     return <img src={item.url} alt="" loading="lazy" className="absolute inset-0 size-full object-contain p-1" />;
   }
-  if (kind === "video") {
-    return <video src={`${item.url}#t=0.5`} preload="metadata" muted playsInline className="absolute inset-0 size-full object-cover" />;
-  }
+  // No <video> in the grid: a first-frame preview range-requests every clip in
+  // the folder, which burns the bucket's daily download/transaction cap. Click
+  // opens the full player.
   return (
     <span className="absolute inset-0 flex items-center justify-center font-mono text-2xl text-white/30">
-      {kind === "audio" ? "♪" : "◇"}
+      {kind === "video" ? "▶" : kind === "audio" ? "♪" : "◇"}
     </span>
   );
 }

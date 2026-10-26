@@ -18,7 +18,7 @@
  *   B2_APP_KEY      application key                                  (secret)
  */
 
-const KEY_PATTERN = /^(videos|thumbnails)\/\d{10,16}-[a-z0-9-]{6,40}\.[a-z0-9]{2,5}$/;
+const KEY_PATTERN = /^(videos|thumbnails|brands|hero|site|audio)\/\d{10,16}-[a-z0-9-]{6,40}\.[a-z0-9]{2,5}$/;
 /** Free-plan cache objects max out at 512 MB; bigger files stream through uncached. */
 const MAX_CACHE_BYTES = 500 * 1024 * 1024;
 const IMMUTABLE = "public, max-age=31536000, immutable";

@@ -5,13 +5,22 @@ import {
   type ConfrontationConfig,
   type ConfrontState,
   type HeroConfig,
+  type Hero3DConfig,
   type HeroFilter,
   type HeroPose,
   type InterviewConfig,
   type InterviewQuestion,
   type RoleStyle,
 } from "@/data/hero-config";
-import { DEFAULT_CONFRONTATION, DEFAULT_EXPRESSIONS, DEFAULT_FEATURES, DEFAULT_INTERVIEW } from "@/data/hero-defaults";
+import {
+  DEFAULT_CONFRONTATION,
+  DEFAULT_EXPRESSIONS,
+  DEFAULT_FEATURES,
+  DEFAULT_INTERVIEW,
+  DEFAULT_MODEL3D,
+  HERO3D_FLOATING_TYPES,
+  HERO_SEQUENCE_MAX,
+} from "@/data/hero-defaults";
 import {
   asset,
   bool,
@@ -205,6 +214,30 @@ function interview(v: unknown, ids: Set<string>): InterviewConfig {
   };
 }
 
+/** Sprint 13: the 3D hero. Files written before it existed get the defaults. */
+function model3d(v: unknown): Hero3DConfig {
+  const d = DEFAULT_MODEL3D;
+  if (v === undefined) return d;
+  const o = rec(v, "model3d");
+  const W = "3D hero";
+  const t = o.theme === undefined ? null : rec(o.theme, "model3d.theme");
+  const theme = t ? { primary: hex(t, "primary", W), secondary: hex(t, "secondary", W), background: hex(t, "background", W) } : d.theme;
+  // Files from the GLB era carry `modelUrl` instead: it's dropped, the sequence starts empty.
+  const seq = o.sequenceImages ?? [];
+  if (!Array.isArray(seq)) return fail(`${W}: "sequenceImages" must be a list of image URLs`);
+  if (seq.length > HERO_SEQUENCE_MAX) fail(`${W}: at most ${HERO_SEQUENCE_MAX} frames in the 360° sequence`);
+  const sequenceImages = seq.map((src, i) => asset({ src }, "src", `${W} frame ${i + 1}`));
+  return {
+    sequenceImages,
+    theme,
+    floatingType: oneOf(o, "floatingType", W, HERO3D_FLOATING_TYPES, d.floatingType),
+    rotateSpeed: num(o, "rotateSpeed", W, 0, 5, 0.05, d.rotateSpeed),
+    count: num(o, "count", W, 100, 500, 1, d.count),
+    seed: num(o, "seed", W, 1, 2_147_483_647, 1, d.seed),
+    postFx: bool(o, "postFx", W, d.postFx),
+  };
+}
+
 /** Validates an unknown value into a HeroConfig. Throws ProjectsFileError (400). */
 export function validateHeroConfig(input: unknown): HeroConfig {
   const o = rec(input, "Hero config");
@@ -278,6 +311,7 @@ export function validateHeroConfig(input: unknown): HeroConfig {
     roles: { items: roleItems, interval, styles: roleStyles(roles.styles, roleItems) },
     confrontation: confrontation(o.confrontation, idSet),
     interview: interview(o.interview, idSet),
+    model3d: model3d(o.model3d),
   };
 }
 

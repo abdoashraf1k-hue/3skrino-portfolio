@@ -29,6 +29,7 @@ export { isBlobConfigured } from "./vercel-blob";
 const DEFAULT_SITE_URL = "https://3skrino.com";
 const KEY_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
 const EXT_PATTERN = /^[a-z0-9]{2,5}$/;
+const DEFAULT_EXT: Record<MediaFolder, string> = { videos: "mp4", thumbnails: "jpg", brands: "png", hero: "webp", site: "png", audio: "mp3" };
 
 function isProviderSetting(value: unknown): value is ProviderSetting {
   return typeof value === "string" && (PROVIDER_SETTINGS as readonly string[]).includes(value);
@@ -78,7 +79,7 @@ function randomId(length: number): string {
 /** "<folder>/<epoch ms>-<12 random>.<ext>" — the only way object keys are minted. */
 export function makeKey(folder: MediaFolder, filename: string): string {
   const fromName = /\.([a-z0-9]+)$/i.exec(filename)?.[1]?.toLowerCase() ?? "";
-  const ext = EXT_PATTERN.test(fromName) ? fromName : folder === "videos" ? "mp4" : "jpg";
+  const ext = EXT_PATTERN.test(fromName) ? fromName : DEFAULT_EXT[folder];
   const key = `${folder}/${Date.now()}-${randomId(12)}.${ext}`;
   if (!KEY_PATTERN.test(key)) throw new StorageError(`Minted an invalid object key "${key}"`, 500);
   return key;
@@ -130,7 +131,7 @@ export function assertUpload(folder: MediaFolder, contentType: string, size: num
     throw new StorageError(`${contentType || "That file type"} isn't allowed in ${folder} — use ${allowed.join(", ")}`, 400);
   }
   if (!Number.isFinite(size) || size <= 0) throw new StorageError("The file is empty", 400);
-  const max = folder === "videos" ? LIMITS.maxVideoBytes : LIMITS.maxImageBytes;
+  const max = folder === "videos" ? LIMITS.maxVideoBytes : folder === "audio" ? LIMITS.maxAudioBytes : LIMITS.maxImageBytes;
   if (size > max) {
     throw new StorageError(`The file is too large (${formatBytes(size)}) — the limit for ${folder} is ${formatBytes(max)}`, 400);
   }

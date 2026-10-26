@@ -21,6 +21,7 @@ export const TAB_SLICES: Record<string, readonly Slice[]> = {
     hero(["confrontation"], "confrontation"),
     hero(["features"], "hero effects"),
     hero(["ambientSrc"], "ambient sound"),
+    hero(["model3d"], "3D hero"),
   ],
   brands: [hero(["logos"], "brands")],
   roles: [hero(["roles"], "roles")],

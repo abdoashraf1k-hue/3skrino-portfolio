@@ -27,6 +27,7 @@ const KEY_ORDER: (keyof Project)[] = [
   "category",
   "year",
   "client",
+  "brandId",
   "role",
   "tools",
   "duration",
@@ -349,6 +350,11 @@ export function validateProject(input: unknown): Project {
     throw new ProjectsFileError('"createdAt" must be an ISO date string');
   }
 
+  const brandId = input.brandId;
+  if (brandId !== undefined && brandId !== "" && (typeof brandId !== "string" || brandId.length > 60 || !SLUG.test(brandId))) {
+    throw new ProjectsFileError('"brandId" must be a brand id (a lowercase slug)');
+  }
+
   const project: Project = {
     id,
     title,
@@ -374,6 +380,7 @@ export function validateProject(input: unknown): Project {
   }
   if (thumbnailSource && project.thumbnail) project.thumbnailSource = thumbnailSource;
   if (typeof createdAt === "string") project.createdAt = new Date(createdAt).toISOString();
+  if (typeof brandId === "string" && brandId) project.brandId = brandId;
   return project;
 }
 

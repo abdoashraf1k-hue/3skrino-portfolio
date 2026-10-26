@@ -1,4 +1,4 @@
-import type { ConfrontationConfig, HeroConfig, HeroFeatures, HeroPose, InterviewConfig } from "./hero-config";
+import type { ConfrontationConfig, Hero3DConfig, Hero3DTheme, HeroConfig, HeroFeatures, HeroFloatingType, HeroPose, InterviewConfig } from "./hero-config";
 
 /**
  * Factory settings for the hero — what "Reset" in the admin goes back to.
@@ -176,6 +176,31 @@ export const DEFAULT_ROLES: HeroConfig["roles"] = {
   styles: {},
 };
 
+/** Sprint 13 — "New theme" in admin cycles through these (primary / secondary / background). */
+export const HERO3D_PALETTES: { name: string; theme: Hero3DTheme }[] = [
+  { name: "Lime / Signal red", theme: { primary: "#e7fe55", secondary: "#ff2d2d", background: "#0a0a0a" } },
+  { name: "Ice / Violet", theme: { primary: "#9fe7ff", secondary: "#8b5cff", background: "#05070d" } },
+  { name: "Ember / Gold", theme: { primary: "#ff7a1a", secondary: "#ffd166", background: "#0d0806" } },
+  { name: "Mint / Magenta", theme: { primary: "#5cffc8", secondary: "#ff3dbb", background: "#06100c" } },
+  { name: "Mono / Chrome", theme: { primary: "#f2f2f2", secondary: "#7d8590", background: "#080808" } },
+  { name: "Deep sea", theme: { primary: "#3de0ff", secondary: "#1f6bff", background: "#020814" } },
+];
+
+export const HERO3D_FLOATING_TYPES: readonly HeroFloatingType[] = ["fish", "orbs", "shards", "cubes"];
+
+/** 360° frames: 36 (10° steps) is typical, 72 is silky; past this the preload gets heavy. */
+export const HERO_SEQUENCE_MAX = 180;
+
+export const DEFAULT_MODEL3D: Hero3DConfig = {
+  sequenceImages: [],
+  theme: HERO3D_PALETTES[0].theme,
+  floatingType: "fish",
+  rotateSpeed: 0.5,
+  count: 320,
+  seed: 1337,
+  postFx: true,
+};
+
 export const DEFAULT_HERO_CONFIG: HeroConfig = {
   poses: { ladder: DEFAULT_LADDER, up: DEFAULT_UP, down: DEFAULT_DOWN },
   expressions: DEFAULT_EXPRESSIONS,
@@ -198,4 +223,5 @@ export const DEFAULT_HERO_CONFIG: HeroConfig = {
   roles: DEFAULT_ROLES,
   confrontation: DEFAULT_CONFRONTATION,
   interview: DEFAULT_INTERVIEW,
+  model3d: DEFAULT_MODEL3D,
 };

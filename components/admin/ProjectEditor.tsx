@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type Reac
 import ProjectBadges from "@/components/ui/ProjectBadges";
 import PublicProjectCard from "@/components/ui/ProjectCard";
 import { allCategories as categories } from "@/data/categories";
+import type { BrandLogo } from "@/data/hero-config";
 import type { Project } from "@/data/projects";
 import { tools as knownTools } from "@/data/site";
 import type { AnalyzeResponse } from "@/app/api/admin/analyze-video/route";
@@ -17,6 +18,8 @@ export type EditorTarget = { mode: "new"; category: string; file?: File } | { mo
 type Props = {
   target: EditorTarget;
   adminKey: string;
+  /** Hero logos (admin → Brands) a project can belong to. */
+  brands: BrandLogo[];
   onClose: () => void;
   /** Persists the project (POST for new, PUT for edit). Throws on failure. */
   onSubmit: (project: Project) => Promise<void>;
@@ -31,6 +34,8 @@ type Phase = "idle" | "saving" | "deleting" | "duplicating" | "analyzing";
 type Form = {
   title: string;
   client: string;
+  /** "" = no brand. */
+  brandId: string;
   role: string;
   year: string;
   duration: string;
@@ -59,6 +64,7 @@ function initialForm(target: EditorTarget): Form {
     return {
       title: p.title,
       client: p.client,
+      brandId: p.brandId ?? "",
       role: p.role,
       year: String(p.year),
       duration: p.duration,
@@ -80,6 +86,7 @@ function initialForm(target: EditorTarget): Form {
   return {
     title: target.file ? target.file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ") : "",
     client: "",
+    brandId: "",
     role: target.category === "ai" ? "AI Director, Editor" : "Editor",
     year: String(new Date().getFullYear()),
     duration: "",
@@ -201,7 +208,7 @@ function ChipInput({
   );
 }
 
-export default function ProjectEditor({ target, adminKey, onClose, onSubmit, onDelete, onDuplicate, onError, onInfo }: Props) {
+export default function ProjectEditor({ target, adminKey, brands, onClose, onSubmit, onDelete, onDuplicate, onError, onInfo }: Props) {
   const [form, setForm] = useState<Form>(() => initialForm(target));
   const [initial] = useState(() => JSON.stringify(initialForm(target)));
   const [phase, setPhase] = useState<Phase>("idle");
@@ -238,6 +245,7 @@ export default function ProjectEditor({ target, adminKey, onClose, onSubmit, onD
     category: form.category,
     year: Number(form.year),
     client: form.client.trim(),
+    ...(form.brandId ? { brandId: form.brandId } : {}),
     role: form.role.trim(),
     tools: form.tools,
     duration: padDuration(form.duration) || "00:00",
@@ -434,6 +442,33 @@ export default function ProjectEditor({ target, adminKey, onClose, onSubmit, onD
             </Field>
             <Field label="Client">
               <input className={inputCls} value={form.client} onChange={(e) => set("client", e.target.value)} />
+            </Field>
+            <Field label="Brand">
+              <select
+                className={inputCls}
+                value={form.brandId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  const logo = brands.find((b) => b.id === id);
+                  // A blank client picks up the brand's name.
+                  setForm((f) => ({ ...f, brandId: id, client: f.client.trim() || !logo ? f.client : logo.name.toUpperCase() }));
+                }}
+              >
+                <option value="" className="bg-[#141414]">
+                  — No brand —
+                </option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id} className="bg-[#141414]">
+                    {b.name}
+                    {b.visible ? "" : " (hidden)"}
+                  </option>
+                ))}
+                {form.brandId && !brands.some((b) => b.id === form.brandId) && (
+                  <option value={form.brandId} className="bg-[#141414]">
+                    {form.brandId} (logo removed)
+                  </option>
+                )}
+              </select>
             </Field>
             <Field label="Role">
               <input className={inputCls} value={form.role} onChange={(e) => set("role", e.target.value)} />

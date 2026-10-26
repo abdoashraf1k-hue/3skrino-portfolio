@@ -5,6 +5,7 @@ import ReorderList from "@/components/admin/ReorderList";
 import { NumberField } from "@/components/admin/fields";
 import { btn, card, Empty, input, micro, Section, Slider, TabHeader, Toggle } from "@/components/admin/ui";
 import HeroLogos from "@/components/sections/HeroLogos";
+import { brandHref, buildBrands } from "@/data/brands";
 import { LOGO_SIZE, type BrandLogo } from "@/data/hero-config";
 import { assertLogoFile, uploadHeroAsset } from "@/lib/admin/hero-assets";
 import { useConfigStore } from "../store";
@@ -119,13 +120,15 @@ export default function BrandsTab({ adminKey, onError }: Props) {
   };
 
   const uploading = Object.entries(busy).filter(([k]) => k.startsWith("upload-"));
+  // Projects link to a brand from the project editor (Brand). Counts are the deployed data/projects.ts.
+  const linked = new Map(buildBrands(items).map((b) => [b.id, b.projectIds.length]));
   const shown = hero.logos.enabled ? items.filter((l) => l.visible) : [];
 
   return (
     <div>
       <TabHeader
         title="Brands"
-        hint="client logos floating around the hero silhouette · clicks pulse, never navigate"
+        hint="client logos floating around the hero · a logo with projects links to /reels?brand=<id>; one without stays visible but isn't clickable"
         actions={
           <label className={`${btn} cursor-pointer border-[#e7fe55]/40 text-[#e7fe55]`}>
             + Upload logos
@@ -189,6 +192,12 @@ export default function BrandsTab({ adminKey, onError }: Props) {
                     onChange={(e) => setLogo(logo.id, { name: e.target.value })}
                     className={`${input} min-w-32 flex-1`}
                   />
+                  <span
+                    className={`${micro} shrink-0 ${linked.get(logo.id) ? "text-[#e7fe55]" : "text-white/35"}`}
+                    title={linked.get(logo.id) ? `Clicks open ${brandHref(logo.id)}` : "Assign projects to this brand in the project editor to make it clickable"}
+                  >
+                    {linked.get(logo.id) ? `${linked.get(logo.id)} project${linked.get(logo.id) === 1 ? "" : "s"} · linked` : "No projects · inert"}
+                  </span>
                   <input
                     aria-label="Link (reference only)"
                     placeholder="https://… (not clickable)"
@@ -266,7 +275,7 @@ export default function BrandsTab({ adminKey, onError }: Props) {
         <aside className="min-w-0 xl:sticky xl:top-24 xl:self-start">
           <Section title="Mini hero" hint="the ring as it floats on the site — move your mouse">
             <MiniHero still={hero.poses.ladder[3]?.src ?? "/hero/silhouette-900.webp"}>
-              <HeroLogos logos={shown} reducedMotion={false} scale={hero.logos.scale} />
+              <HeroLogos logos={shown} reducedMotion={false} scale={hero.logos.scale} linkable={false} />
             </MiniHero>
             {!shown.length && (
               <p className={`${micro} mt-2 text-white/40`}>{hero.logos.enabled ? "No visible logos" : "Floating logos are switched off"}</p>

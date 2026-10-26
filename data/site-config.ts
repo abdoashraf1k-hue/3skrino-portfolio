@@ -69,7 +69,7 @@ export type BackupSchedule = "off" | "daily" | "weekly" | "monthly";
 /* ------------------------------------------------------------------ */
 
 /** Which hero the home page opens with (admin → Heroes). */
-export type HeroVariant = "cinematic" | "split" | "gallery" | "timeline" | "mirror" | "confrontation" | "interview";
+export type HeroVariant = "cinematic" | "split" | "gallery" | "timeline" | "mirror" | "confrontation" | "interview" | "model3d";
 
 /** Colour-grade presets applied to the site's images and videos. */
 export type LutPreset = "none" | "teal-orange" | "bleach" | "kodak" | "noir" | "warm" | "cool" | "vintage";
@@ -279,7 +279,7 @@ export const siteConfig: SiteConfig = {
   },
   seo: { projects: {} },
   backups: { schedule: "weekly" },
-  heroVariant: "cinematic",
+  heroVariant: "model3d",
   cinematic: {
     effects: {
       filmGrain: { enabled: false, intensity: 0.08, flicker: 12, dust: 0.3 },

@@ -15,9 +15,12 @@ export type VideoProvider = "b2" | "vercel-blob";
 export type ProviderSetting = "auto" | VideoProvider;
 export const PROVIDER_SETTINGS: readonly ProviderSetting[] = ["auto", "b2", "vercel-blob"];
 
-/** Folders an S3-compatible bucket accepts uploads into. */
-export type MediaFolder = "videos" | "thumbnails";
-export const MEDIA_FOLDERS: readonly MediaFolder[] = ["videos", "thumbnails"];
+/**
+ * Folders an S3-compatible bucket accepts uploads into. Sprint 13: the hero /
+ * brand / site / audio assets moved off Vercel Blob into the same bucket.
+ */
+export type MediaFolder = "videos" | "thumbnails" | "brands" | "hero" | "site" | "audio";
+export const MEDIA_FOLDERS: readonly MediaFolder[] = ["videos", "thumbnails", "brands", "hero", "site", "audio"];
 
 const MiB = 1024 * 1024;
 
@@ -25,8 +28,10 @@ const MiB = 1024 * 1024;
 export const LIMITS = {
   /** Largest video the admin accepts. */
   maxVideoBytes: 2 * 1024 * MiB,
-  /** Largest thumbnail / still. */
+  /** Largest thumbnail / still / logo / pose. */
   maxImageBytes: 15 * MiB,
+  /** Largest UI sound or ambient loop. */
+  maxAudioBytes: 5 * MiB,
   /** Below this a single presigned PUT; at or above it multipart. */
   multipartThreshold: 5 * MiB,
   /** S3 minimum part size (all but the last part). */
@@ -53,13 +58,19 @@ export function partSizeFor(size: number): number {
 export const ALLOWED_TYPES: Record<MediaFolder, readonly string[]> = {
   videos: ["video/mp4", "video/webm", "video/quicktime"],
   thumbnails: ["image/jpeg", "image/png", "image/webp"],
+  // SVG logos are only ever drawn through <img> (scripts never run there), and
+  // they're served from the bucket / proxy origin, never this site's.
+  brands: ["image/png", "image/webp", "image/jpeg", "image/svg+xml"],
+  hero: ["image/png", "image/webp"],
+  site: ["image/png", "image/webp", "image/jpeg"],
+  audio: ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/wave"],
 };
 
 /**
  * Object keys are minted on the server only: "<folder>/<epoch ms>-<random>.<ext>".
  * Routes re-check every key a browser sends back against this pattern.
  */
-export const KEY_PATTERN = /^(videos|thumbnails)\/\d{10,16}-[a-z0-9-]{6,40}\.[a-z0-9]{2,5}$/;
+export const KEY_PATTERN = /^(videos|thumbnails|brands|hero|site|audio)\/\d{10,16}-[a-z0-9-]{6,40}\.[a-z0-9]{2,5}$/;
 
 /** Public path of the delivery route (app/media/[...key]/route.ts). */
 export const MEDIA_ROUTE = "/media";
