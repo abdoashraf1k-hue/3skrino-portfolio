@@ -174,14 +174,17 @@ export type Hero3DTheme = {
   background: string;
 };
 
+/** One frame of the 360° sequence. `angle`: head yaw in degrees, [-180, 180) — 0 faces the camera, ±180 is the back. */
+export type SequenceFrame = { url: string; angle: number };
+
 /** The "3D model" hero (admin → Poses → Hero 3D controls). */
 export type Hero3DConfig = {
   /**
-   * The 360° image sequence: one photo per step of the turn, in rotation
-   * order (pose-001 … pose-036). Mouse X / touch drag scrubs through them.
-   * Empty → the hero shows the centre pose of the ladder as a still.
+   * The 360° image sequence: one photo per step of the turn, each with its
+   * head yaw (Sprint 14). The hero sorts by angle; mouse X / touch drag
+   * scrubs through them. Empty → the centre pose of the ladder as a still.
    */
-  sequenceImages: string[];
+  sequenceImages: SequenceFrame[];
   theme: Hero3DTheme;
   floatingType: HeroFloatingType;
   /** Extra drift of the floating orbit around the photo: 0 = none, 5 max. */

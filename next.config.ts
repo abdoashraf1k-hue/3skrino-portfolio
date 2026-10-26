@@ -14,6 +14,14 @@ const nextConfig: NextConfig = {
       { source: "/ai", destination: "/ai-cuts", permanent: true },
     ];
   },
+  // Sprint 14: the admin's angle detector loads Human in the browser only, but the
+  // package's "node" export (→ @tensorflow/tfjs-node) would be bundled for SSR.
+  // Every import gets the self-contained browser ESM build instead.
+  turbopack: {
+    resolveAlias: {
+      "@vladmandic/human": "./node_modules/@vladmandic/human/dist/human.esm.js",
+    },
+  },
   images: {
     remotePatterns: [
       // Vercel Blob — current uploads (videos/ + thumbnails/)

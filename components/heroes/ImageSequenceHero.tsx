@@ -1,21 +1,24 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import type { SequenceFrame } from "@/data/hero-config";
 import { cn } from "@/lib/utils";
 import { heroSpin } from "@/store/heroStore";
 
 /**
- * The 360° hero: a frame-by-frame turn of real photos (pose-001 … pose-036),
- * drawn on a Canvas 2D. Every frame is fetched and decoded up front (to an
- * ImageBitmap where the browser can), so scrubbing never waits on the network
- * or the decoder.
+ * The 360° hero: a frame-by-frame turn of real photos, drawn on a Canvas 2D.
+ * Every frame is fetched and decoded up front (to an ImageBitmap where the
+ * browser can), so scrubbing never waits on the network or the decoder.
  *
- * Mouse: the pointer's X across `trackRef` picks the frame — far left is the
- * first, far right the last. Touch: a horizontal drag turns the head (and
- * wraps around: it's a full circle), vertical swipes still scroll the page.
- * The shown position eases towards the target (exponential lerp), so the turn
- * has weight and steps through every frame in between instead of jumping.
- * The rAF loop only runs while the position is still settling.
+ * Frames are placed by their head yaw (Sprint 14), sorted and de-duplicated,
+ * and the pointer drives an *angle*, not an index: a sequence with frames
+ * bunched near the face (AI fill-ins) still turns at an even speed.
+ * Mouse: X across `trackRef` maps the lowest angle (far left) to the highest
+ * (far right). Touch: a horizontal drag turns the head — around the full
+ * circle when the sequence closes it — while vertical swipes still scroll.
+ * The angle eases towards the target (exponential lerp), so the turn has
+ * weight and steps through every frame in between instead of jumping. The
+ * rAF loop only runs while it is still settling. It starts facing you (0°).
  */
 
 type Frame = ImageBitmap | HTMLImageElement;
@@ -25,6 +28,39 @@ const PRELOAD_CONCURRENCY = 6;
 const STIFFNESS = 7;
 /** One full turn per this fraction of the stage width, when dragging. */
 const DRAG_TURN = 0.9;
+/** Frames closer than this (degrees) are duplicates: the first one wins. */
+const SAME_ANGLE = 0.5;
+
+/** Sorted by angle, duplicates dropped. */
+function orderFrames(frames: SequenceFrame[]): SequenceFrame[] {
+  const out: SequenceFrame[] = [];
+  for (const f of [...frames].sort((a, b) => a.angle - b.angle)) {
+    const last = out.at(-1);
+    if (!last || f.angle - last.angle >= SAME_ANGLE) out.push(f);
+  }
+  return out;
+}
+
+/** Index of the angle nearest `deg` in an ascending list (circular: across the ±180 seam too). */
+function nearest(angles: number[], deg: number, circular: boolean): number {
+  const n = angles.length;
+  const a = circular ? ((((deg + 180) % 360) + 360) % 360) - 180 : deg;
+  let lo = 0;
+  let hi = n - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (angles[mid] < a) lo = mid + 1;
+    else hi = mid;
+  }
+  const dist = (i: number) => {
+    const d = Math.abs(angles[i] - a);
+    return circular ? Math.min(d, 360 - d) : d;
+  };
+  let best = lo;
+  // The neighbour below, and across the seam the far end of the list.
+  for (const i of circular ? [lo - 1, 0, n - 1] : [lo - 1]) if (i >= 0 && dist(i) < dist(best)) best = i;
+  return best;
+}
 
 async function loadFrame(src: string): Promise<Frame> {
   const img = new Image();
@@ -42,9 +78,9 @@ async function loadFrame(src: string): Promise<Frame> {
   return img;
 }
 
-/** Loads every frame (a few at a time), reporting progress. Frames that fail are dropped. */
+/** Loads every frame (a few at a time), reporting progress. Frames that fail are dropped; `urls` are the ones that made it. */
 function usePreload(images: string[]) {
-  const [state, setState] = useState<{ key: string; loaded: number; frames: Frame[] | null }>({ key: "", loaded: 0, frames: null });
+  const [state, setState] = useState<{ key: string; loaded: number; frames: Frame[] | null; urls: string[] }>({ key: "", loaded: 0, frames: null, urls: [] });
   // The array's contents are its identity: a new array with the same URLs doesn't reload.
   const key = images.join("\n");
   const urls = useMemo(() => (key ? key.split("\n") : []), [key]);
@@ -68,7 +104,9 @@ function usePreload(images: string[]) {
       }
     };
     void Promise.all(Array.from({ length: Math.min(PRELOAD_CONCURRENCY, urls.length) }, worker)).then(() => {
-      if (!cancelled) setState({ key, loaded, frames: out.filter((f): f is Frame => f !== null) });
+      if (cancelled) return;
+      const ok = urls.filter((_, i) => out[i] !== null);
+      setState({ key, loaded, frames: out.filter((f): f is Frame => f !== null), urls: ok });
     });
     return () => {
       cancelled = true;
@@ -77,11 +115,11 @@ function usePreload(images: string[]) {
   }, [key, urls]);
 
   const current = state.key === key;
-  return { loaded: current ? state.loaded : 0, frames: current ? state.frames : null };
+  return { loaded: current ? state.loaded : 0, frames: current ? state.frames : null, urls: current ? state.urls : [] };
 }
 
 type Props = {
-  images: string[];
+  frames: SequenceFrame[];
   /** Shown while the sequence loads, and instead of it when there is none. */
   fallbackSrc: string;
   /** Where the pointer is tracked (the whole hero, so the turn follows the mouse anywhere on it). */
@@ -91,28 +129,41 @@ type Props = {
   coarse: boolean;
 };
 
-export default function ImageSequenceHero({ images, fallbackSrc, trackRef, reducedMotion, coarse }: Props) {
+export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef, reducedMotion, coarse }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { loaded, frames } = usePreload(images);
+  const ordered = useMemo(() => orderFrames(input), [input]);
+  const images = useMemo(() => ordered.map((f) => f.url), [ordered]);
+  const { loaded, frames, urls: loadedUrls } = usePreload(images);
+  // Angles of the frames that loaded, from the current config (an angle edit needs no reload).
+  const loadedAngles = useMemo(() => {
+    const byUrl = new Map(ordered.map((f) => [f.url, f.angle]));
+    return frames ? loadedUrls.map((u) => byUrl.get(u) ?? 0) : null;
+  }, [ordered, frames, loadedUrls]);
   const ready = Boolean(frames?.length);
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const track = trackRef.current;
-    if (!frames?.length || !canvas || !track) return;
+    if (!frames?.length || !loadedAngles || !canvas || !track) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const n = frames.length;
+    const angles = loadedAngles;
+    const lo = angles[0];
+    const hi = angles[n - 1];
+    // A closed turn: the seam between the last and first frame is no wider than a normal step.
+    const circular = n >= 3 && 360 - (hi - lo) <= Math.max(30, 2 * (360 / n));
+    const clamp = (a: number) => (circular ? a : Math.min(hi, Math.max(lo, a)));
 
-    let target = 0;
-    let pos = 0;
+    let target = clamp(0);
+    let pos = target;
     let drawn = -1;
     let raf = 0;
     let last = 0;
 
     const draw = (force = false) => {
-      const idx = ((Math.round(pos) % n) + n) % n;
+      const idx = nearest(angles, pos, circular);
       if (idx === drawn && !force) return;
       drawn = idx;
       const f = frames[idx];
@@ -128,8 +179,8 @@ export default function ImageSequenceHero({ images, fallbackSrc, trackRef, reduc
       const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
       last = now;
       pos += (target - pos) * (reducedMotion ? 1 : 1 - Math.exp(-STIFFNESS * dt));
-      if (Math.abs(target - pos) < 0.01) pos = target;
-      heroSpin.angle = (pos / n) * Math.PI * 2;
+      if (Math.abs(target - pos) < 0.05) pos = target;
+      heroSpin.angle = (pos * Math.PI) / 180;
       draw();
       raf = pos === target ? 0 : requestAnimationFrame(tick);
     };
@@ -157,13 +208,13 @@ export default function ImageSequenceHero({ images, fallbackSrc, trackRef, reduc
       const rect = track.getBoundingClientRect();
       if (e.pointerType === "touch") {
         if (dragX === null) return;
-        target += ((e.clientX - dragX) / (rect.width * DRAG_TURN)) * n;
+        target = clamp(target + ((e.clientX - dragX) / (rect.width * DRAG_TURN)) * 360);
         dragX = e.clientX;
       } else {
         const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-        target = x * (n - 1);
-        // A mouse after a touch drag: bring the wrapped position back to [0, n-1] the short way.
-        pos -= Math.round((pos - target) / n) * n;
+        target = lo + x * (hi - lo);
+        // A mouse after a touch drag: bring the wrapped angle back into [lo, hi] the short way.
+        if (circular) pos -= Math.round((pos - target) / 360) * 360;
       }
       setTouched(true);
       kick();
@@ -188,7 +239,7 @@ export default function ImageSequenceHero({ images, fallbackSrc, trackRef, reduc
       window.removeEventListener("pointercancel", onUp);
       heroSpin.angle = 0;
     };
-  }, [frames, trackRef, reducedMotion]);
+  }, [frames, loadedAngles, trackRef, reducedMotion]);
 
   const total = images.length;
   const pct = total ? Math.round((loaded / total) * 100) : 0;

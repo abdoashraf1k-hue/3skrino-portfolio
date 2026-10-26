@@ -11,6 +11,7 @@ import {
   type InterviewConfig,
   type InterviewQuestion,
   type RoleStyle,
+  type SequenceFrame,
 } from "@/data/hero-config";
 import {
   DEFAULT_CONFRONTATION,
@@ -214,6 +215,9 @@ function interview(v: unknown, ids: Set<string>): InterviewConfig {
   };
 }
 
+/** Frame i of n spread evenly over the turn, in [-180, 180). */
+const evenAngle = (i: number, n: number) => Number(((((((i * 360) / n + 180) % 360) + 360) % 360) - 180).toFixed(1));
+
 /** Sprint 13: the 3D hero. Files written before it existed get the defaults. */
 function model3d(v: unknown): Hero3DConfig {
   const d = DEFAULT_MODEL3D;
@@ -224,9 +228,15 @@ function model3d(v: unknown): Hero3DConfig {
   const theme = t ? { primary: hex(t, "primary", W), secondary: hex(t, "secondary", W), background: hex(t, "background", W) } : d.theme;
   // Files from the GLB era carry `modelUrl` instead: it's dropped, the sequence starts empty.
   const seq = o.sequenceImages ?? [];
-  if (!Array.isArray(seq)) return fail(`${W}: "sequenceImages" must be a list of image URLs`);
+  if (!Array.isArray(seq)) return fail(`${W}: "sequenceImages" must be a list of frames`);
   if (seq.length > HERO_SEQUENCE_MAX) fail(`${W}: at most ${HERO_SEQUENCE_MAX} frames in the 360° sequence`);
-  const sequenceImages = seq.map((src, i) => asset({ src }, "src", `${W} frame ${i + 1}`));
+  // Sprint 13 stored bare URLs in turn order: they get evenly spaced angles, the first facing the camera.
+  const sequenceImages = seq.map((f: unknown, i): SequenceFrame => {
+    const what = `${W} frame ${i + 1}`;
+    if (typeof f === "string") return { url: asset({ f }, "f", what), angle: evenAngle(i, seq.length) };
+    const r = rec(f, what);
+    return { url: asset(r, "url", what), angle: num(r, "angle", what, -180, 180, 0.1) };
+  });
   return {
     sequenceImages,
     theme,

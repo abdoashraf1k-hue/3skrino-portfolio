@@ -111,7 +111,7 @@ export default function Hero3D() {
       )}
 
       {/* The portrait: a Canvas 2D on top of the WebGL orbit (or of the static stage without WebGL). */}
-      <ImageSequenceHero images={model3d.sequenceImages} fallbackSrc={still} trackRef={sectionRef} reducedMotion={reducedMotion} coarse={coarse} />
+      <ImageSequenceHero frames={model3d.sequenceImages} fallbackSrc={still} trackRef={sectionRef} reducedMotion={reducedMotion} coarse={coarse} />
 
       {/* Legibility scrim behind the copy */}
       <div
