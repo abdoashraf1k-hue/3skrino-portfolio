@@ -889,6 +889,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-26T13:24:42.604Z",
   },
+  {
+    id: "orangesquare",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "ORANGESQUARE",
+    category: "fashion",
+    year: 2026,
+    client: "DOWNTOWN MALL",
+    role: "Editor",
+    tools: [],
+    duration: "00:40",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1793021098738-eq7t8ehpn38b.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1793021248446-gf1lybjkgd6q.jpg",
+    filmed: true,
+    directed: true,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-26T13:27:33.840Z",
+  },
 ];
 
 export type Reel = {
