@@ -762,6 +762,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-24T20:13:12.465Z",
   },
+  {
+    id: "blend",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "BLEND",
+    category: "furniture",
+    year: 2026,
+    client: "DOWNTOWN MALL",
+    role: "Editor",
+    tools: [],
+    duration: "00:30",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1793019163200-qelworx0wkpx.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1793019206825-va2ibfk04yjq.jpg",
+    filmed: false,
+    directed: false,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-26T12:53:46.636Z",
+  },
 ];
 
 export type Reel = {
