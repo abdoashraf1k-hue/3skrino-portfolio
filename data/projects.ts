@@ -847,6 +847,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-26T13:03:05.112Z",
   },
+  {
+    id: "waste-your-time-in-downtown",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "WASTE YOUR TIME IN DOWNTOWN",
+    category: "corporate",
+    year: 2026,
+    client: "DOWNTOWN MALL",
+    role: "Editor",
+    tools: [],
+    duration: "00:55",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1793019806802-x5xss89rgpym.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1793019843709-wobv68npkw3z.jpg",
+    filmed: true,
+    directed: true,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-26T13:04:57.473Z",
+  },
 ];
 
 export type Reel = {
