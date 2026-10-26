@@ -1,136 +1,82 @@
 import { isAuthorized, unauthorized } from "@/lib/admin/auth";
+import { editOnSpace, MAX_ROTATE, planA, planB, SpaceError, type SpaceErrorCode } from "@/lib/ai/liveportrait";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// A CPU fallback can take minutes; one request generates one angle.
+export const maxDuration = 300;
 
 /**
- * Sprint 14 — the AI angle generator (admin only, `Authorization: Bearer <admin key>`).
+ * Sprint 14b — the free AI angle generator (admin only, `Authorization: Bearer <admin key>`).
  *
- * Diffusion can't run on Vercel, so this asks Replicate. The model is a
- * LivePortrait pose editor (fofr/expression-editor by default): it re-renders
- * *your* photo with the head turned, so identity holds far better than a
- * text-prompted generator — but each pass turns the head at most ±20°, so the
- * admin fills gaps outwards from real frames, in hops. The back of the head
- * can't be invented this way; that needs real photos.
+ * POST multipart/form-data:
+ *   image          the reference frame (the admin sends the bytes — the server never fetches URLs)
+ *   referenceYaw   its detected yaw, degrees
+ *   targetYaw      the yaw wanted, degrees (within ±20° of the reference: one pass)
+ *   pitch?         degrees, default 0
+ *   gain?          model units per degree of detected turn, measured on earlier results
  *
- * A prediction takes longer than a serverless request may, so nothing here
- * waits on one:
- *   POST { referenceImageUrl, referenceYaw?, missingAngles, pitch?, gain?, brandId? }
- *        → { jobs: [{ angle, rotateYaw, id }] }  — one prediction per angle
- *   GET  ?id=…          → { status, error, outputs }
- *   GET  ?id=…&file=0   → the generated image's bytes (proxied: no CORS, no
- *                         Replicate URL reaches the browser), for the admin to
- *                         run the detector on and upload to B2.
+ * → 200 { success: true, planUsed: "A" | "B", space, rotateYaw, imageUrl: data:…, attempts }
+ * → 503 { success: false, error, code, attempts } when every free Space failed.
+ *
+ * Plan A is the ZeroGPU Space; if it fails (quota, queue, asleep) Plan B tries
+ * the CPU copies in order — automatically, in this same request.
  */
 
-const API = "https://api.replicate.com/v1";
-/** fofr/expression-editor — inputs image, rotate_yaw / rotate_pitch / rotate_roll (−20…20). Override with REPLICATE_ANGLE_VERSION. */
-const DEFAULT_VERSION = "bf913bc90e1c44ba288ba3942a538693b72e8cc7df576f3beebe56adc0a92b86";
-/** The model's rotation limit, per pass. */
-const MAX_ROTATE = 20;
-const MAX_JOBS = 12;
-const ID = /^[a-z0-9]{8,64}$/;
-const OUTPUT_HOST = /(^|\.)replicate\.delivery$/;
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // under Vercel's 4.5 MB request body limit
+const BUDGET_MS = 280_000;
+const PLAN_A_TIMEOUT = 60_000;
+const PLAN_B_TIMEOUT = 150_000;
 
-const bad = (error: string, status = 400) => Response.json({ ok: false, error }, { status });
+const BUSY_MESSAGE = "Free AI queue is busy or quota exceeded. Please wait a few minutes and try again, or upload the photo manually.";
 
-function token(): string | null {
-  return process.env.REPLICATE_API_TOKEN?.trim() || null;
-}
+type Attempt = { plan: "A" | "B"; space: string; ok: boolean; ms: number; error?: string; code?: SpaceErrorCode };
 
-async function replicate(path: string, init?: RequestInit): Promise<Response> {
-  return fetch(`${API}${path}`, {
-    ...init,
-    headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json", ...init?.headers },
-    cache: "no-store",
-  });
-}
-
-const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
-const clampRotate = (v: number) => Math.round(Math.min(MAX_ROTATE, Math.max(-MAX_ROTATE, v)) * 10) / 10;
+const bad = (error: string, status = 400) => Response.json({ success: false, error }, { status });
+const num = (v: FormDataEntryValue | null) => (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v)) ? Number(v) : null);
 /** Shortest signed distance a → b in degrees. */
 const delta = (a: number, b: number) => ((((b - a + 180) % 360) + 360) % 360) - 180;
 
-/** Replicate fetches the reference itself: a /path becomes an absolute URL on the public site. */
-function absolute(url: string, request: Request): string | null {
-  if (/^https:\/\/\S+$/.test(url)) return url;
-  if (!/^\/(?!\/)(?!.*\.\.)[\w\-./%]+$/.test(url)) return null;
-  const origin = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "") || new URL(request.url).origin;
-  return `${origin}${url}`;
-}
-
 export async function POST(request: Request) {
   if (!isAuthorized(request)) return unauthorized();
-  if (!token()) return bad("REPLICATE_API_TOKEN isn't set — add it in Vercel → Settings → Environment Variables (see .env.example)", 503);
 
-  let body: Record<string, unknown>;
+  let form: FormData;
   try {
-    const parsed: unknown = await request.json();
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return bad("Body must be a JSON object");
-    body = parsed as Record<string, unknown>;
+    form = await request.formData();
   } catch {
-    return bad("Body must be JSON");
+    return bad("Send multipart/form-data with the reference image");
+  }
+  const image = form.get("image");
+  if (!(image instanceof Blob) || !image.size) return bad('"image" must be the reference image file');
+  if (image.size > MAX_IMAGE_BYTES) return bad("The reference image is over 4 MB");
+  if (!/^image\/(png|jpeg|webp)$/.test(image.type)) return bad("The reference image must be a PNG, JPEG or WebP");
+  const referenceYaw = num(form.get("referenceYaw")) ?? 0;
+  const targetYaw = num(form.get("targetYaw"));
+  if (targetYaw === null) return bad('"targetYaw" must be a number (degrees)');
+  const pitch = num(form.get("pitch")) ?? 0;
+  const g = num(form.get("gain"));
+  const gain = g !== null && Math.abs(g) >= 0.2 && Math.abs(g) <= 5 ? g : 1;
+  const rotateYaw = Math.round(Math.min(MAX_ROTATE, Math.max(-MAX_ROTATE, delta(referenceYaw, targetYaw) * gain)) * 10) / 10;
+
+  const started = Date.now();
+  const attempts: Attempt[] = [];
+  const plans: ["A" | "B", string, number][] = [...planA().map((s) => ["A", s, PLAN_A_TIMEOUT] as ["A", string, number]), ...planB().map((s) => ["B", s, PLAN_B_TIMEOUT] as ["B", string, number])];
+
+  for (const [plan, space, timeout] of plans) {
+    const left = BUDGET_MS - (Date.now() - started);
+    if (left < 15_000) break;
+    const t = Date.now();
+    try {
+      const out = await editOnSpace(space, image, { yaw: rotateYaw, pitch }, Math.min(timeout, left));
+      attempts.push({ plan, space, ok: true, ms: Date.now() - t });
+      const imageUrl = `data:${out.type};base64,${Buffer.from(await out.arrayBuffer()).toString("base64")}`;
+      return Response.json({ success: true, planUsed: plan, space, rotateYaw, imageUrl, attempts });
+    } catch (err) {
+      const e = err instanceof SpaceError ? err : new SpaceError(err instanceof Error ? err.message : "failed", "failed", space);
+      attempts.push({ plan, space, ok: false, ms: Date.now() - t, error: e.message, code: e.code });
+    }
   }
 
-  const ref = typeof body.referenceImageUrl === "string" ? absolute(body.referenceImageUrl.trim(), request) : null;
-  if (!ref) return bad('"referenceImageUrl" must be an https URL or a /path on this site');
-  const angles = body.missingAngles;
-  if (!Array.isArray(angles) || !angles.length || !angles.every(finite)) return bad('"missingAngles" must be a non-empty list of yaw angles (degrees)');
-  if (angles.length > MAX_JOBS) return bad(`At most ${MAX_JOBS} angles per request`);
-  const refYaw = finite(body.referenceYaw) ? body.referenceYaw : 0;
-  const pitch = finite(body.pitch) ? clampRotate(body.pitch) : 0;
-  // Model units per degree of detected turn, measured by the admin on earlier results (sign included).
-  const gain = finite(body.gain) && Math.abs(body.gain) >= 0.2 && Math.abs(body.gain) <= 5 ? body.gain : 1;
-  const brandId = typeof body.brandId === "string" ? body.brandId.slice(0, 60) : undefined;
-  const version = process.env.REPLICATE_ANGLE_VERSION?.trim() || DEFAULT_VERSION;
-
-  try {
-    const jobs = await Promise.all(
-      angles.map(async (angle) => {
-        const rotateYaw = clampRotate(delta(refYaw, angle) * gain);
-        const res = await replicate("/predictions", {
-          method: "POST",
-          body: JSON.stringify({
-            version,
-            input: { image: ref, rotate_yaw: rotateYaw, rotate_pitch: pitch, rotate_roll: 0, output_format: "webp", output_quality: 95 },
-          }),
-        });
-        const data = (await res.json().catch(() => null)) as { id?: string; detail?: string } | null;
-        if (!res.ok || !data?.id) throw new Error(data?.detail ?? `Replicate refused the job (${res.status})`);
-        return { angle, rotateYaw, id: data.id };
-      }),
-    );
-    return Response.json({ ok: true, jobs, ...(brandId ? { brandId } : {}) });
-  } catch (err) {
-    return bad(err instanceof Error ? err.message : "Replicate request failed", 502);
-  }
-}
-
-type Prediction = { status: string; error?: string | null; output?: unknown };
-
-export async function GET(request: Request) {
-  if (!isAuthorized(request)) return unauthorized();
-  if (!token()) return bad("REPLICATE_API_TOKEN isn't set", 503);
-  const params = new URL(request.url).searchParams;
-  const id = params.get("id") ?? "";
-  if (!ID.test(id)) return bad("Bad prediction id");
-
-  const res = await replicate(`/predictions/${id}`);
-  if (!res.ok) return bad(`Replicate: prediction ${id} not found (${res.status})`, 502);
-  const p = (await res.json()) as Prediction;
-  const outputs = (Array.isArray(p.output) ? p.output : p.output ? [p.output] : []).filter((u): u is string => typeof u === "string");
-
-  const file = params.get("file");
-  if (file === null) return Response.json({ ok: true, status: p.status, error: p.error ?? null, outputs: outputs.length });
-
-  // Proxy one output, only from Replicate's own delivery host.
-  const src = outputs[Number(file)];
-  if (p.status !== "succeeded" || !src) return bad("No such output yet", 404);
-  const url = new URL(src);
-  if (url.protocol !== "https:" || !OUTPUT_HOST.test(url.hostname)) return bad("Unexpected output host", 502);
-  const img = await fetch(url, { cache: "no-store" });
-  if (!img.ok || !img.body) return bad(`Couldn't fetch the output (${img.status})`, 502);
-  return new Response(img.body, {
-    headers: { "Content-Type": img.headers.get("content-type") ?? "image/webp", "Cache-Control": "no-store" },
-  });
+  const code: SpaceErrorCode = attempts.some((a) => a.code === "quota") ? "quota" : attempts.some((a) => a.code === "busy") ? "busy" : attempts.every((a) => a.code === "down") ? "down" : "failed";
+  return Response.json({ success: false, error: BUSY_MESSAGE, code, attempts }, { status: 503 });
 }

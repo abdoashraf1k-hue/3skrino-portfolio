@@ -22,30 +22,52 @@ export type PoseMap = Record<string, HeadPose | null>;
 
 /** The model's limit per pass (route.ts MAX_ROTATE): each hop reaches this much further from a real face. */
 const HOP = 20;
-const JOB_CONCURRENCY = 3;
-const POLL_MS = 2500;
-const POLL_TIMEOUT_MS = 4 * 60_000;
-/** Most frames one Generate run may create (each is a paid Replicate prediction). */
+/** Free Spaces: one request at a time (a shared queue, and a daily GPU quota). */
+const JOB_CONCURRENCY = 1;
+/** Most frames one Generate run may create (~8 s of free GPU each). */
 const MAX_PER_RUN = 24;
+/** How long Plan A gets on the server before it moves on to Plan B (route.ts PLAN_A_TIMEOUT, plus slack). */
+const PLAN_A_HINT_MS = 65_000;
+/** The route's request body limit is 4.5 MB; bigger references are re-encoded. */
+const MAX_REFERENCE_BYTES = 3.5 * 1024 * 1024;
 
 const sortByAngle = (l: SequenceFrame[]) => [...l].sort((a, b) => a.angle - b.angle);
 const deg = (v: number) => `${v > 0 ? "+" : ""}${Math.round(v)}°`;
 
-async function aiFetch<T>(key: string, init: { method: "GET" | "POST"; query?: string; body?: unknown }): Promise<T> {
-  const res = await fetch(`/api/ai/generate-angles${init.query ? `?${init.query}` : ""}`, {
-    method: init.method,
-    headers: { Authorization: `Bearer ${key}`, ...(init.body ? { "Content-Type": "application/json" } : {}) },
-    body: init.body ? JSON.stringify(init.body) : undefined,
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    const data = (await res.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(data?.error ?? `Request failed (${res.status})`);
-  }
-  return (init.query?.includes("file=") ? res.blob() : res.json()) as Promise<T>;
+type Attempt = { plan: "A" | "B"; space: string; ok: boolean; ms: number; error?: string; code?: string };
+type GenerateResult =
+  | { success: true; planUsed: "A" | "B"; space: string; rotateYaw: number; imageUrl: string; attempts: Attempt[] }
+  | { success: false; error: string; code?: string; attempts?: Attempt[] };
+
+/** A frame's bytes as a PNG / JPEG / WebP under the upload limit. */
+async function referenceBlob(url: string): Promise<Blob> {
+  const res = await fetch(url, { mode: "cors", cache: "force-cache" });
+  if (!res.ok) throw new Error(`couldn't load the reference frame (${res.status})`);
+  const blob = await res.blob();
+  if (blob.size <= MAX_REFERENCE_BYTES && /^image\/(png|jpeg|webp)$/.test(blob.type)) return blob;
+  const bitmap = await createImageBitmap(blob);
+  const s = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * s);
+  canvas.height = Math.round(bitmap.height * s);
+  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("couldn't re-encode the reference"))), "image/webp", 0.92));
 }
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** One angle through the free engine (Plan A, then Plan B on the server). */
+async function generateAngle(key: string, image: Blob, referenceYaw: number, targetYaw: number, pitch: number, gain: number): Promise<GenerateResult> {
+  const form = new FormData();
+  form.set("image", image, "reference");
+  form.set("referenceYaw", String(referenceYaw));
+  form.set("targetYaw", String(targetYaw));
+  form.set("pitch", String(pitch));
+  form.set("gain", String(gain));
+  const res = await fetch("/api/ai/generate-angles", { method: "POST", headers: { Authorization: `Bearer ${key}` }, body: form, cache: "no-store" });
+  if (res.status === 401) return { success: false, error: "Unauthorized — sign in to the admin again" };
+  const data = (await res.json().catch(() => null)) as GenerateResult | null;
+  return data ?? { success: false, error: `Request failed (${res.status})` };
+}
 
 /* ------------------------------------------------------------------ */
 /* Dial                                                                */
@@ -101,10 +123,11 @@ type Props = {
 
 /**
  * Poses → AI Reality Engine (Sprint 14). "Analyze" reads every frame's head
- * pose in the browser and maps it onto the 36-step grid; "Generate" asks
- * Replicate to turn the nearest real face into each missing angle it can
- * reach (±20° per hop), re-measures what came back, and adds only frames
- * that land on a still-empty step — so the sequence never gains duplicates.
+ * pose in the browser and maps it onto the 36-step grid; "Generate" sends
+ * the nearest real face to the free LivePortrait engine (route.ts: a ZeroGPU
+ * Space, then CPU copies) to turn it to each missing angle it can reach
+ * (±20° per hop), re-measures what came back, and adds only frames that land
+ * on a still-empty step — so the sequence never gains duplicates.
  */
 export default function AngleEngine({ frames, setFrames, poses, setPoses, adminKey, onError }: Props) {
   const [running, setRunning] = useState<"analyze" | "generate" | null>(null);
@@ -164,22 +187,6 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
 
   /* -------------------------------- Generate ------------------------------- */
 
-  /** Runs one prediction to the end and returns the image. */
-  const runJob = async (id: string): Promise<Blob> => {
-    const until = Date.now() + POLL_TIMEOUT_MS;
-    for (;;) {
-      if (stop.current) throw new Error("stopped");
-      const s = await aiFetch<{ status: string; error: string | null; outputs: number }>(adminKey, { method: "GET", query: `id=${id}` });
-      if (s.status === "succeeded") {
-        if (!s.outputs) throw new Error("the model returned no image");
-        return aiFetch<Blob>(adminKey, { method: "GET", query: `id=${id}&file=0` });
-      }
-      if (s.status === "failed" || s.status === "canceled") throw new Error(s.error ?? s.status);
-      if (Date.now() > until) throw new Error("timed out");
-      await sleep(POLL_MS);
-    }
-  };
-
   const generate = async () => {
     const sources0 = frames.filter((f) => poses[f.url]);
     if (!sources0.length) return onError("Analyze first — generation starts from frames where a face was detected");
@@ -188,7 +195,12 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
     const room = HERO_SEQUENCE_MAX - frames.length;
     const budget = Math.min(MAX_PER_RUN, plan.length, room);
     if (budget <= 0) return onError(`The sequence is full (${HERO_SEQUENCE_MAX} frames)`);
-    if (!window.confirm(`Generate up to ${budget} frame${budget === 1 ? "" : "s"} on Replicate (paid per image)?\n\nTargets: ${formatRanges(plan.slice(0, budget))} yaw`)) return;
+    if (
+      !window.confirm(
+        `Generate up to ${budget} frame${budget === 1 ? "" : "s"} with free AI (Hugging Face)?\n\nTargets: ${formatRanges(plan.slice(0, budget))} yaw\nOne at a time — about 10 s each on the GPU, longer when it falls back to CPU.`,
+      )
+    )
+      return;
 
     stop.current = false;
     setRunning("generate");
@@ -218,15 +230,25 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
           if (covered.has(target)) continue;
           const src = sources.reduce((a, b) => (Math.abs(angleDelta(b.yaw, target)) < Math.abs(angleDelta(a.yaw, target)) ? b : a));
           tried++;
+          let slow: ReturnType<typeof setTimeout> | undefined;
           try {
-            const g = gain();
-            const { jobs } = await aiFetch<{ jobs: { angle: number; rotateYaw: number; id: string }[] }>(adminKey, {
-              method: "POST",
-              body: { referenceImageUrl: src.url, referenceYaw: src.yaw, missingAngles: [target], gain: g },
-            });
-            const job = jobs[0];
-            say(`${deg(target)}: from the ${deg(src.yaw)} frame, rotate ${deg(job.rotateYaw)} (job ${job.id.slice(0, 8)})`);
-            const blob = await runJob(job.id);
+            const reference = await referenceBlob(src.url);
+            say(`${deg(target)}: from the ${deg(src.yaw)} frame — trying Plan A (HF ZeroGPU)…`);
+            slow = setTimeout(() => say(`${deg(target)}: Plan A is slow or out of quota — the server switches to Plan B (LivePortrait on CPU)…`), PLAN_A_HINT_MS);
+            const res = await generateAngle(adminKey, reference, src.yaw, target, 0, gain());
+            clearTimeout(slow);
+            for (const a of res.attempts ?? []) if (!a.ok) say(`${deg(target)}: Plan ${a.plan} failed on ${a.space} after ${(a.ms / 1000).toFixed(0)}s — ${a.error}`);
+            if (!res.success) {
+              say(`${deg(target)}: ${res.error}`);
+              // Every free Space refused: the next angles would too. Stop and say why.
+              onError(res.error);
+              stop.current = true;
+              continue;
+            }
+            const plan = res.attempts.find((a) => a.ok);
+            say(`${deg(target)}: Plan ${res.planUsed} worked (${res.space}, ${plan ? (plan.ms / 1000).toFixed(0) : "?"}s, rotate ${deg(res.rotateYaw)})`);
+            const blob = await (await fetch(res.imageUrl)).blob();
+            const job = { rotateYaw: res.rotateYaw };
             const pose = await detectAngle(blob);
             if (!pose) {
               say(`${deg(target)}: no face in the result — discarded`);
@@ -249,12 +271,8 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
             setProgress({ done: made, total: budget });
             say(`${deg(target)}: ✓ added at ${deg(pose.yaw)}`);
           } catch (err) {
-            const m = err instanceof Error ? err.message : "failed";
-            say(`${deg(target)}: ${m}`);
-            if (/REPLICATE_API_TOKEN|Unauthorized|401/.test(m)) {
-              onError(m);
-              stop.current = true;
-            }
+            clearTimeout(slow);
+            say(`${deg(target)}: ${err instanceof Error ? err.message : "failed"}`);
           }
         }
       };
@@ -274,11 +292,14 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
   return (
     <div className="mb-3 border border-white/10 bg-white/[0.02] p-4">
       <div className={`${micro} mb-3 flex flex-wrap items-center justify-between gap-2 text-white/50`}>
-        <span>AI Reality Engine</span>
+        <span>AI Reality Engine · Free AI (Hugging Face)</span>
         <span className="text-white/35">
           {analysed.length}/{frames.length} analysed
         </span>
       </div>
+      <p className={`${micro} -mt-1 mb-3 leading-relaxed text-white/35`}>
+        Free quota: ~5 min GPU/day. For unlimited generation, run LivePortrait locally or on your own free Space (see docs/AI-ANGLES.md).
+      </p>
 
       <div className="flex flex-col gap-4 sm:flex-row">
         <CoverageDial cells={cells} pct={cov.coveragePercentage} />
