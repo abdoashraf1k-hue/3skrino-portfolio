@@ -804,6 +804,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-26T12:54:43.992Z",
   },
+  {
+    id: "ramadan-campaign-downtown",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "RAMADAN CAMPAIGN-DOWNTOWN",
+    category: "corporate",
+    year: 2026,
+    client: "DOWNTOWN MALL",
+    role: "Editor",
+    tools: [],
+    duration: "00:36",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1793019304581-6bx38ci6ffbo.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1793019362712-4ko1874105nz.jpg",
+    filmed: true,
+    directed: true,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-26T12:56:09.383Z",
+  },
 ];
 
 export type Reel = {
