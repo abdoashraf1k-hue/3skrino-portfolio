@@ -783,6 +783,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-26T12:53:46.636Z",
   },
+  {
+    id: "flore",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "FLORE",
+    category: "fashion",
+    year: 2025,
+    client: "DOWNTOWN MALL",
+    role: "Editor",
+    tools: [],
+    duration: "00:50",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1793019254026-7hii6rs0eb02.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1793019272277-hbc5ddpfuep3.jpg",
+    filmed: true,
+    directed: false,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-26T12:54:43.992Z",
+  },
 ];
 
 export type Reel = {
