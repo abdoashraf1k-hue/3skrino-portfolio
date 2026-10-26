@@ -826,6 +826,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-26T12:56:09.383Z",
   },
+  {
+    id: "naga-homme",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "NAGA HOMME",
+    category: "fashion",
+    year: 2026,
+    client: "DOWNTOWN MALL",
+    role: "Editor",
+    tools: [],
+    duration: "00:46",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1793019678819-4hwe9jxqay0u.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1793019731563-s2c5sk1e2gls.jpg",
+    filmed: true,
+    directed: true,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-26T13:03:05.112Z",
+  },
 ];
 
 export type Reel = {
