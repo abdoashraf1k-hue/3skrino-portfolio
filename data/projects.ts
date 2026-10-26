@@ -868,6 +868,27 @@ export const projects: Project[] = [
     thumbnailSource: "auto",
     createdAt: "2026-10-26T13:04:57.473Z",
   },
+  {
+    id: "adidas",
+    accentColor: "#e7fe55",
+    orientation: "vertical",
+    title: "ADIDAS",
+    category: "fashion",
+    year: 2026,
+    client: "DOWNTOWN MALL",
+    role: "Editor",
+    tools: [],
+    duration: "00:40",
+    description: "",
+    videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1793021048363-z670thheiflh.mp4",
+    thumbnail:
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1793021074060-ppp08lbno0j7.jpg",
+    filmed: true,
+    directed: true,
+    edited: true,
+    thumbnailSource: "auto",
+    createdAt: "2026-10-26T13:24:42.604Z",
+  },
 ];
 
 export type Reel = {
