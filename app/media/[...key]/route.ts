@@ -37,6 +37,11 @@ async function redirect(params: Promise<{ key: string[] }>): Promise<Response> {
         // never points at an expired URL.
         "Cache-Control": "private, max-age=300",
         "Referrer-Policy": "no-referrer",
+        // A CORS fetch() that meets a cross-origin redirect needs CORS headers on
+        // the redirect itself (Sprint 14: the admin reads frame pixels for the
+        // angle detector, also from localhost / preview deploys). The media is
+        // public anyway; the bucket's own CORS rules still decide the final GET.
+        "Access-Control-Allow-Origin": "*",
       },
     });
   } catch {

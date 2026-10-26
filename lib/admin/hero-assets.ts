@@ -75,10 +75,38 @@ export async function uploadHeroAsset(
 /* Upscale                                                             */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Stored media URLs carry the production origin (<site>/media/<key>). Read
+ * from another origin (localhost, a preview deploy), their redirect is
+ * cross-origin and a CORS fetch() fails on it — so pixels are read through
+ * this origin's own /media route, which redirects to the same object.
+ */
+export function sameOriginMedia(src: string): string {
+  if (typeof window === "undefined") return src;
+  try {
+    const u = new URL(src, window.location.href);
+    return u.origin !== window.location.origin && u.pathname.startsWith("/media/") ? `${u.pathname}${u.search}` : src;
+  } catch {
+    return src;
+  }
+}
+
+/** Fetches an image for pixel access. Errors name the URL, so a failing image is told apart from anything else. */
+export async function fetchImage(src: string): Promise<Blob> {
+  const url = sameOriginMedia(src);
+  let res: Response;
+  try {
+    res = await fetch(url, { mode: "cors", cache: "force-cache" });
+  } catch (err) {
+    console.error("[media] image fetch failed", { src, fetched: url, err });
+    throw new Error(`image ${url} couldn't be fetched (network / CORS) — ${err instanceof Error ? err.message : String(err)}`);
+  }
+  if (!res.ok) throw new Error(`image ${url} answered ${res.status}`);
+  return res.blob();
+}
+
 export async function loadBitmap(src: string): Promise<ImageBitmap> {
-  const res = await fetch(src, { mode: "cors", cache: "force-cache" });
-  if (!res.ok) throw new Error(`Couldn't load ${src} (${res.status})`);
-  return createImageBitmap(await res.blob());
+  return createImageBitmap(await fetchImage(src));
 }
 
 /** One separable [1 2 1] / 4 blur pass over premultiplied RGB (alpha untouched). */

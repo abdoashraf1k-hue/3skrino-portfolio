@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { btn, btnDanger, btnPrimary, micro, Segmented } from "@/components/admin/ui";
 import type { SequenceFrame } from "@/data/hero-config";
 import { HERO_SEQUENCE_MAX } from "@/data/hero-defaults";
-import { uploadHeroAsset } from "@/lib/admin/hero-assets";
+import { fetchImage, uploadHeroAsset } from "@/lib/admin/hero-assets";
 import {
   analyzeCoverage,
   angleDelta,
@@ -41,9 +41,7 @@ type GenerateResult =
 
 /** A frame's bytes as a PNG / JPEG / WebP under the upload limit. */
 async function referenceBlob(url: string): Promise<Blob> {
-  const res = await fetch(url, { mode: "cors", cache: "force-cache" });
-  if (!res.ok) throw new Error(`couldn't load the reference frame (${res.status})`);
-  const blob = await res.blob();
+  const blob = await fetchImage(url);
   if (blob.size <= MAX_REFERENCE_BYTES && /^image\/(png|jpeg|webp)$/.test(blob.type)) return blob;
   const bitmap = await createImageBitmap(blob);
   const s = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
@@ -169,7 +167,13 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
         if (pose) faces++;
         say(`#${i + 1}  ${pose ? `yaw ${deg(pose.yaw)} · pitch ${deg(pose.pitch)} · roll ${deg(pose.roll)}` : "no face (profile or back of the head)"}`);
       } catch (err) {
+        console.error(`[angle-detector] frame #${i + 1} failed`, { url: f.url, err });
         say(`#${i + 1}  couldn't analyse: ${err instanceof Error ? err.message : "error"}`);
+        // The model is shared by every frame: if it can't load, the rest would fail the same way.
+        if (err instanceof Error && err.message.startsWith("face model")) {
+          onError(err.message);
+          break;
+        }
       }
       setProgress({ done: i + 1, total: frames.length });
     }

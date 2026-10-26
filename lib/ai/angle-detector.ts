@@ -72,19 +72,28 @@ function getHuman(): Promise<Human> {
       segmentation: { enabled: false },
     });
     await h.load();
+    // Human logs a failed model fetch instead of throwing: check the face models really arrived.
+    const missing = h.models
+      .list()
+      .filter((m) => /blazeface|facemesh/.test(m.name) && !m.loaded)
+      .map((m) => String(m.url ?? m.name));
+    if (missing.length) throw new Error(`face model couldn't load (${missing.join(", ")})`);
     return h;
   })().catch((err) => {
     human = null; // let a later call retry (e.g. the CDN was briefly unreachable)
-    throw err;
+    console.error("[angle-detector] face model failed to load", { from: MODELS, err });
+    throw err instanceof Error && err.message.startsWith("face model") ? err : new Error(`face model couldn't load from ${MODELS} — ${err instanceof Error ? err.message : String(err)}`);
   });
   return human;
 }
 
 /** Head pose of the (largest) face in an image, or null when no face is found. */
 export async function detectAngle(input: string | Blob): Promise<HeadPose | null> {
+  // Model and image load side by side; whichever fails says which it was (see fetchImage / getHuman).
   const [h, bitmap] = await Promise.all([getHuman(), typeof input === "string" ? loadBitmap(input) : createImageBitmap(input)]);
   try {
     const res = await h.detect(bitmap);
+    if (res.error) throw new Error(`face detection failed: ${res.error}`);
     const angle = res.face[0]?.rotation?.angle;
     if (!angle) return null;
     const r1 = (v: number) => Math.round(v * DEG * 10) / 10;
