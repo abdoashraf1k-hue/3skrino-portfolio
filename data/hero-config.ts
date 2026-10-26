@@ -452,7 +452,24 @@ export const heroConfig: HeroConfig = {
     waveform: true,
   },
   model3d: {
-    sequenceImages: [{ url: "https://3skrino.com/media/hero/1793051292020-fn0jmyri9cod.png", angle: 0 }],
+    sequenceImages: [
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1793052205559-wtadwcokz7gw.png", angle: 176.4 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1793052203300-h76hsh3m4663.png", angle: 140.4 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1793052203486-m1hxj447vumd.png", angle: 15.6 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1793052276103-m5j71n24yk2r.webp", angle: 9.4 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1793052206935-tkuczuxra5ad.png", angle: 1.8 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1793052206627-u8rkx020hojw.png", angle: 1.2 },
+      {
+        url: "https://3skrino-portfolio.vercel.app/media/hero/1793052296273-nl4hev71mrve.webp",
+        angle: -11.6,
+      },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1793052203325-bmt75yzddfwu.png", angle: -20.8 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1793052204130-ra98ezvvu3um.png", angle: -25.1 },
+      {
+        url: "https://3skrino-portfolio.vercel.app/media/hero/1793052205462-pdbwtzqu1blu.png",
+        angle: -147.6,
+      },
+    ],
     theme: { primary: "#e7fe55", secondary: "#ff2d2d", background: "#0a0a0a" },
     floatingType: "fish",
     rotateSpeed: 0.5,
