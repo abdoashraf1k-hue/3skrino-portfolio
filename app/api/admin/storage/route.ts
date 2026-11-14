@@ -76,7 +76,14 @@ export async function POST(request: Request) {
     const raw = (body.credentials ?? undefined) as Record<string, unknown> | undefined;
     const str = (v: unknown) => (typeof v === "string" ? v.slice(0, 500) : "");
     const credentials: Partial<TigrisCredentials> | undefined = raw
-      ? { endpoint: str(raw.endpoint), region: str(raw.region), accessKeyId: str(raw.accessKeyId), secretAccessKey: str(raw.secretAccessKey), bucket: str(raw.bucket) }
+      ? {
+          endpoint: str(raw.endpoint),
+          region: str(raw.region),
+          accessKeyId: str(raw.accessKeyId),
+          secretAccessKey: str(raw.secretAccessKey),
+          bucket: str(raw.bucket),
+          forcePathStyle: raw.forcePathStyle === true,
+        }
       : undefined;
     const origin = request.headers.get("origin");
     if (body.action === "test") return Response.json(await testConnection(credentials, origin));

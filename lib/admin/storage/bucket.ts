@@ -46,24 +46,60 @@ function store(): { host: BucketHost; store: ObjectStore } {
   return { host: active.host, store: createS3Store(active.config) };
 }
 
-const CREDENTIAL_ERRORS = new Set(["AccessDenied", "InvalidAccessKeyId", "SignatureDoesNotMatch", "Forbidden", "Unauthorized"]);
 const NETWORK_CODES = new Set(["ECONNREFUSED", "ECONNRESET", "ENOTFOUND", "EAI_AGAIN", "ETIMEDOUT", "EPIPE"]);
+
+/**
+ * Everything the AWS SDK knows about a failure — never credentials. Note:
+ * HEAD requests (HeadBucket, HeadObject) have no response body, so a 403 on
+ * them arrives as name "Unknown" / "UnknownError" with only the status: the
+ * real code (InvalidAccessKeyId, SignatureDoesNotMatch, AccessDenied…) needs a
+ * request that returns a body, e.g. ListObjectsV2 (see conntest.ts).
+ */
+export type S3ErrorInfo = { name: string; code: string; status: number | null; message: string; requestId: string };
+
+export function describeS3Error(err: unknown): S3ErrorInfo {
+  if (!(err instanceof Error)) return { name: "Error", code: "", status: null, message: String(err), requestId: "" };
+  const e = err as Error & { Code?: string; code?: string; $metadata?: { httpStatusCode?: number; requestId?: string; extendedRequestId?: string } };
+  return {
+    name: e.name,
+    code: e.Code ?? (typeof e.code === "string" ? e.code : "") ?? "",
+    status: e.$metadata?.httpStatusCode ?? null,
+    message: e.message,
+    requestId: e.$metadata?.requestId ?? e.$metadata?.extendedRequestId ?? "",
+  };
+}
+
+/** One line for logs: the SDK's own words, so the real cause is visible (Vercel → Logs). */
+export function logS3Error(context: string, err: unknown): void {
+  const d = describeS3Error(err);
+  console.error(
+    `[storage] ${context} failed: ${d.code || d.name}${d.status ? ` (HTTP ${d.status})` : ""} — ${d.message}${d.requestId ? ` · request ${d.requestId}` : ""}`,
+  );
+}
 
 /** SDK / network failure → StorageError with a readable message naming the host. Never includes credentials. */
 export function toStorageError(err: unknown, host: BucketHost): StorageError {
   const name = HOST_LABEL[host];
-  const vars = host === "tigris" ? "TIGRIS_ACCESS_KEY_ID / TIGRIS_SECRET_ACCESS_KEY" : "B2_KEY_ID / B2_APP_KEY";
+  const idVar = host === "tigris" ? "TIGRIS_ACCESS_KEY_ID" : "B2_KEY_ID";
+  const secretVar = host === "tigris" ? "TIGRIS_SECRET_ACCESS_KEY" : "B2_APP_KEY";
   if (err instanceof StorageError) return err;
   if (!(err instanceof Error)) return new StorageError(`${name} request failed`, 502);
+  const { code: errCode, status } = describeS3Error(err);
   const code = (err as { code?: unknown }).code;
-  const status = (err as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+  const kind = errCode || err.name;
 
   if (err.name === "NoSuchUpload") return new StorageError("That upload expired or was already finished", 404);
   if (err.name === "NoSuchKey" || err.name === "NotFound") return new StorageError("That file isn't in the bucket", 404);
-  if (err.name === "NoSuchBucket") return new StorageError(`${name} bucket not found — check the bucket name`, 502);
+  if (kind === "NoSuchBucket") return new StorageError(`${name} bucket not found — check the bucket name (exact, lowercase)`, 502);
   if (/cap exceeded/i.test(err.message)) return new StorageError(`${name} daily cap exceeded — downloads are blocked until it resets`, 503);
-  if (CREDENTIAL_ERRORS.has(err.name) || status === 401 || status === 403) {
-    return new StorageError(`${name} rejected the credentials — check ${vars}`, 502);
+  // The real cause, when the response carried one.
+  if (kind === "InvalidAccessKeyId") return new StorageError(`${name} doesn't recognise this access key ID — check ${idVar} (a deleted key, a typo, or a key from another account)`, 502);
+  if (kind === "SignatureDoesNotMatch") return new StorageError(`${name} knows the key ID but the secret doesn't match — check ${secretVar} (no spaces / line breaks; it's shown only once when the key is created)`, 502);
+  if (kind === "AccessDenied") return new StorageError(`${name} accepted the key but it has no permission on this bucket — give it ReadWrite (or Editor) on the bucket`, 502);
+  if (kind === "RequestTimeTooSkewed") return new StorageError(`${name} refused the request: the server clock is off by more than 15 minutes`, 502);
+  if (status === 401 || status === 403 || err.name === "Forbidden" || err.name === "Unauthorized") {
+    // A bare 403 (e.g. from a HEAD request, which has no body): the cause isn't known here.
+    return new StorageError(`${name} answered 403 Forbidden — run admin → Settings → Storage → Test connection for the exact reason`, 502);
   }
   if (err.name === "InvalidPart" || err.name === "InvalidPartOrder" || err.name === "EntityTooSmall") {
     return new StorageError(`${name} couldn't assemble the upload (${err.name}) — retry the upload`, 400);
@@ -83,6 +119,8 @@ async function run<T>(fn: (s: ObjectStore) => Promise<T>): Promise<T> {
   try {
     return await fn(s);
   } catch (err) {
+    // Not-found answers are routine (HeadObject before an upload, deleted media) — log only real failures.
+    if (describeS3Error(err).status !== 404) logS3Error(`${HOST_LABEL[host]} request`, err);
     throw toStorageError(err, host);
   }
 }

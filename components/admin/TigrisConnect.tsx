@@ -18,12 +18,14 @@ const DEFAULTS = { endpoint: "https://t3.storage.dev", region: "auto" };
  */
 export default function TigrisConnect({ adminKey, active, onError }: { adminKey: string; active: { host: string; bucket: string; endpoint: string } | null; onError: (m: string) => void }) {
   const [form, setForm] = useState({ endpoint: DEFAULTS.endpoint, region: DEFAULTS.region, accessKeyId: "", secretAccessKey: "", bucket: "" });
+  // Virtual-hosted is Tigris' documented style; the test says if path-style is what works for these keys.
+  const [pathStyle, setPathStyle] = useState(false);
   const [busy, setBusy] = useState<"test" | "cors" | null>(null);
   const [result, setResult] = useState<TestResult | null>(null);
   const [browserCheck, setBrowserCheck] = useState<Step | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const filled = Boolean(form.accessKeyId.trim() || form.secretAccessKey.trim() || form.bucket.trim());
-  const credentials = filled ? form : undefined;
+  const credentials = filled ? { ...form, forcePathStyle: pathStyle } : undefined;
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const test = async () => {
@@ -71,6 +73,7 @@ export default function TigrisConnect({ adminKey, active, onError }: { adminKey:
     `TIGRIS_ACCESS_KEY_ID=${form.accessKeyId.trim()}`,
     `TIGRIS_SECRET_ACCESS_KEY=${form.secretAccessKey.trim()}`,
     `TIGRIS_BUCKET_NAME=${form.bucket.trim()}`,
+    ...(pathStyle ? ["TIGRIS_FORCE_PATH_STYLE=true"] : []),
   ].join("\n");
 
   const copy = async () => {
@@ -126,9 +129,13 @@ export default function TigrisConnect({ adminKey, active, onError }: { adminKey:
           Secret access key
           <input className={input} type="password" value={form.secretAccessKey} onChange={set("secretAccessKey")} placeholder="tsec_…" autoComplete="new-password" />
         </label>
-        <label className={`${micro} flex flex-col gap-1 text-white/50 sm:col-span-2`}>
+        <label className={`${micro} flex flex-col gap-1 text-white/50`}>
           Bucket name
           <input className={input} value={form.bucket} onChange={set("bucket")} placeholder="e.g. 3skrino-media" spellCheck={false} />
+        </label>
+        <label className={`${micro} flex items-center gap-2 self-end pb-2 text-white/50`} title="Only if the test says these keys work path-style">
+          <input type="checkbox" checked={pathStyle} onChange={(e) => setPathStyle(e.target.checked)} className="accent-[#e7fe55]" />
+          Path-style addressing
         </label>
         <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
           <button type="submit" className={btnPrimary} disabled={busy !== null}>
