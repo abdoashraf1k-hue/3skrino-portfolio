@@ -298,7 +298,7 @@ export const heroConfig: HeroConfig = {
     items: [
       {
         id: "northwind",
-        name: "Northwind",
+        name: "downtown katameya mall",
         imageUrl: "https://3skrino-portfolio.vercel.app/media/brands/1794656904875-y7868224z864.png",
         size: 62,
         visible: true,
