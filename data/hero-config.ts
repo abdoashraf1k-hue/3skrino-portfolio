@@ -626,38 +626,7 @@ export const heroConfig: HeroConfig = {
     waveform: true,
   },
   model3d: {
-    sequenceImages: [
-      {
-        url: "https://3skrino-portfolio.vercel.app/media/hero/1794697969187-yj1vxznuzwau.png",
-        angle: -168.2,
-      },
-      {
-        url: "https://3skrino-portfolio.vercel.app/media/hero/1794698035335-9775m85mprzp.webp",
-        angle: -144.2,
-      },
-      {
-        url: "https://3skrino-portfolio.vercel.app/media/hero/1794698069302-dim9olkhf8k2.webp",
-        angle: -120.2,
-      },
-      {
-        url: "https://3skrino-portfolio.vercel.app/media/hero/1794698274088-zmh2h7axiosf.webp",
-        angle: -96.2,
-      },
-      {
-        url: "https://3skrino-portfolio.vercel.app/media/hero/1794698572050-8vfonhu4v8bj.webp",
-        angle: -72.2,
-      },
-      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794697969982-6dmsfn7w44t7.png", angle: -2.3 },
-      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794697969193-om7h10um0p0w.png", angle: -0.7 },
-      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794698016162-9w2aogub4qo7.webp", angle: -0.2 },
-      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794698587018-m8sesu27a22p.webp", angle: 23.8 },
-      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794697969177-0ohkcy2424pv.png", angle: 24.1 },
-      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794697970055-fnic1l549i4e.png", angle: 26.8 },
-      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794698100903-ck9kbitpajtw.webp", angle: 95.8 },
-      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794697970045-ka69oe8gkxca.png", angle: 119.8 },
-      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794697969924-9q5s6zgrdr94.png", angle: 143.8 },
-      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794697969169-xtmx9yv56rk2.png", angle: 167.8 },
-    ],
+    sequenceImages: [],
     theme: { primary: "#e7fe55", secondary: "#ff2d2d", background: "#0a0a0a" },
     floatingType: "fish",
     rotateSpeed: 0.5,
