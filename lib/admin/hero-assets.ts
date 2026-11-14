@@ -3,6 +3,9 @@
 import { adminFetch } from "@/lib/admin/client-api";
 import { uploadToStore, xhrPut } from "@/lib/admin/multipart";
 import type { UploadRequest } from "@/lib/admin/storage/contract";
+import { sameOriginMedia } from "@/lib/media-url";
+
+export { sameOriginMedia };
 
 /**
  * Admin helpers for hero assets: direct-to-B2 uploads through presigned PUTs
@@ -74,22 +77,6 @@ export async function uploadHeroAsset(
 /* ------------------------------------------------------------------ */
 /* Upscale                                                             */
 /* ------------------------------------------------------------------ */
-
-/**
- * Stored media URLs carry the production origin (<site>/media/<key>). Read
- * from another origin (localhost, a preview deploy), their redirect is
- * cross-origin and a CORS fetch() fails on it — so pixels are read through
- * this origin's own /media route, which redirects to the same object.
- */
-export function sameOriginMedia(src: string): string {
-  if (typeof window === "undefined") return src;
-  try {
-    const u = new URL(src, window.location.href);
-    return u.origin !== window.location.origin && u.pathname.startsWith("/media/") ? `${u.pathname}${u.search}` : src;
-  } catch {
-    return src;
-  }
-}
 
 /** Fetches an image for pixel access. Errors name the URL, so a failing image is told apart from anything else. */
 export async function fetchImage(src: string): Promise<Blob> {

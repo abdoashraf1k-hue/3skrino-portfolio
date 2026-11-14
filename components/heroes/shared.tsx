@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore, type RefObject } from "react";
-import { HERO_VARIANTS } from "@/data/cinematic-defaults";
+import { DEFAULT_HERO_VARIANT, HERO_VARIANTS } from "@/data/cinematic-defaults";
 import type { HeroConfig, HeroPose } from "@/data/hero-config";
 import { projects, type Project } from "@/data/projects";
 import type { HeroVariant } from "@/data/site-config";
@@ -37,7 +37,7 @@ const noop = () => () => {};
 export function useHeroVariant(): HeroVariant {
   const forced = useSyncExternalStore(noop, readParam, () => null);
   const { heroVariant } = useSiteConfig();
-  return forced ?? heroVariant ?? "cinematic";
+  return forced ?? heroVariant ?? DEFAULT_HERO_VARIANT;
 }
 
 /** The reel for the Split hero: the chosen project, else the first featured vertical with footage. */

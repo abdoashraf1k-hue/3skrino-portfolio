@@ -69,7 +69,8 @@ function Spin({ reducedMotion, children }: { reducedMotion: boolean; children: R
     const want = reducedMotion ? 0 : useHeroStore.getState().rotateSpeed * 0.1;
     speed.current += (want - speed.current) * ease(3, delta);
     drift.current += speed.current * delta;
-    g.rotation.y = heroSpin.angle + drift.current;
+    // The sequence's turn + the gaze tilt (already spring-smoothed): the orbit stays anchored to the head.
+    g.rotation.set(heroSpin.tiltX, heroSpin.angle + heroSpin.tiltY + drift.current, 0);
   });
   return (
     <group ref={ref} position={HEAD}>

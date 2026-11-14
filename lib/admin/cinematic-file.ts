@@ -6,6 +6,7 @@ import {
   EFFECT_IDS,
   EFFECT_SCOPES,
   ENTRY_ANIMATIONS,
+  DEFAULT_HERO_VARIANT,
   HERO_VARIANTS,
   LUT_PRESETS,
   SOUND_NAMES,
@@ -225,7 +226,7 @@ function sound(input: Record<string, unknown>): CinematicConfig["sound"] {
 }
 
 export function validateHeroVariant(o: Record<string, unknown>): HeroVariant {
-  return oneOf(o, "heroVariant", "Hero variant", HERO_VARIANTS, "cinematic");
+  return oneOf(o, "heroVariant", "Hero variant", HERO_VARIANTS, DEFAULT_HERO_VARIANT);
 }
 
 export function validateCinematic(v: unknown): CinematicConfig {

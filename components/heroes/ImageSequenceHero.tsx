@@ -1,7 +1,9 @@
 "use client";
 
+import { motion, useMotionValue, useMotionValueEvent, useSpring, useTransform } from "framer-motion";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { SequenceFrame } from "@/data/hero-config";
+import { sameOriginMedia } from "@/lib/media-url";
 import { cn } from "@/lib/utils";
 import { heroSpin } from "@/store/heroStore";
 
@@ -19,6 +21,11 @@ import { heroSpin } from "@/store/heroStore";
  * The angle eases towards the target (exponential lerp), so the turn has
  * weight and steps through every frame in between instead of jumping. The
  * rAF loop only runs while it is still settling. It starts facing you (0°).
+ *
+ * Gaze (Sprint 15): on top of the turn, the portrait tilts towards the cursor
+ * anywhere on the page — X → rotateY, Y → rotateX (±15°) on springs, under a
+ * CSS perspective — and the WebGL orbit tilts with it (heroSpin.tiltX/Y).
+ * Mouse and pen only; touch keeps the drag-to-turn, reduced motion keeps still.
  */
 
 type Frame = ImageBitmap | HTMLImageElement;
@@ -28,6 +35,72 @@ const PRELOAD_CONCURRENCY = 6;
 const STIFFNESS = 7;
 /** One full turn per this fraction of the stage width, when dragging. */
 const DRAG_TURN = 0.9;
+/** Gaze tilt at the edge of the stage, degrees. */
+const TILT = 15;
+/** Gaze parallax shift at the edge of the stage, px. */
+const SHIFT_X = 14;
+const SHIFT_Y = 10;
+/** Soft and weighted: the head follows, it doesn't snap. */
+const GAZE_SPRING = { stiffness: 50, damping: 20, mass: 1 };
+/** Where the face sits in the stage's height (the portrait box is 5% → 91%). */
+const FACE_Y = 0.42;
+
+const clamp1 = (v: number) => Math.min(1, Math.max(-1, v));
+
+/** Is the stage on screen at all? (Window-level listeners skip work while it's scrolled away.) */
+const onScreen = (r: DOMRect) => r.bottom > 0 && r.top < window.innerHeight;
+
+/**
+ * The cursor anywhere on the page → spring-smoothed tilt / shift of the portrait.
+ * Leaving the window (or a touch screen, or reduced motion) eases back to centre.
+ */
+function useGaze(trackRef: RefObject<HTMLElement | null>, enabled: boolean) {
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const sx = useSpring(mx, GAZE_SPRING);
+  const sy = useSpring(my, GAZE_SPRING);
+  const rotateY = useTransform(sx, [-1, 1], [-TILT, TILT]);
+  // Cursor above the face → the head tips back (looks up).
+  const rotateX = useTransform(sy, [-1, 1], [TILT, -TILT]);
+  const x = useTransform(sx, [-1, 1], [-SHIFT_X, SHIFT_X]);
+  const y = useTransform(sy, [-1, 1], [-SHIFT_Y, SHIFT_Y]);
+
+  // The WebGL orbit reads these inside useFrame: it tilts with the head.
+  useMotionValueEvent(rotateX, "change", (v) => {
+    heroSpin.tiltX = (v * Math.PI) / 180;
+  });
+  useMotionValueEvent(rotateY, "change", (v) => {
+    heroSpin.tiltY = (v * Math.PI) / 180;
+  });
+
+  useEffect(() => {
+    if (!enabled) {
+      mx.set(0);
+      my.set(0);
+      return;
+    }
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType === "touch") return;
+      const r = trackRef.current?.getBoundingClientRect();
+      if (!r || !onScreen(r)) return;
+      mx.set(clamp1((e.clientX - (r.left + r.width / 2)) / (r.width / 2)));
+      my.set(clamp1((e.clientY - (r.top + r.height * FACE_Y)) / (r.height / 2)));
+    };
+    const onLeave = () => {
+      mx.set(0);
+      my.set(0);
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    document.documentElement.addEventListener("mouseleave", onLeave);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      document.documentElement.removeEventListener("mouseleave", onLeave);
+    };
+  }, [enabled, trackRef, mx, my]);
+
+  return { rotateX, rotateY, x, y };
+}
+
 /** Frames closer than this (degrees) are duplicates: the first one wins. */
 const SAME_ANGLE = 0.5;
 
@@ -65,7 +138,7 @@ function nearest(angles: number[], deg: number, circular: boolean): number {
 async function loadFrame(src: string): Promise<Frame> {
   const img = new Image();
   img.decoding = "async";
-  img.src = src;
+  img.src = sameOriginMedia(src);
   await img.decode();
   // A bitmap is GPU-ready: drawImage() never re-decodes it.
   if (typeof createImageBitmap === "function") {
@@ -141,6 +214,7 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
   }, [ordered, frames, loadedUrls]);
   const ready = Boolean(frames?.length);
   const [touched, setTouched] = useState(false);
+  const gaze = useGaze(trackRef, !reducedMotion && !coarse);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -204,8 +278,10 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
     resize();
 
     let dragX: number | null = null;
+    // Window-level: the turn follows the mouse anywhere on the page, mapped across the stage's width.
     const onMove = (e: PointerEvent) => {
       const rect = track.getBoundingClientRect();
+      if (!onScreen(rect)) return;
       if (e.pointerType === "touch") {
         if (dragX === null) return;
         target = clamp(target + ((e.clientX - dragX) / (rect.width * DRAG_TURN)) * 360);
@@ -225,7 +301,7 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
     const onUp = () => {
       dragX = null;
     };
-    track.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointermove", onMove, { passive: true });
     track.addEventListener("pointerdown", onDown, { passive: true });
     window.addEventListener("pointerup", onUp, { passive: true });
     window.addEventListener("pointercancel", onUp, { passive: true });
@@ -233,7 +309,7 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
-      track.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointermove", onMove);
       track.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
@@ -246,25 +322,31 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
 
   return (
     <div className="pointer-events-none absolute inset-0">
-      {/* The portrait's box: centred, clear of the nav, its bottom under the copy's scrim. */}
-      <div className="absolute inset-x-0 top-[5%] h-[86%]">
-        {/* The still: the only image without a sequence, the placeholder while one loads. */}
-        {/* eslint-disable-next-line @next/next/no-img-element -- admin-uploaded URLs on any host */}
-        <img
-          src={fallbackSrc}
-          alt=""
-          aria-hidden
-          draggable={false}
-          className={cn("absolute inset-0 size-full object-contain transition-opacity duration-700", ready ? "opacity-0" : "opacity-100")}
-        />
-        {total > 0 && (
-          <canvas
-            ref={canvasRef}
-            role="img"
-            aria-label="360° portrait — move the mouse or drag to turn it"
-            className={cn("absolute inset-0 size-full transition-opacity duration-700", ready ? "opacity-100" : "opacity-0")}
+      {/* The portrait's box: centred, clear of the nav, its bottom under the copy's scrim. Perspective for the gaze tilt. */}
+      <div className="absolute inset-x-0 top-[5%] h-[86%] [perspective:1100px]">
+        {/* Transforms only (rotate / translate on the compositor): no layout or paint per frame. */}
+        <motion.div
+          className="absolute inset-0 origin-[50%_42%] will-change-transform [transform-style:preserve-3d]"
+          style={{ rotateX: gaze.rotateX, rotateY: gaze.rotateY, x: gaze.x, y: gaze.y }}
+        >
+          {/* The still: the only image without a sequence, the placeholder while one loads. */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- admin-uploaded URLs on any host */}
+          <img
+            src={sameOriginMedia(fallbackSrc)}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className={cn("absolute inset-0 size-full object-contain transition-opacity duration-700", ready ? "opacity-0" : "opacity-100")}
           />
-        )}
+          {total > 0 && (
+            <canvas
+              ref={canvasRef}
+              role="img"
+              aria-label="360° portrait — move the mouse or drag to turn it"
+              className={cn("absolute inset-0 size-full transition-opacity duration-700", ready ? "opacity-100" : "opacity-0")}
+            />
+          )}
+        </motion.div>
       </div>
 
       <div className="absolute right-4 top-24 z-30 font-mono text-[10px] uppercase tracking-widest text-muted md:right-8">

@@ -67,4 +67,10 @@ export const useHeroStore = create<HeroState>()((set, get) => ({
  * useFrame — a plain mutable object, so 60 fps writes never touch React or
  * Zustand subscribers.
  */
-export const heroSpin = { angle: 0 };
+export const heroSpin = {
+  angle: 0,
+  /** Sprint 15 gaze tilt of the portrait (radians, spring-smoothed): pitch towards the cursor… */
+  tiltX: 0,
+  /** …and yaw towards it, on top of the sequence's turn. */
+  tiltY: 0,
+};
