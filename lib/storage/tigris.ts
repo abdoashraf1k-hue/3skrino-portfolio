@@ -34,9 +34,28 @@ export type TigrisCredentials = {
   bucket: string;
 };
 
+const warned = new Set<string>();
+
+/**
+ * A Tigris env value, cleaned. None of them (endpoint, region, key ID, secret,
+ * bucket name) can contain whitespace, but a value pasted twice or with an
+ * extra line — e.g. TIGRIS_BUCKET_NAME = "3skrino-media\n3skrino-media" —
+ * otherwise reaches the SDK verbatim and every request 404s on a bucket that
+ * doesn't exist. Keep the first token, and say so once in the logs so the
+ * variable gets fixed (the value itself is never logged).
+ */
 function env(name: string): string {
-  return (process.env[name] ?? "").trim();
+  const raw = (process.env[name] ?? "").trim();
+  const first = raw.split(/\s+/)[0] ?? "";
+  if (first !== raw && !warned.has(name)) {
+    warned.add(name);
+    console.error(`[storage] ${name} contains a space or line break (pasted twice?) — using only its first part. Fix the variable on Vercel.`);
+  }
+  return first;
 }
+
+/** Same rule for values typed into the admin form. */
+const token = (v: string | undefined) => (v ?? "").trim().split(/\s+/)[0] ?? "";
 
 function normalizeEndpoint(raw: string): string {
   const value = raw || TIGRIS_DEFAULT_ENDPOINT;
@@ -47,11 +66,11 @@ function normalizeEndpoint(raw: string): string {
 /** An S3 config for Tigris from explicit credentials (admin → Settings → Storage → Test connection). */
 export function tigrisConfigFrom(c: TigrisCredentials): S3Config {
   return {
-    endpoint: normalizeEndpoint((c.endpoint ?? "").trim()),
-    region: (c.region ?? "").trim() || TIGRIS_DEFAULT_REGION,
-    accessKeyId: c.accessKeyId.trim(),
-    secretAccessKey: c.secretAccessKey.trim(),
-    bucket: c.bucket.trim(),
+    endpoint: normalizeEndpoint(token(c.endpoint)),
+    region: token(c.region) || TIGRIS_DEFAULT_REGION,
+    accessKeyId: token(c.accessKeyId),
+    secretAccessKey: token(c.secretAccessKey),
+    bucket: token(c.bucket),
     forcePathStyle: c.forcePathStyle ?? false,
   };
 }
