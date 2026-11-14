@@ -26,8 +26,8 @@ export type Coverage = {
   coveragePercentage: number;
 };
 
-/** 36 steps of 10°: one frame per step is the target for a smooth turn. */
-export const GRID_STEP = 10;
+/** Sprint 15.5: 72 steps of 5° — one frame per step is the target for a smooth turn (was 36 × 10°). */
+export const GRID_STEP = 5;
 
 const HUMAN_VERSION = "3.3.6";
 const MODELS = `https://cdn.jsdelivr.net/npm/@vladmandic/human@${HUMAN_VERSION}/models/`;

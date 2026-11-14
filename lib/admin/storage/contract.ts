@@ -141,7 +141,8 @@ export type StoreUsage = { configured: boolean; bytes: number; count: number; vi
 export type StorageStatusResponse = {
   provider: VideoProvider;
   setting: ProviderSetting;
-  b2: StoreUsage & { bucket: string; endpoint: string; publicBase: string };
+  /** The S3 media bucket (the "b2" id is historical): Tigris since Sprint 15.5, B2 as the fallback. */
+  b2: StoreUsage & { host: "tigris" | "b2" | "none"; hostLabel: string; bucket: string; endpoint: string; publicBase: string };
   blob: StoreUsage & { quotaBytes: number };
 };
 

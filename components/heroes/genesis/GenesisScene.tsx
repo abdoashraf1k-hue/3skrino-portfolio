@@ -1,12 +1,13 @@
 "use client";
 
 import { PerformanceMonitor } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
 import type { GenesisBackground, GenesisPalette } from "@/data/hero-config";
 import { sameOriginMedia } from "@/lib/media-url";
-import { BACKGROUND_FRAGMENTS, gridFragment, horizonFragment, horizonVertex, screenVertex, watermarkFragment, worldVertex } from "./shaders";
+import { heroSpin } from "@/store/heroStore";
+import { BACKGROUND_FRAGMENTS, gridFragment, hologramFragment, hologramVertex, horizonFragment, horizonVertex, screenVertex, watermarkFragment, worldVertex } from "./shaders";
 
 /**
  * Sprint 15 — the Genesis hero's WebGL layer, behind the 360° portrait (which
@@ -15,7 +16,9 @@ import { BACKGROUND_FRAGMENTS, gridFragment, horizonFragment, horizonVertex, scr
  *   1. a full-screen procedural backdrop (one of four GLSL presets),
  *   2. the retro grid floor in perspective, dissolving into the horizon,
  *   3. the watermark (uploaded logo or the site name) with glitch +
- *      chromatic aberration + neon glow, sitting behind the head.
+ *      chromatic aberration + neon glow, sitting behind the head,
+ *   4. (Sprint 15.5, hologram mode) the 360° head itself, as a tilted plane
+ *      through the hologram shader — Fresnel rim, scanlines, RGB split, grain.
  *
  * Following the R3F skill: materials / geometries / textures are built in
  * useMemo (never inside useFrame) and disposed on swap and unmount; useFrame
@@ -31,8 +34,32 @@ const ease = (k: number, delta: number) => 1 - Math.exp(-k * delta);
 const FLOOR_Y = -1.4;
 /** Where the watermark's centre sits, as a fraction of the stage height from the top. */
 const MARK_Y = 0.36;
-/** The watermark never gets taller than this fraction of the stage. */
-const MARK_MAX_H = 0.4;
+/** Watermark at 1×: fits this share of the stage (width, height). */
+const MARK_BASE = { w: 0.5, h: 0.32 };
+/** …and never grows past this, whatever the scale. */
+const MARK_MAX = { w: 1.15, h: 0.92 };
+/** Hologram plane: the portrait box (as ImageSequenceHero lays it out: top 5%, 86% tall) and its tilt pivot / perspective. */
+const PORTRAIT = { top: 0.05, height: 0.86, pivotFromTop: 0.42, perspective: 1100 };
+/** webgl skill: cap texture uploads (GPU memory protection). */
+const MAX_TEXTURE = 4096;
+/**
+ * webgl skill: texture memory budget for the pre-uploaded 360° frames (its
+ * resource manager caps all textures at 256 MB; this leaves headroom for the
+ * rest of the scene). 1254² RGBA ≈ 6.3 MB → ~30 frames resident.
+ */
+const FRAME_BUDGET_BYTES = 192 * 1024 * 1024;
+
+/** A frame texture configured for the hologram (colour image, no mips, flipped in the shader). */
+function frameTexture(image?: TexImageSource): THREE.Texture {
+  const t = new THREE.Texture(image as THREE.Texture["image"]);
+  t.colorSpace = THREE.SRGBColorSpace; // decoded to linear when sampled (threejs-shaders)
+  t.flipY = false; // an ImageBitmap ignores flipY: the shader flips every source the same way
+  t.generateMipmaps = false;
+  t.minFilter = THREE.LinearFilter;
+  t.magFilter = THREE.LinearFilter;
+  if (image) t.needsUpdate = true;
+  return t;
+}
 /** Reduced motion: one frozen, pleasant moment of every shader. */
 const FROZEN_T = 14;
 
@@ -316,12 +343,13 @@ function Watermark({ url, text, glitch, opacity, scale, colors, clock }: MarkPro
     const W = state.size.width;
     const H = state.size.height;
     const aspect = img.width / img.height;
-    let w = W * scale;
+    // 1× fits the logo into half the stage's width and a third of its height; the admin scale (0.5–3) multiplies that.
+    let w = Math.min(W * MARK_BASE.w, H * MARK_BASE.h * aspect) * scale;
     let h = w / aspect;
-    if (h > H * MARK_MAX_H) {
-      h = H * MARK_MAX_H;
-      w = h * aspect;
-    }
+    // Past the stage it would only crop: capped, aspect kept.
+    const cap = Math.min(1, (W * MARK_MAX.w) / w, (H * MARK_MAX.h) / h);
+    w *= cap;
+    h *= cap;
     const x = (W - w) / 2;
     const yFromBottom = H - H * MARK_Y - h / 2;
     (u.uRect.value as THREE.Vector4).set(x * dpr, yFromBottom * dpr, w * dpr, h * dpr);
@@ -341,6 +369,170 @@ function Watermark({ url, text, glitch, opacity, scale, colors, clock }: MarkPro
 }
 
 /* ------------------------------------------------------------------ */
+/* 4. Hologram head (Sprint 15.5)                                      */
+/* ------------------------------------------------------------------ */
+
+export type HologramSettings = { fresnel: number; scanlines: number; aberration: number; grain: number };
+
+/**
+ * The 360° frame on screen, drawn as a tilted plane through the hologram
+ * shader.
+ *
+ * Textures: each decoded frame gets its own texture, built when the sequence
+ * arrives (props, never inside useFrame) up to FRAME_BUDGET_BYTES, and
+ * pre-uploaded to the GPU in idle time with renderer.initTexture — so
+ * scrubbing only switches a uniform, never re-uploads 6 MB per frame change.
+ * Frames past the budget stream through one shared texture (swap the image,
+ * re-upload; a new size disposes the GPU copy first so storage reallocates).
+ */
+function Hologram({
+  settings,
+  frames,
+  colors,
+  clock,
+}: {
+  settings: HologramSettings;
+  frames: readonly (ImageBitmap | HTMLImageElement)[] | null;
+  colors: PaletteUniforms;
+  clock: RefObject<Clock>;
+}) {
+  const mesh = useRef<ShaderMesh>(null);
+  const seen = useRef({ version: -1, w: 0, h: 0 });
+  const gl = useThree((s) => s.gl);
+  const texture = useMemo(() => frameTexture(), []);
+  useEffect(() => () => texture.dispose(), [texture]);
+
+  // Resident textures, one per frame, within the GPU budget.
+  const cache = useMemo(() => {
+    const map = new Map<ImageBitmap | HTMLImageElement, THREE.Texture>();
+    let bytes = 0;
+    for (const f of frames ?? []) {
+      const size = f.width * f.height * 4;
+      if (f.width > MAX_TEXTURE || f.height > MAX_TEXTURE || bytes + size > FRAME_BUDGET_BYTES) break;
+      bytes += size;
+      map.set(f, frameTexture(f));
+    }
+    return map;
+  }, [frames]);
+  // Upload them a few at a time while the browser is idle; free them when the sequence changes.
+  useEffect(() => {
+    const queue = [...cache.values()];
+    const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 16));
+    const cancelIdle = window.cancelIdleCallback ?? window.clearTimeout;
+    let handle = 0;
+    const step = () => {
+      for (let i = 0; i < 2 && queue.length; i++) gl.initTexture(queue.shift()!);
+      if (queue.length) handle = idle(step) as number;
+    };
+    handle = idle(step) as number;
+    return () => {
+      cancelIdle(handle);
+      cache.forEach((t) => t.dispose());
+    };
+  }, [cache, gl]);
+
+  const material = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader: hologramVertex,
+        fragmentShader: hologramFragment,
+        uniforms: {
+          uMap: { value: texture },
+          // Not read by the shader: keeps the streaming texture reachable from the frame loop.
+          uStream: { value: texture },
+          uTexel: { value: new THREE.Vector2(1, 1) },
+          uRes: { value: new THREE.Vector2(1, 1) },
+          uRect: { value: new THREE.Vector4(0, 0, 1, 1) },
+          uPivot: { value: new THREE.Vector2() },
+          uTilt: { value: new THREE.Vector2() },
+          uShift: { value: new THREE.Vector2() },
+          uFocal: { value: PORTRAIT.perspective },
+          uTime: { value: 0 },
+          uFresnel: { value: 0 },
+          uScan: { value: 0 },
+          uAberration: { value: 0 },
+          uGrain: { value: 0 },
+          uOpacity: { value: 0 },
+          uGlow: colors.uGlow,
+          uTint: colors.uTint,
+        },
+        // Normal blending: the head occludes the watermark and grid behind it (no CSS occluder needed).
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+        toneMapped: false,
+      }),
+    [texture, colors],
+  );
+  useEffect(() => () => material.dispose(), [material]);
+
+  useFrame((state, delta) => {
+    const m = mesh.current;
+    if (!m) return;
+    const u = m.material.uniforms;
+    const frame = heroSpin.frame;
+    const s = seen.current;
+    if (!frame) {
+      m.visible = false;
+      return;
+    }
+    const fw = frame.width;
+    const fh = frame.height;
+    if (s.version !== heroSpin.version) {
+      s.version = heroSpin.version;
+      const resident = cache.get(frame);
+      if (resident) {
+        // Pre-uploaded: switching frames is a uniform swap.
+        u.uMap.value = resident;
+      } else {
+        if (fw > MAX_TEXTURE || fh > MAX_TEXTURE) {
+          m.visible = false;
+          return;
+        }
+        // Past the budget: stream through the shared texture (reached via the material, not the memo).
+        const tex = u.uStream.value as THREE.Texture;
+        if (s.w !== fw || s.h !== fh) tex.dispose(); // a different size needs fresh GPU storage
+        tex.image = frame;
+        tex.needsUpdate = true;
+        u.uMap.value = tex;
+        s.w = fw;
+        s.h = fh;
+      }
+    }
+    m.visible = true;
+
+    const dpr = state.viewport.dpr;
+    const W = state.size.width * dpr;
+    const H = state.size.height * dpr;
+    // The portrait box (y up), and the frame fitted inside it like the Canvas 2D draws it.
+    const boxH = H * PORTRAIT.height;
+    const boxY = H * (1 - PORTRAIT.top - PORTRAIT.height);
+    const k = Math.min(W / fw, boxH / fh);
+    const w = fw * k;
+    const h = fh * k;
+    (u.uRect.value as THREE.Vector4).set((W - w) / 2, boxY + (boxH - h) / 2, w, h);
+    (u.uPivot.value as THREE.Vector2).set(W / 2, boxY + boxH * (1 - PORTRAIT.pivotFromTop));
+    (u.uRes.value as THREE.Vector2).set(W, H);
+    (u.uTexel.value as THREE.Vector2).set(1 / fw, 1 / fh);
+    (u.uTilt.value as THREE.Vector2).set(heroSpin.tiltX, heroSpin.tiltY);
+    (u.uShift.value as THREE.Vector2).set(heroSpin.shiftX * dpr, -heroSpin.shiftY * dpr);
+    u.uFocal.value = PORTRAIT.perspective * dpr;
+    u.uTime.value = clock.current.t;
+    u.uFresnel.value = settings.fresnel;
+    u.uScan.value = clock.current.frozen ? settings.scanlines * 0.5 : settings.scanlines;
+    u.uAberration.value = settings.aberration;
+    u.uGrain.value = clock.current.frozen ? 0 : settings.grain;
+    u.uOpacity.value += (1 - u.uOpacity.value) * ease(3, delta);
+  });
+
+  return (
+    <mesh ref={mesh} frustumCulled={false} renderOrder={8} material={material} visible={false}>
+      <planeGeometry args={[2, 2]} />
+    </mesh>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Stage                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -349,14 +541,20 @@ type SceneProps = {
   palette: GenesisPalette;
   grid: boolean;
   watermark: { url: string; text: string; glitch: number; opacity: number; scale: number };
+  /** Sprint 15.5: draw the 360° head through the hologram shader (null → the DOM canvas shows it). */
+  hologram: HologramSettings | null;
+  /** The decoded 360° frames, for GPU pre-upload (null while there's none or they aren't WebGL-safe). */
+  hologramFrames: readonly (ImageBitmap | HTMLImageElement)[] | null;
   pointer: RefObject<Pointer>;
   reducedMotion: boolean;
   /** Pauses rendering entirely while the hero is off-screen. */
   active: boolean;
   onReady: () => void;
+  /** webgl skill: the GPU dropped the context — the hero falls back to its CSS stage. */
+  onContextLost: () => void;
 };
 
-function Stage({ preset, palette, grid, watermark, pointer, reducedMotion, onReady }: Omit<SceneProps, "active">) {
+function Stage({ preset, palette, grid, watermark, hologram, hologramFrames, pointer, reducedMotion, onReady }: Omit<SceneProps, "active" | "onContextLost">) {
   const colors = usePaletteUniforms(palette);
   const clock = useRef<Clock>({ t: reducedMotion ? FROZEN_T : 0, age: 0, frozen: reducedMotion });
   const ready = useRef(false);
@@ -381,11 +579,12 @@ function Stage({ preset, palette, grid, watermark, pointer, reducedMotion, onRea
       <Backdrop preset={preset} colors={colors} clock={clock} pointer={pointer} />
       {grid && <Grid colors={colors} clock={clock} />}
       <Watermark {...watermark} colors={colors} clock={clock} />
+      {hologram && <Hologram settings={hologram} frames={hologramFrames} colors={colors} clock={clock} />}
     </>
   );
 }
 
-export default function GenesisScene({ active, ...props }: SceneProps) {
+export default function GenesisScene({ active, onContextLost, ...props }: SceneProps) {
   const coarse = useMemo(() => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches, []);
   const [dpr, setDpr] = useState(coarse ? 1 : 1.5);
   return (
@@ -394,7 +593,15 @@ export default function GenesisScene({ active, ...props }: SceneProps) {
       dpr={dpr}
       gl={{ antialias: false, powerPreference: "high-performance", alpha: false }}
       frameloop={active ? "always" : "never"}
-      onCreated={({ camera }) => camera.lookAt(0, 0.05, 0)}
+      onCreated={({ camera, gl }) => {
+        camera.lookAt(0, 0.05, 0);
+        // webgl skill §4.2: never let a lost context crash the page — prevent the default and fall back.
+        gl.domElement.addEventListener("webglcontextlost", (e) => {
+          e.preventDefault();
+          console.warn("[genesis] WebGL context lost — showing the CSS stage");
+          onContextLost();
+        });
+      }}
       aria-hidden
     >
       {/* Sustained low fps → render at 1× for the session (the shaders scale with pixel count). */}

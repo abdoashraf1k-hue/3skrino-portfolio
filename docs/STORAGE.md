@@ -1,12 +1,50 @@
-# Media storage (Sprint 12)
+# Media storage (Sprint 12 · Tigris since Sprint 15.5)
 
-How the portfolio stores and serves images and videos, how to set up the free
-Backblaze B2 bucket that holds the videos, how to move old videos over, and what
-to do when something breaks.
+How the portfolio stores and serves images and videos, how to set up the
+bucket that holds them, how to move old files over, and what to do when
+something breaks.
 
-Facts about providers and their free tiers were checked on 2026-10-06. Free
-tiers change. If a number here matters to you, check it in the provider's own
-console.
+## Sprint 15.5 — Tigris is the media bucket now
+
+On 2026-11-14 Backblaze B2 hit its free daily download cap and started
+answering **403 "cap exceeded"** for every file, which took every image and
+video on the live site down. B2 can only raise the cap with a card on file, so
+the media moved to **Tigris** (S3-compatible, no card; checked 2026-11-14:
+5 GB storage, 10,000 writes and 100,000 reads a month free, **egress free**).
+
+**Nothing in `data/` changes.** Stored URLs are `<site>/media/<key>`; the
+`/media` route now presigns against Tigris whenever `TIGRIS_*` is set
+(`lib/admin/storage/bucket.ts`), and falls back to B2 otherwise.
+
+Set-up, once:
+
+1. Sign up at <https://console.storage.dev/signup> (no card).
+2. Create a bucket at <https://storage.new> — private (the default) is right.
+3. Console → **Access Keys** → **Create New Access Key +** → permission
+   **ReadWrite**, only that bucket. Copy the `tid_…` ID and the `tsec_…` secret
+   (shown once). Optionally switch off *Default allowed operations* (the key
+   then can't create or list other buckets).
+4. Admin → **Settings → Storage → Tigris**: paste the keys and bucket →
+   **Test connection** → **Apply CORS** → test again (all ✓) → **Copy env block**.
+5. Vercel → project → **Settings → Environment Variables**: paste the block
+   (Production + Preview) → **Redeploy**.
+6. Copy the files: `node scripts/migrate-b2-to-tigris.mjs` (dry run) then
+   `--confirm`. It needs the B2 keys too (`.env`) and a working B2 download
+   quota, so run it after B2's daily reset (00:00 UTC). It copies images first,
+   videos last, skips what's already copied, and stops cleanly if B2's cap
+   trips again — just re-run the next day. The bucket was 1.82 GB (204 files)
+   on 2026-11-14, well inside Tigris' 5 GB.
+7. The Cloudflare Worker (`workers/b2-proxy/worker.js`): paste the new file and
+   add `TIGRIS_BUCKET_NAME`, `TIGRIS_ACCESS_KEY_ID`, `TIGRIS_SECRET_ACCESS_KEY`
+   (and `TIGRIS_ENDPOINT` if yours isn't `https://t3.storage.dev`) as
+   variables / secrets. With them set it signs for Tigris; without, for B2.
+
+The rest of this file is the original Sprint 12 B2 guide — still accurate for
+B2 as the fallback. Where it says "B2", the code now means "the media bucket".
+
+Facts about providers and their free tiers were checked on 2026-10-06 (B2) and
+2026-11-14 (Tigris). Free tiers change. If a number here matters to you, check
+it in the provider's own console.
 
 ---
 

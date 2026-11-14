@@ -8,8 +8,8 @@ import {
   getPresignedMultipartUrl,
   getPresignedPutUrl,
   headObject,
-  isB2Configured,
-} from "@/lib/admin/storage/b2";
+  isBucketConfigured,
+} from "@/lib/admin/storage/bucket";
 import {
   KEY_PATTERN,
   LIMITS,
@@ -47,7 +47,7 @@ export const dynamic = "force-dynamic";
  * short-lived signed URLs. Every action needs the admin key.
  */
 
-const NOT_CONFIGURED = "B2 isn't configured — set B2_* env vars (docs/STORAGE.md)";
+const NOT_CONFIGURED = "No media bucket is configured — set the TIGRIS_* env vars (admin → Settings → Storage, docs/STORAGE.md)";
 /**
  * Highest part number a legitimate upload can reach: the largest allowed video
  * at its part size. The server keeps no per-upload state, so this bound (plus
@@ -179,13 +179,14 @@ async function handle(req: UploadRequest): Promise<Response> {
     const body: ConfigResponse = {
       provider: resolveProvider(setting),
       setting,
-      configured: { b2: isB2Configured(), blob: isBlobConfigured() },
+      // "b2" = the S3 bucket (Tigris, or B2 as the fallback).
+      configured: { b2: isBucketConfigured(), blob: isBlobConfigured() },
       publicBase: publicBase(),
     };
     return Response.json(body);
   }
 
-  if (!isB2Configured()) return Response.json({ error: NOT_CONFIGURED }, { status: 503 });
+  if (!isBucketConfigured()) return Response.json({ error: NOT_CONFIGURED }, { status: 503 });
 
   switch (req.action) {
     case "put": {

@@ -219,6 +219,8 @@ export const DEFAULT_MODEL3D: Hero3DConfig = {
 /** Sprint 15 — the Genesis hero. */
 export const GENESIS_BACKGROUNDS: readonly GenesisBackground[] = ["celestial-nebula", "neon-ring-field", "liquid-metal", "calm-dark"];
 export const GENESIS_GRAVITY: readonly GenesisGravity[] = ["off", "repel", "attract"];
+/** Calibration offset bounds (degrees). */
+export const CALIBRATION_RANGE = 90;
 export const GENESIS_HEAD_MODES: readonly GenesisHeadMode[] = ["hologram", "cutout"];
 export const BRAND_SHAPES: readonly BrandShape[] = ["diamond", "circle", "glitch-text"];
 
@@ -234,12 +236,18 @@ export const DEFAULT_GENESIS: GenesisConfig = {
   background: "celestial-nebula",
   palette: DEFAULT_GENESIS_PALETTE,
   themePrompt: "",
-  watermarkUrl: "",
+  customWatermarkUrl: "",
   watermarkGlitch: 0.6,
-  watermarkOpacity: 0.55,
-  watermarkScale: 0.8,
+  watermarkOpacity: 0.85,
+  watermarkScale: 1.5,
+  globalWatermark: false,
   grid: true,
   headMode: "hologram",
+  holoFresnel: 0.7,
+  holoScanlines: 0.5,
+  holoAberration: 0.5,
+  holoGrain: 0.35,
+  calibrationOffset: 0,
   autoCamera: true,
   gravity: "repel",
   gravityStrength: 0.6,

@@ -3,6 +3,7 @@
 import { motion, useMotionValue, useMotionValueEvent, useSpring, useTransform } from "framer-motion";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { SequenceFrame } from "@/data/hero-config";
+import { matteBlackBackdrop } from "@/lib/backdrop-matte";
 import { sameOriginMedia } from "@/lib/media-url";
 import { cn } from "@/lib/utils";
 import { heroSpin } from "@/store/heroStore";
@@ -28,11 +29,20 @@ import { heroSpin } from "@/store/heroStore";
  * Mouse and pen only; touch keeps the drag-to-turn, reduced motion keeps still.
  */
 
-type Frame = ImageBitmap | HTMLImageElement;
+export type Frame = ImageBitmap | HTMLImageElement;
 
 const PRELOAD_CONCURRENCY = 6;
-/** Lerp stiffness: higher follows the pointer more tightly. */
-const STIFFNESS = 7;
+/**
+ * Sprint 15.5 calibration: the cursor across the window, nx ∈ [-1, 1], maps
+ * linearly to a target yaw of nx × 180° (+ the admin's calibration offset):
+ * 10% of the half-width right of centre is +18°, the edges are ±180°. The
+ * angle then eases toward it by lerp(current, target, 0.1) per 60 fps frame —
+ * applied frame-rate-independently as 1 − 0.9^(dt·60).
+ */
+const MOUSE_RANGE = 180;
+const LERP = 0.1;
+/** Arrow keys: one press turns this far (image-zoom-360: a keyboard alternative to dragging). */
+const KEY_STEP = 5;
 /** One full turn per this fraction of the stage width, when dragging. */
 const DRAG_TURN = 0.9;
 /** Gaze tilt at the edge of the stage, degrees. */
@@ -65,12 +75,18 @@ function useGaze(trackRef: RefObject<HTMLElement | null>, enabled: boolean) {
   const x = useTransform(sx, [-1, 1], [-SHIFT_X, SHIFT_X]);
   const y = useTransform(sy, [-1, 1], [-SHIFT_Y, SHIFT_Y]);
 
-  // The WebGL orbit reads these inside useFrame: it tilts with the head.
+  // The WebGL orbit / hologram read these inside useFrame: they tilt with the head.
   useMotionValueEvent(rotateX, "change", (v) => {
     heroSpin.tiltX = (v * Math.PI) / 180;
   });
   useMotionValueEvent(rotateY, "change", (v) => {
     heroSpin.tiltY = (v * Math.PI) / 180;
+  });
+  useMotionValueEvent(x, "change", (v) => {
+    heroSpin.shiftX = v;
+  });
+  useMotionValueEvent(y, "change", (v) => {
+    heroSpin.shiftY = v;
   });
 
   useEffect(() => {
@@ -135,28 +151,67 @@ function nearest(angles: number[], deg: number, circular: boolean): number {
   return best;
 }
 
-async function loadFrame(src: string): Promise<Frame> {
+/** Frames that loaded without CORS (tainted): drawable on a Canvas 2D, but WebGL may not sample them. */
+const tainted = new WeakSet<Frame>();
+
+async function decodeImage(src: string, cors: boolean): Promise<HTMLImageElement> {
   const img = new Image();
+  // Sprint 15.5: CORS, so the hologram shader may upload the pixels (the bucket answers with CORS headers).
+  if (cors) img.crossOrigin = "anonymous";
   img.decoding = "async";
   img.src = sameOriginMedia(src);
   await img.decode();
+  return img;
+}
+
+async function loadFrame(src: string, matte: boolean): Promise<Frame> {
+  let img: HTMLImageElement;
+  let clean = true;
+  try {
+    img = await decodeImage(src, true);
+  } catch {
+    // A host without CORS headers: load it the old way — it still draws, just not through WebGL.
+    img = await decodeImage(src, false);
+    clean = false;
+  }
+  const mark = (f: Frame) => {
+    if (!clean) tainted.add(f);
+    return f;
+  };
+  // Sprint 15.5: a black studio backdrop becomes transparent (connectivity matte — dark skin / hair stay solid).
+  // Needs CORS-clean pixels; a tainted frame keeps its backdrop.
+  if (matte && clean) {
+    const matted = matteBlackBackdrop(img, img.naturalWidth, img.naturalHeight);
+    if (matted) {
+      if (typeof createImageBitmap === "function") {
+        try {
+          return await createImageBitmap(matted);
+        } catch {
+          /* fall through to the original */
+        }
+      }
+    }
+  }
   // A bitmap is GPU-ready: drawImage() never re-decodes it.
   if (typeof createImageBitmap === "function") {
     try {
-      return await createImageBitmap(img);
+      return mark(await createImageBitmap(img));
     } catch {
       /* fall back to the decoded <img> */
     }
   }
-  return img;
+  return mark(img);
 }
 
 /** Loads every frame (a few at a time), reporting progress. Frames that fail are dropped; `urls` are the ones that made it. */
-function usePreload(images: string[]) {
+function usePreload(images: string[], matte: boolean) {
   const [state, setState] = useState<{ key: string; loaded: number; frames: Frame[] | null; urls: string[] }>({ key: "", loaded: 0, frames: null, urls: [] });
   // The array's contents are its identity: a new array with the same URLs doesn't reload.
   const key = images.join("\n");
   const urls = useMemo(() => (key ? key.split("\n") : []), [key]);
+
+  // The loaded state belongs to these URLs *and* this matte setting (toggling it reloads).
+  const stateKey = `${matte ? 1 : 0}|${key}`;
 
   useEffect(() => {
     if (!urls.length) return;
@@ -168,28 +223,31 @@ function usePreload(images: string[]) {
       while (!cancelled && next < urls.length) {
         const i = next++;
         try {
-          out[i] = await loadFrame(urls[i]);
+          out[i] = await loadFrame(urls[i], matte);
         } catch {
           console.warn(`[hero] 360° frame ${i + 1} failed to load: ${urls[i]}`);
         }
         loaded++;
-        if (!cancelled) setState((s) => ({ ...s, key, loaded }));
+        if (!cancelled) setState((s) => ({ ...s, key: stateKey, loaded }));
       }
     };
     void Promise.all(Array.from({ length: Math.min(PRELOAD_CONCURRENCY, urls.length) }, worker)).then(() => {
       if (cancelled) return;
       const ok = urls.filter((_, i) => out[i] !== null);
-      setState({ key, loaded, frames: out.filter((f): f is Frame => f !== null), urls: ok });
+      setState({ key: stateKey, loaded, frames: out.filter((f): f is Frame => f !== null), urls: ok });
     });
     return () => {
       cancelled = true;
       for (const f of out) if (f && "close" in f) f.close();
     };
-  }, [key, urls]);
+  }, [stateKey, urls, matte]);
 
-  const current = state.key === key;
+  const current = state.key === stateKey;
   return { loaded: current ? state.loaded : 0, frames: current ? state.frames : null, urls: current ? state.urls : [] };
 }
+
+/** What the sequence reports up: drawable or not, safe for WebGL, and the decoded frames (for GPU pre-upload). */
+export type SequenceState = { ready: boolean; webgl: boolean; frames: readonly Frame[] | null };
 
 type Props = {
   frames: SequenceFrame[];
@@ -200,13 +258,34 @@ type Props = {
   reducedMotion: boolean;
   /** "pointer: coarse" — picks the hint. */
   coarse: boolean;
+  /** Sprint 15.5: degrees added to the mouse's nx × 180 target (admin → Genesis → Calibration). */
+  calibrationOffset?: number;
+  /** Sprint 15.5: make a black photo backdrop transparent at load (connectivity matte — see lib/backdrop-matte). */
+  matteBackdrop?: boolean;
+  /** Keep drawing, but don't show the canvas: a WebGL pass (the Genesis hologram) samples and draws it instead. */
+  hideCanvas?: boolean;
+  /**
+   * Fires when the sequence becomes drawable or goes away. `webgl`: every
+   * loaded frame came with CORS, so a WebGL pass may sample it.
+   */
+  onReadyChange?: (state: SequenceState) => void;
 };
 
-export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef, reducedMotion, coarse }: Props) {
+export default function ImageSequenceHero({
+  frames: input,
+  fallbackSrc,
+  trackRef,
+  reducedMotion,
+  coarse,
+  calibrationOffset = 0,
+  hideCanvas = false,
+  matteBackdrop = false,
+  onReadyChange,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ordered = useMemo(() => orderFrames(input), [input]);
   const images = useMemo(() => ordered.map((f) => f.url), [ordered]);
-  const { loaded, frames, urls: loadedUrls } = usePreload(images);
+  const { loaded, frames, urls: loadedUrls } = usePreload(images, matteBackdrop);
   // Angles of the frames that loaded, from the current config (an angle edit needs no reload).
   const loadedAngles = useMemo(() => {
     const byUrl = new Map(ordered.map((f) => [f.url, f.angle]));
@@ -215,6 +294,27 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
   const ready = Boolean(frames?.length);
   const [touched, setTouched] = useState(false);
   const gaze = useGaze(trackRef, !reducedMotion && !coarse);
+
+  // Hidden while WebGL draws the head; un-hiding repaints immediately.
+  const hiddenRef = useRef(hideCanvas);
+  const redraw = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    hiddenRef.current = hideCanvas;
+    if (!hideCanvas) redraw.current?.();
+  }, [hideCanvas]);
+
+  // Live calibration: the pointer handler reads the latest offset without re-binding (or reloading frames).
+  const offsetRef = useRef(calibrationOffset);
+  const retarget = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    offsetRef.current = calibrationOffset;
+    retarget.current?.();
+  }, [calibrationOffset]);
+
+  const webglSafe = Boolean(frames?.length && frames.every((f) => !tainted.has(f)));
+  useEffect(() => {
+    onReadyChange?.({ ready, webgl: webglSafe, frames: ready ? frames : null });
+  }, [ready, webglSafe, frames, onReadyChange]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -230,8 +330,10 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
     const circular = n >= 3 && 360 - (hi - lo) <= Math.max(30, 2 * (360 / n));
     const clamp = (a: number) => (circular ? a : Math.min(hi, Math.max(lo, a)));
 
-    let target = clamp(0);
+    // Facing you at rest — through the calibration, so the centred cursor and the first frame agree.
+    let target = clamp(offsetRef.current);
     let pos = target;
+    let lastNx = 0;
     let drawn = -1;
     let raf = 0;
     let last = 0;
@@ -241,6 +343,10 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
       if (idx === drawn && !force) return;
       drawn = idx;
       const f = frames[idx];
+      heroSpin.frame = f;
+      heroSpin.version++;
+      // A WebGL pass draws the head: skip the (invisible) 2D redraw — it's the expensive part of a frame change.
+      if (hiddenRef.current) return;
       const { width: cw, height: ch } = canvas;
       const s = Math.min(cw / f.width, ch / f.height);
       const w = f.width * s;
@@ -248,13 +354,18 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
       ctx.clearRect(0, 0, cw, ch);
       ctx.drawImage(f, (cw - w) / 2, (ch - h) / 2, w, h);
     };
+    // Shown again (cutout mode, a WebGL failure): paint the current frame at once.
+    redraw.current = () => draw(true);
 
     const tick = (now: number) => {
       const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
       last = now;
-      pos += (target - pos) * (reducedMotion ? 1 : 1 - Math.exp(-STIFFNESS * dt));
+      // lerp(pos, target, 0.1) per 60 fps frame, the same feel at any refresh rate.
+      pos += (target - pos) * (reducedMotion ? 1 : 1 - Math.pow(1 - LERP, dt * 60));
       if (Math.abs(target - pos) < 0.05) pos = target;
       heroSpin.angle = (pos * Math.PI) / 180;
+      // The settled yaw, for QA / assistive tooling (written only while the turn is moving).
+      canvas.dataset.angle = pos.toFixed(1);
       draw();
       raf = pos === target ? 0 : requestAnimationFrame(tick);
     };
@@ -277,8 +388,19 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
     ro.observe(canvas);
     resize();
 
+    /** nx ∈ [-1, 1] → nx × 180° + calibration (clamped to the frames when the turn isn't closed). */
+    const aim = (nx: number) => {
+      lastNx = nx;
+      target = clamp(nx * MOUSE_RANGE + offsetRef.current);
+      // Coming from a wrapped angle (touch drag, keys): close the gap the short way round.
+      if (circular) pos -= Math.round((pos - target) / 360) * 360;
+      kick();
+    };
+    // A new calibration offset re-aims at once, from where the cursor last was.
+    retarget.current = () => aim(lastNx);
+
     let dragX: number | null = null;
-    // Window-level: the turn follows the mouse anywhere on the page, mapped across the stage's width.
+    // Window-level: the turn follows the mouse anywhere on the page.
     const onMove = (e: PointerEvent) => {
       const rect = track.getBoundingClientRect();
       if (!onScreen(rect)) return;
@@ -286,12 +408,20 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
         if (dragX === null) return;
         target = clamp(target + ((e.clientX - dragX) / (rect.width * DRAG_TURN)) * 360);
         dragX = e.clientX;
+        kick();
       } else {
-        const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-        target = lo + x * (hi - lo);
-        // A mouse after a touch drag: bring the wrapped angle back into [lo, hi] the short way.
-        if (circular) pos -= Math.round((pos - target) / 360) * 360;
+        aim(Math.min(1, Math.max(-1, (e.clientX / window.innerWidth) * 2 - 1)));
       }
+      setTouched(true);
+    };
+    // ← / → turn the head while the hero is on screen and nothing else has focus.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      const el = document.activeElement;
+      if (el && el !== document.body && el !== track && !track.contains(el)) return;
+      if (!onScreen(track.getBoundingClientRect())) return;
+      target = clamp(target + (e.key === "ArrowRight" ? KEY_STEP : -KEY_STEP));
       setTouched(true);
       kick();
     };
@@ -305,6 +435,8 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
     track.addEventListener("pointerdown", onDown, { passive: true });
     window.addEventListener("pointerup", onUp, { passive: true });
     window.addEventListener("pointercancel", onUp, { passive: true });
+    window.addEventListener("keydown", onKey);
+    kick(); // settle on the calibrated rest angle
 
     return () => {
       cancelAnimationFrame(raf);
@@ -313,6 +445,14 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
       track.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
+      window.removeEventListener("keydown", onKey);
+      retarget.current = null;
+      redraw.current = null;
+      // The frames are closed when the sequence unloads: never leave a closed bitmap for WebGL to upload.
+      if (heroSpin.frame && frames.includes(heroSpin.frame)) {
+        heroSpin.frame = null;
+        heroSpin.version++;
+      }
       heroSpin.angle = 0;
     };
   }, [frames, loadedAngles, trackRef, reducedMotion]);
@@ -342,8 +482,8 @@ export default function ImageSequenceHero({ frames: input, fallbackSrc, trackRef
             <canvas
               ref={canvasRef}
               role="img"
-              aria-label="360° portrait — move the mouse or drag to turn it"
-              className={cn("absolute inset-0 size-full transition-opacity duration-700", ready ? "opacity-100" : "opacity-0")}
+              aria-label="360° portrait — move the mouse, drag, or use the arrow keys to turn it"
+              className={cn("absolute inset-0 size-full transition-opacity duration-700", ready && !hideCanvas ? "opacity-100" : "opacity-0")}
             />
           )}
         </motion.div>

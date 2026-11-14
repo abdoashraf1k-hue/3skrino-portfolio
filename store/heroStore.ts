@@ -73,4 +73,16 @@ export const heroSpin = {
   tiltX: 0,
   /** …and yaw towards it, on top of the sequence's turn. */
   tiltY: 0,
+  /** Sprint 15.5 gaze parallax shift of the portrait, CSS px. */
+  shiftX: 0,
+  shiftY: 0,
+  /**
+   * Sprint 15.5 — the 360° frame on screen right now (a decoded bitmap), for
+   * the Genesis hologram shader to sample; null while there's no loaded
+   * sequence. `version` bumps on every change, so the WebGL texture
+   * re-uploads only when a new frame was drawn — one frame at native size,
+   * never the whole full-width canvas.
+   */
+  frame: null as ImageBitmap | HTMLImageElement | null,
+  version: 0,
 };

@@ -22,6 +22,7 @@ import {
   DEFAULT_GENESIS,
   DEFAULT_MODEL3D,
   BRAND_SHAPES,
+  CALIBRATION_RANGE,
   GENESIS_BACKGROUNDS,
   GENESIS_GRAVITY,
   GENESIS_HEAD_MODES,
@@ -269,12 +270,24 @@ function genesis(v: unknown): GenesisConfig {
     background: oneOf(o, "background", W, GENESIS_BACKGROUNDS, d.background),
     palette,
     themePrompt: o.themePrompt === undefined ? "" : text(o, "themePrompt", W, 120, false),
-    watermarkUrl: o.watermarkUrl === undefined ? "" : asset(o, "watermarkUrl", W, false),
+    // Sprint 15 files call it watermarkUrl.
+    customWatermarkUrl:
+      o.customWatermarkUrl !== undefined
+        ? asset(o, "customWatermarkUrl", W, false)
+        : o.watermarkUrl !== undefined
+          ? asset(o, "watermarkUrl", W, false)
+          : "",
     watermarkGlitch: num(o, "watermarkGlitch", W, 0, 1, 0.01, d.watermarkGlitch),
-    watermarkOpacity: num(o, "watermarkOpacity", W, 0, 1, 0.01, d.watermarkOpacity),
-    watermarkScale: num(o, "watermarkScale", W, 0.3, 1, 0.01, d.watermarkScale),
+    watermarkOpacity: num(o, "watermarkOpacity", W, 0.1, 1, 0.01, d.watermarkOpacity),
+    watermarkScale: num(o, "watermarkScale", W, 0.5, 3, 0.05, d.watermarkScale),
+    globalWatermark: bool(o, "globalWatermark", W, d.globalWatermark),
     grid: bool(o, "grid", W, d.grid),
     headMode: oneOf(o, "headMode", W, GENESIS_HEAD_MODES, d.headMode),
+    holoFresnel: num(o, "holoFresnel", W, 0, 1, 0.01, d.holoFresnel),
+    holoScanlines: num(o, "holoScanlines", W, 0, 1, 0.01, d.holoScanlines),
+    holoAberration: num(o, "holoAberration", W, 0, 1, 0.01, d.holoAberration),
+    holoGrain: num(o, "holoGrain", W, 0, 1, 0.01, d.holoGrain),
+    calibrationOffset: num(o, "calibrationOffset", W, -CALIBRATION_RANGE, CALIBRATION_RANGE, 0.5, d.calibrationOffset),
     autoCamera: bool(o, "autoCamera", W, d.autoCamera),
     gravity: oneOf(o, "gravity", W, GENESIS_GRAVITY, d.gravity),
     gravityStrength: num(o, "gravityStrength", W, 0, 1, 0.01, d.gravityStrength),

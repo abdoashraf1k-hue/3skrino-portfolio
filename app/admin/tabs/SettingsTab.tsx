@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MediaResponse } from "@/app/api/admin/media/route";
 import type { SettingsStatus } from "@/app/api/admin/settings/route";
+import TigrisConnect from "@/components/admin/TigrisConnect";
 import { btn, btnDanger, btnPrimary, bytes, card, input, micro, Section, Segmented, Stat, TabHeader } from "@/components/admin/ui";
 import type { HeroConfig } from "@/data/hero-config";
 import type { Project } from "@/data/projects";
@@ -230,15 +231,16 @@ export default function SettingsTab({ adminKey, projects, onSetVideoUrl, onAuthE
 /* ------------------------------------------------------------------ */
 
 const GB = 1024 ** 3;
-/** Backblaze B2's free tier. */
-const B2_FREE_BYTES = 10 * GB;
+/** Free storage per host: Tigris 5 GB / month (no card), Backblaze B2 10 GB. */
+const BUCKET_FREE_BYTES: Record<string, number> = { tigris: 5 * GB, b2: 10 * GB };
 /** Vercel Blob Hobby quota when the server doesn't say. */
 const BLOB_DEFAULT_QUOTA = 1 * GB;
 
-const PROVIDER_LABEL: Record<VideoProvider, string> = { b2: "Backblaze B2", "vercel-blob": "Vercel Blob" };
+/** "b2" is the historical id of the S3 media bucket — Tigris since Sprint 15.5, B2 as the fallback. */
+const PROVIDER_LABEL: Record<VideoProvider, string> = { b2: "Media bucket", "vercel-blob": "Vercel Blob" };
 const SETTING_OPTIONS: readonly { value: ProviderSetting; label: string }[] = [
   { value: "auto", label: "Auto" },
-  { value: "b2", label: "Backblaze B2" },
+  { value: "b2", label: "Media bucket" },
   { value: "vercel-blob", label: "Vercel Blob" },
 ];
 
@@ -445,7 +447,7 @@ function StorageSection({
   return (
     <Section
       title="Storage"
-      hint="where video files live — Backblaze B2 (cheap, large) or Vercel Blob (legacy)"
+      hint="where media lives — the S3 bucket (Tigris; B2 as the fallback) or Vercel Blob (legacy)"
       aside={
         <button type="button" className={btn} disabled={state.kind === "loading"} onClick={refresh}>
           {state.kind === "loading" ? "Refreshing…" : "↻ Refresh"}
@@ -459,7 +461,9 @@ function StorageSection({
             <p className={`${micro} mb-1 flex items-center gap-2 text-white/40`}>
               Active now
               {data ? (
-                <span className="border border-[#e7fe55]/40 bg-[#e7fe55]/10 px-2 py-0.5 text-[#e7fe55]">{PROVIDER_LABEL[data.provider]}</span>
+                <span className="border border-[#e7fe55]/40 bg-[#e7fe55]/10 px-2 py-0.5 text-[#e7fe55]">
+                  {data.provider === "b2" && data.b2.hostLabel ? data.b2.hostLabel : PROVIDER_LABEL[data.provider]}
+                </span>
               ) : (
                 <span className="border border-white/15 px-2 py-0.5 text-white/40">{state.kind === "error" ? "unknown" : "…"}</span>
               )}
@@ -472,8 +476,9 @@ function StorageSection({
                   : (
                       <>
                         New videos go to <b className="text-white">{PROVIDER_LABEL[effective]}</b>
-                        {draft === "auto" && " (auto: B2 when configured, else Vercel Blob)"}
-                        {draft === "b2" && !b2Ready && " — B2 isn't configured, so uploads fall back to Vercel Blob"}
+                        {effective === "b2" && data?.b2.hostLabel && ` (${data.b2.hostLabel})`}
+                        {draft === "auto" && " (auto: the bucket when configured, else Vercel Blob)"}
+                        {draft === "b2" && !b2Ready && " — no bucket is configured, so uploads fall back to Vercel Blob"}
                         {unsaved && <span className="text-[#e7fe55]"> · after you save</span>}
                       </>
                     )}
@@ -492,13 +497,20 @@ function StorageSection({
 
         {state.kind === "error" && <p className={`${micro} text-[#ff6b6b]`}>{state.message}</p>}
 
+        {/* Sprint 15.5: Tigris keys — test, CORS, env block */}
+        <TigrisConnect
+          adminKey={adminKey}
+          active={data?.b2.configured ? { host: data.b2.host, bucket: data.b2.bucket, endpoint: data.b2.endpoint } : null}
+          onError={onError}
+        />
+
         {/* Usage */}
         <div className="grid gap-3 md:grid-cols-2">
           <UsageCard
-            title="Backblaze B2"
+            title={data?.b2.hostLabel || "Media bucket"}
             usage={data?.b2 ?? null}
-            limit={B2_FREE_BYTES}
-            limitLabel="10 GB free tier"
+            limit={BUCKET_FREE_BYTES[data?.b2.host ?? "tigris"] ?? 5 * GB}
+            limitLabel={data?.b2.host === "b2" ? "10 GB free tier" : "5 GB free tier"}
             details={
               data?.b2.configured
                 ? [
@@ -507,7 +519,7 @@ function StorageSection({
                   ]
                 : []
             }
-            notConfigured="Not configured — set B2_* env vars (docs/STORAGE.md)"
+            notConfigured="Not configured — add your Tigris keys above"
             failed={state.kind === "error"}
           />
           <UsageCard
@@ -528,7 +540,7 @@ function StorageSection({
               <p className="text-sm font-bold">Migrate old videos</p>
               <p className={`${micro} text-[9px] text-white/40`}>
                 {legacy.length
-                  ? `${legacy.length} project${legacy.length === 1 ? "" : "s"} still on Vercel Blob${legacyBytes ? ` · ${bytes(legacyBytes)}` : ""} — copied in this browser, straight to B2`
+                  ? `${legacy.length} project${legacy.length === 1 ? "" : "s"} still on Vercel Blob${legacyBytes ? ` · ${bytes(legacyBytes)}` : ""} — copied in this browser, straight to the bucket`
                   : "every project video is off Vercel Blob"}
               </p>
             </div>
@@ -545,7 +557,7 @@ function StorageSection({
 
           {!b2Ready && data && (
             <p className={`${micro} mb-3 text-[9px] text-[#ffb54d]`}>
-              Migration needs Backblaze B2 —{" "}
+              Migration needs the media bucket (Tigris) —{" "}
               <span className="cursor-help text-[#e7fe55] underline underline-offset-4" title="docs/STORAGE.md in the repository: bucket, CORS and env vars">
                 see docs/STORAGE.md
               </span>

@@ -12,7 +12,7 @@ import {
   type ProviderSetting,
   type VideoProvider,
 } from "./contract";
-import { isB2Configured } from "./b2";
+import { isBucketConfigured } from "./bucket";
 import { StorageError } from "./types";
 
 /**
@@ -24,6 +24,7 @@ import { StorageError } from "./types";
 export * from "./contract";
 export * from "./types";
 export { isB2Configured } from "./b2";
+export { activeBucket, isBucketConfigured } from "./bucket";
 export { isBlobConfigured } from "./vercel-blob";
 
 const DEFAULT_SITE_URL = "https://3skrino.com";
@@ -52,8 +53,9 @@ export function resolveProvider(setting?: ProviderSetting): VideoProvider {
   if (setting && setting !== "auto") provider = setting;
   else if (committedSetting() !== "auto") provider = committedSetting() as VideoProvider;
   else if (isProviderSetting(envSetting) && envSetting !== "auto") provider = envSetting;
-  else provider = isB2Configured() ? "b2" : "vercel-blob";
-  return provider === "b2" && !isB2Configured() ? "vercel-blob" : provider;
+  else provider = isBucketConfigured() ? "b2" : "vercel-blob";
+  // "b2" means the S3 bucket — Tigris or B2 (./bucket.ts).
+  return provider === "b2" && !isBucketConfigured() ? "vercel-blob" : provider;
 }
 
 function siteUrl(): string {

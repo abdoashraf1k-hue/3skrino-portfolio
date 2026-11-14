@@ -319,7 +319,7 @@ export default function HeroTab({ adminKey, onError, onSuccess }: Props) {
 
       <GenesisSection adminKey={adminKey} onError={onError} />
 
-      <Hero3DSection adminKey={adminKey} onError={onError} />
+      <Hero3DSection />
 
       <ExpressionsSection adminKey={adminKey} onError={onError} />
 

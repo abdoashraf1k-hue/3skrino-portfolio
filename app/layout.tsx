@@ -7,6 +7,7 @@ import CommandPalette from "@/components/ui/CommandPalette";
 import Cursor from "@/components/ui/Cursor";
 import FxRoot from "@/components/fx/FxRoot";
 import Footer from "@/components/ui/Footer";
+import GlobalWatermark from "@/components/ui/GlobalWatermark";
 import Grain from "@/components/ui/Grain";
 import Navigation from "@/components/ui/Navigation";
 import PageTransition from "@/components/ui/PageTransition";
@@ -105,6 +106,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <PwaManager />
             <SectionRail />
             <ScrollTop />
+            <GlobalWatermark />
             <SignatureMoments />
           </PageTransition>
         </SmoothScroll>

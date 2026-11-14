@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import SafeBoundary from "@/components/three/SafeBoundary";
 import type { GenesisPalette } from "@/data/hero-config";
 import { site } from "@/data/site";
@@ -13,7 +13,7 @@ import { sameOriginMedia } from "@/lib/media-url";
 import { CONTAINER, cn } from "@/lib/utils";
 import type { Pointer } from "./genesis/GenesisScene";
 import OrbitalLogos from "./genesis/OrbitalLogos";
-import ImageSequenceHero from "./ImageSequenceHero";
+import ImageSequenceHero, { type SequenceState } from "./ImageSequenceHero";
 import { HeroCtas } from "./shared";
 
 // three.js + R3F load on the client only, after the DOM hero paints.
@@ -137,6 +137,16 @@ export default function GenesisHero() {
   const logos = config.logos.enabled ? config.logos.items.filter((l) => l.visible) : [];
   const kenBurns = g.autoCamera && !reducedMotion;
   const showCss = !(scene && ready);
+  // Sprint 15.5: in hologram mode, once WebGL and the sequence are both up, the shader draws the head.
+  const [sequence, setSequence] = useState<SequenceState>({ ready: false, webgl: false, frames: null });
+  const hologram = g.headMode === "hologram";
+  // Frames that loaded without CORS can't be sampled by WebGL: those keep the CSS hologram.
+  const glHead = hologram && scene && ready && sequence.ready && sequence.webgl;
+  const holoSettings = useMemo(
+    () => (hologram ? { fresnel: g.holoFresnel, scanlines: g.holoScanlines, aberration: g.holoAberration, grain: g.holoGrain } : null),
+    [hologram, g.holoFresnel, g.holoScanlines, g.holoAberration, g.holoGrain],
+  );
+  const onContextLost = useCallback(() => setFailed(true), []);
 
   return (
     <section
@@ -152,7 +162,7 @@ export default function GenesisHero() {
       >
         {/* CSS stage: before WebGL is up, without WebGL, or after a scene error. */}
         <div aria-hidden className={cn("pointer-events-none absolute inset-0 transition-opacity duration-1000", showCss ? "opacity-100" : "opacity-0")}>
-          <CssStage watermarkUrl={g.watermarkUrl} watermarkScale={g.watermarkScale} watermarkOpacity={g.watermarkOpacity} grid={g.grid} />
+          <CssStage watermarkUrl={g.customWatermarkUrl} watermarkScale={g.watermarkScale} watermarkOpacity={g.watermarkOpacity} grid={g.grid} />
         </div>
 
         {scene && (
@@ -162,11 +172,14 @@ export default function GenesisHero() {
                 preset={g.background}
                 palette={g.palette}
                 grid={g.grid}
-                watermark={{ url: g.watermarkUrl, text: site.name, glitch: g.watermarkGlitch, opacity: g.watermarkOpacity, scale: g.watermarkScale }}
+                watermark={{ url: g.customWatermarkUrl, text: site.name, glitch: g.watermarkGlitch, opacity: g.watermarkOpacity, scale: g.watermarkScale }}
+                hologram={glHead ? holoSettings : null}
+                hologramFrames={glHead ? sequence.frames : null}
                 pointer={pointer}
                 reducedMotion={reducedMotion}
                 active={active}
                 onReady={onReady}
+                onContextLost={onContextLost}
               />
             </SafeBoundary>
           </div>
@@ -182,8 +195,8 @@ export default function GenesisHero() {
           }}
         />
 
-        {/* Hologram only: screen-blending can't hide what's behind, so a soft dark occluder puts the watermark and grid behind the head. */}
-        {g.headMode === "hologram" && (
+        {/* CSS hologram fallback only (no WebGL / no sequence yet): screen-blending can't hide what's behind, so a soft dark occluder puts the watermark behind the head. */}
+        {hologram && !glHead && (
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
@@ -191,9 +204,22 @@ export default function GenesisHero() {
           />
         )}
 
-        {/* The glowing head: the 360° sequence, either screen-blended (hologram) or solid with a neon rim traced from its alpha (cutout). */}
-        <div className="pointer-events-none absolute inset-0" style={g.headMode === "hologram" ? HOLOGRAM : CUTOUT}>
-          <ImageSequenceHero frames={config.model3d.sequenceImages} fallbackSrc={still} trackRef={sectionRef} reducedMotion={reducedMotion} coarse={coarse} />
+        {/*
+          The 360° sequence. Hologram + WebGL: it keeps scrubbing, but the GLSL hologram in the scene draws it (canvas hidden).
+          Hologram without WebGL: the CSS screen-blend fallback. Cutout: solid, neon rim traced from its alpha.
+        */}
+        <div className="pointer-events-none absolute inset-0" style={glHead ? undefined : hologram ? HOLOGRAM : CUTOUT}>
+          <ImageSequenceHero
+            frames={config.model3d.sequenceImages}
+            fallbackSrc={still}
+            trackRef={sectionRef}
+            reducedMotion={reducedMotion}
+            coarse={coarse}
+            calibrationOffset={g.calibrationOffset}
+            matteBackdrop
+            hideCanvas={glHead}
+            onReadyChange={setSequence}
+          />
         </div>
 
         {/* Legibility scrim behind the copy */}
@@ -253,9 +279,17 @@ function CssStage({ watermarkUrl, watermarkScale, watermarkOpacity, grid }: { wa
       <div className="absolute inset-x-0 top-[36%] flex -translate-y-1/2 justify-center" style={{ opacity: watermarkOpacity }}>
         {watermarkUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded logo on any host
-          <img src={sameOriginMedia(watermarkUrl)} alt="" className="genesis-mark-css max-h-[40svh] object-contain" style={{ width: `${watermarkScale * 100}%` }} />
+          <img
+            src={sameOriginMedia(watermarkUrl)}
+            alt=""
+            className="genesis-mark-css object-contain"
+            style={{ width: `${Math.min(115, 50 * watermarkScale)}%`, maxHeight: `${Math.min(92, 32 * watermarkScale)}svh` }}
+          />
         ) : (
-          <span className="genesis-mark-css type-display text-[clamp(4rem,17vw,18rem)] leading-none" style={{ color: "var(--g-glow)" }}>
+          <span
+            className="genesis-mark-css type-display leading-none"
+            style={{ color: "var(--g-glow)", fontSize: `clamp(2rem, ${(11 * watermarkScale).toFixed(1)}vw, ${(12 * watermarkScale).toFixed(1)}rem)` }}
+          >
             {site.name}
           </span>
         )}

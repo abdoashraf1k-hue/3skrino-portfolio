@@ -94,6 +94,8 @@ type Store = {
   reload: () => Promise<void>;
   /** Adopt a server response (e.g. "reset hero") as both saved + draft. */
   adoptHero: (c: HeroConfig) => void;
+  /** A server action committed the hero (e.g. calibration): adopt it as the saved copy, keep every unsaved draft edit. */
+  markHeroSaved: (c: HeroConfig) => void;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -256,6 +258,7 @@ export function ConfigProvider({
       setSavedHero(c);
       setHeroDraft(c);
     }, []),
+    markHeroSaved: useCallback((c: HeroConfig) => setSavedHero(c), []),
   };
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;

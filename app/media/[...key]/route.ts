@@ -1,4 +1,4 @@
-import { getPresignedGetUrl, isB2Configured } from "@/lib/admin/storage/b2";
+import { getPresignedGetUrl, isBucketConfigured } from "@/lib/admin/storage/bucket";
 import { KEY_PATTERN } from "@/lib/admin/storage/contract";
 
 export const runtime = "nodejs";
@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * Public delivery route: /media/<key> → 302 to a 15-minute presigned GET on
- * the bucket (which can stay private). Bytes never pass through this function
+ * the bucket (which can stay private). Sprint 15.5: the bucket is Tigris when
+ * TIGRIS_* is set, else B2 (lib/admin/storage/bucket.ts) — stored URLs never change. Bytes never pass through this function
  * (Vercel's 4.5 MB body / bandwidth limits) — the browser follows the redirect
  * and range-requests the bucket directly.
  */
@@ -25,7 +26,7 @@ async function redirect(params: Promise<{ key: string[] }>): Promise<Response> {
   } catch {
     return notFound();
   }
-  if (!KEY_PATTERN.test(key) || !isB2Configured()) return notFound();
+  if (!KEY_PATTERN.test(key) || !isBucketConfigured()) return notFound();
   try {
     const url = await getPresignedGetUrl(key, URL_TTL_SECONDS);
     return new Response(null, {

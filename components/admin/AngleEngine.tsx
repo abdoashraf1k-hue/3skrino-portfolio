@@ -24,8 +24,10 @@ export type PoseMap = Record<string, HeadPose | null>;
 const HOP = 20;
 /** Free Spaces: one request at a time (a shared queue, and a daily GPU quota). */
 const JOB_CONCURRENCY = 1;
-/** Most frames one Generate run may create (~8 s of free GPU each). */
-const MAX_PER_RUN = 24;
+/** Most frames one Generate run may create (~8 s of free GPU each). Sprint 15.5: 36 — the 5° grid has 72 steps. */
+const MAX_PER_RUN = 36;
+/** Sprint 15.5: the finishing grade every generated frame gets before it is uploaded. */
+const ENHANCE = "contrast(1.1) brightness(1.05)";
 /** How long Plan A gets on the server before it moves on to Plan B (route.ts PLAN_A_TIMEOUT, plus slack). */
 const PLAN_A_HINT_MS = 65_000;
 /** The route's request body limit is 4.5 MB; bigger references are re-encoded. */
@@ -53,6 +55,30 @@ async function referenceBlob(url: string): Promise<Blob> {
   return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("couldn't re-encode the reference"))), "image/webp", 0.92));
 }
 
+/**
+ * Sprint 15.5 — a generated frame, crisped up before it goes to B2: redrawn
+ * through a canvas with `contrast(1.1) brightness(1.05)` at its native size,
+ * re-encoded as a high-quality WebP (alpha kept). Browsers without canvas
+ * filters (older Safari) upload the original untouched.
+ */
+async function enhanceFrame(blob: Blob): Promise<Blob> {
+  const bitmap = await createImageBitmap(blob);
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx || typeof ctx.filter !== "string") return blob;
+    ctx.filter = ENHANCE;
+    if (ctx.filter === "none") return blob; // the filter string wasn't accepted
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bitmap, 0, 0);
+    return await new Promise((resolve) => canvas.toBlob((b) => resolve(b ?? blob), "image/webp", 0.95));
+  } finally {
+    bitmap.close();
+  }
+}
+
 /** One angle through the free engine (Plan A, then Plan B on the server). */
 async function generateAngle(key: string, image: Blob, referenceYaw: number, targetYaw: number, pitch: number, gain: number): Promise<GenerateResult> {
   const form = new FormData();
@@ -74,7 +100,7 @@ async function generateAngle(key: string, image: Blob, referenceYaw: number, tar
 type Cell = "face" | "inferred" | "reachable" | "missing";
 const CELL_FILL: Record<Cell, string> = { face: "#3dffb0", inferred: "#4d9fff", reachable: "#ffb54d", missing: "#2a2a2a" };
 
-/** 36 wedges, 0° (facing the camera) at the top, positive yaw clockwise; the coverage % in the middle. */
+/** One wedge per grid step (72 at 5°), 0° (facing the camera) at the top, positive yaw clockwise; the coverage % in the middle. */
 function CoverageDial({ cells, pct }: { cells: Map<number, Cell>; pct: number }) {
   const R1 = 44;
   const R2 = 70;
@@ -85,8 +111,8 @@ function CoverageDial({ cells, pct }: { cells: Map<number, Cell>; pct: number })
   return (
     <svg viewBox="0 0 160 160" className="size-40 shrink-0" role="img" aria-label={`${pct}% of the 360° turn covered`}>
       {[...cells].map(([a, cell]) => {
-        const a0 = a - GRID_STEP / 2 + 0.8;
-        const a1 = a + GRID_STEP / 2 - 0.8;
+        const a0 = a - GRID_STEP / 2 + 0.4;
+        const a1 = a + GRID_STEP / 2 - 0.4;
         return (
           <path key={a} d={`M ${pt(a0, R1)} L ${pt(a0, R2)} A ${R2} ${R2} 0 0 1 ${pt(a1, R2)} L ${pt(a1, R1)} A ${R1} ${R1} 0 0 0 ${pt(a0, R1)} Z`} fill={CELL_FILL[cell]}>
             <title>{`${deg(a)} — ${cell === "face" ? "face detected" : cell === "inferred" ? "frame, angle from its place in the turn" : cell === "reachable" ? "missing — AI can generate it" : "missing — needs a real photo"}`}</title>
@@ -267,7 +293,7 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
             }
             covered.add(landed);
             const name = `seq-ai-${String(Math.round(pose.yaw + 180)).padStart(3, "0")}-${Date.now().toString(36)}`;
-            const url = await uploadHeroAsset(blob, "hero", name, adminKey);
+            const url = await uploadHeroAsset(await enhanceFrame(blob), "hero", name, adminKey);
             setPoses((p) => ({ ...p, [url]: pose }));
             setFrames((l) => sortByAngle([...l, { url, angle: pose.yaw }]));
             sources.push({ url, yaw: pose.yaw, pitch: pose.pitch });
@@ -310,12 +336,12 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <p className="text-sm text-white/85">
             You have {cov.coveragePercentage}% coverage.
-            {cov.missingAngles.length ? ` Missing: ${formatRanges(cov.missingAngles)} yaw.` : " Every 10° step has a frame."}
+            {cov.missingAngles.length ? ` Missing: ${formatRanges(cov.missingAngles)} yaw.` : ` Every ${GRID_STEP}° step has a frame.`}
             {pitches.length > 1 && ` Pitch in your faces: ${deg(Math.min(...pitches))} to ${deg(Math.max(...pitches))}.`}
           </p>
           {cov.missingAngles.length > 0 && (
             <p className={`${micro} leading-relaxed text-white/45`}>
-              Need: {cov.missingAngles.map(deg).join(", ")}
+              Need: {formatRanges(cov.missingAngles)} yaw
               {analysed.length > 0 && outOfReach.length > 0 && <span className="text-[#ff8a8a]"> · out of the AI&apos;s reach (real photos): {formatRanges(outOfReach)}</span>}
             </p>
           )}

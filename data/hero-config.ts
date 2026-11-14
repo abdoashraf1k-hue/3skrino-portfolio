@@ -235,17 +235,30 @@ export type GenesisConfig = {
   palette: GenesisPalette;
   /** The last AI theme prompt (shown back in the admin). */
   themePrompt: string;
-  /** Logo behind the head; empty → the site name as text. Transparent PNG / SVG / WebP. */
-  watermarkUrl: string;
+  /** Your logo: behind the head, and the site-wide signature. Empty → the site name as text. Transparent PNG / SVG / WebP. */
+  customWatermarkUrl: string;
   /** 0–1: glitch bursts + chromatic split. */
   watermarkGlitch: number;
-  /** 0–1. */
+  /** 0.1–1. */
   watermarkOpacity: number;
-  /** Width as a fraction of the stage (0.3–1). */
+  /** Size multiplier, 0.5–3 (1× fits half the stage width / a third of its height). */
   watermarkScale: number;
+  /** A small signature of the logo in the bottom-right corner of every page. */
+  globalWatermark: boolean;
   /** Retro grid floor on / off. */
   grid: boolean;
   headMode: GenesisHeadMode;
+  /** Hologram shader (0–1 each): Fresnel rim, moving scanlines, RGB split on the edges, projection grain. */
+  holoFresnel: number;
+  holoScanlines: number;
+  holoAberration: number;
+  holoGrain: number;
+  /**
+   * Mouse → head turn calibration, degrees (-90…90), added to nx × 180 where
+   * nx is the cursor across the window in -1…1. Shifts which frame faces you
+   * when the cursor is centred.
+   */
+  calibrationOffset: number;
   /** Slow infinite Ken Burns on the whole hero. */
   autoCamera: boolean;
   gravity: GenesisGravity;
@@ -642,12 +655,18 @@ export const heroConfig: HeroConfig = {
     background: "calm-dark",
     palette: { background: "#0a0102", grid: "#ff2d2d", glow: "#ff4d1a", tint: "#7a0010", accent: "#ffb199" },
     themePrompt: "Blood Moon",
-    watermarkUrl: "https://3skrino-portfolio.vercel.app/media/site/1794684869125-2953j4w812j8.png",
+    customWatermarkUrl: "https://3skrino-portfolio.vercel.app/media/site/1794684869125-2953j4w812j8.png",
     watermarkGlitch: 0.6,
     watermarkOpacity: 1,
-    watermarkScale: 1,
+    watermarkScale: 2,
+    globalWatermark: false,
     grid: true,
     headMode: "hologram",
+    holoFresnel: 0.7,
+    holoScanlines: 0.5,
+    holoAberration: 0.5,
+    holoGrain: 0.35,
+    calibrationOffset: 0,
     autoCamera: true,
     gravity: "repel",
     gravityStrength: 0.75,

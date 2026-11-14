@@ -421,3 +421,143 @@ export const watermarkFragment = /* glsl */ `
     #include <colorspace_fragment>
   }
 `;
+
+/* ------------------------------------------------------------------ */
+/* Sprint 15.5 — Hologram head                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The 360° frame as a plane in the WebGL scene, tilted toward the cursor the
+ * way the CSS portrait was (rotateX → rotateY about a pivot 42% down the
+ * portrait box, a 1100px perspective, the gaze shift). Everything is in
+ * drawing-buffer pixels, so the plane lands exactly where the DOM portrait
+ * would have been.
+ */
+export const hologramVertex = /* glsl */ `
+  uniform vec2 uRes;     // drawing buffer, px
+  uniform vec4 uRect;    // the frame's drawn rect: x, y (bottom-left), w, h — px
+  uniform vec2 uPivot;   // tilt pivot, px
+  uniform vec2 uTilt;    // rotateX, rotateY (radians)
+  uniform vec2 uShift;   // gaze shift, px (y up)
+  uniform float uFocal;  // perspective distance, px
+  varying vec2 vUv;
+
+  void main() {
+    vUv = uv;
+    vec2 p = uRect.xy + uv * uRect.zw - uPivot;
+    float cx = cos(uTilt.x), sx = sin(uTilt.x);
+    float cy = cos(uTilt.y), sy = sin(uTilt.y);
+    // rotateX: a positive angle tips the top away (as in CSS); then rotateY: the right side goes away.
+    float y1 = p.y * cx;
+    float z1 = -p.y * sx;
+    float x2 = p.x * cy + z1 * sy;
+    float z2 = -p.x * sy + z1 * cy;
+    float persp = uFocal / (uFocal - z2);
+    vec2 px = uPivot + vec2(x2, y1) * persp + uShift;
+    gl_Position = vec4(px / uRes * 2.0 - 1.0, 0.0, 1.0);
+  }
+`;
+
+/**
+ * Holographic projection. Adapted from Anderson Mancini's
+ * threejs-holographic-material (MIT, github.com/ektogamat/threejs-holographic-material):
+ * its flicker() / random() helpers, scanline composition and Fresnel term
+ * are kept; the `webgl` skill's moving fine scanlines are layered on top.
+ *
+ * A flat photo has no mesh normals, so the "surface" normal comes from the
+ * gradient of the hologram's key (alpha × luminance): flat inside the
+ * silhouette, steep at its edge — so the Fresnel rim lights the outline of
+ * the head, where a real hologram's grazing angles would be. The same edge
+ * strength drives the RGB split. The key is the frame's alpha — a black
+ * photo backdrop is matted out at load by connectivity (never by brightness,
+ * which would hollow out dark skin and hair), so the old CSS "screen" trick goes.
+ */
+export const hologramFragment = /* glsl */ `
+  uniform sampler2D uMap;
+  uniform vec2 uTexel;        // 1 / frame size
+  uniform vec2 uRes;
+  uniform float uTime;
+  uniform vec3 uGlow;         // rim / Fresnel colour
+  uniform vec3 uTint;         // hologram colour
+  uniform float uFresnel;     // 0–1
+  uniform float uScan;        // 0–1
+  uniform float uAberration;  // 0–1
+  uniform float uGrain;       // 0–1
+  uniform float uOpacity;
+  varying vec2 vUv;
+
+  // ektogamat
+  float flicker(float amt, float time) { return clamp(fract(cos(time) * 43758.5453123), amt, 1.0); }
+  float random(in float a, in float b) { return fract((cos(dot(vec2(a, b), vec2(12.9898, 78.233))) * 43758.5453)); }
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+
+  // Bitmaps upload top-down (flipY can't apply to an ImageBitmap): flip here, for every source alike.
+  vec4 tap(vec2 uv) { return texture(uMap, vec2(uv.x, 1.0 - uv.y)); }
+
+  // The key is the frame's alpha: a black photo backdrop was already removed at load by a
+  // connectivity matte (lib/backdrop-matte), so dark skin and hair inside the silhouette stay solid.
+  float keyOf(vec4 c) {
+    return c.a;
+  }
+
+  void main() {
+    vec4 base = tap(vUv);
+    float m = keyOf(base);
+
+    // Pseudo-normal from the key's gradient (2 texels each way).
+    vec2 d = uTexel * 2.0;
+    float gx = keyOf(tap(vUv + vec2(d.x, 0.0))) - keyOf(tap(vUv - vec2(d.x, 0.0)));
+    float gy = keyOf(tap(vUv + vec2(0.0, d.y))) - keyOf(tap(vUv - vec2(0.0, d.y)));
+    vec3 normal = normalize(vec3(-gx, -gy, 0.35));
+    float edge = clamp(length(vec2(gx, gy)) * 1.5, 0.0, 1.0);
+
+    // Chromatic aberration, strongest on the edges.
+    float ca = uTexel.x * (1.0 + 9.0 * edge) * 2.0 * uAberration;
+    vec3 col = vec3(tap(vUv + vec2(ca, 0.0)).r, base.g, tap(vUv - vec2(ca, 0.0)).b);
+    float mR = keyOf(tap(vUv + vec2(ca, 0.0)));
+    float mB = keyOf(tap(vUv - vec2(ca, 0.0)));
+    float cover = max(m, max(mR, mB) * 0.85);
+
+    // Hologram colour. A projection emits light: lift the shadows with a tone curve first
+    // (a dark subject's features live in linear 0.01–0.1), so faces read instead of
+    // collapsing into a flat silhouette — then push the result toward the tint.
+    float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
+    float lifted = pow(clamp(luma, 0.0, 1.0), 0.55);
+    vec3 photo = col * (lifted / max(luma, 1e-4));
+    col = mix(photo, uTint * (0.12 + lifted * 1.9), 0.42) + uGlow * 0.03;
+
+    // Scanlines (ektogamat composition, screen space).
+    vec2 myUV = gl_FragCoord.xy / uRes;
+    float signalSpeed = 0.45;
+    float scanlineSize = 8.0;
+    float scanlines = 10.0;
+    scanlines += 20.0 * sin(uTime * signalSpeed * 20.8 - myUV.y * 60.0 * scanlineSize);
+    scanlines *= smoothstep(1.3 * cos(uTime * signalSpeed + myUV.y * scanlineSize), 0.78, 0.9);
+    scanlines *= max(0.25, sin(uTime * signalSpeed));
+    float r = random(vUv.x, vUv.y);
+    float b = random(vUv.y * 0.9, vUv.y * 0.2);
+    col += vec3(r * scanlines, b * scanlines, r) / 84.0 * uScan * cover;
+
+    // Fine scanlines drifting upward (webgl skill: sin(y·k − t·speed)).
+    // Fine and light, so they texture the projection instead of striping it.
+    float fine = sin(gl_FragCoord.y * 2.2 - uTime * 9.0) * 0.5 + 0.5;
+    col *= mix(1.0, 0.84 + 0.16 * fine, uScan);
+
+    // Fresnel (ektogamat: clamp(amount − dot(view, normal)·(1.6 − opacity/2), 0, opacity)).
+    float fresnelOpacity = 1.0;
+    float fresnelAmount = 0.45 + 0.55 * uFresnel;
+    float fres = clamp(fresnelAmount - dot(vec3(0.0, 0.0, 1.0), normal) * (1.6 - fresnelOpacity / 2.0), 0.0, fresnelOpacity);
+    fres *= uFresnel;
+    // Blink on the rim only (ektogamat's blinkFresnelOnly), softened.
+    float blink = mix(1.0, flicker(0.6 - signalSpeed, uTime * signalSpeed * 0.02), 0.35);
+    col += uGlow * fres * blink * 1.8;
+
+    // Projection grain, re-rolled 24× a second.
+    col += (hash(gl_FragCoord.xy + floor(uTime * 24.0) * 13.1) - 0.5) * 0.14 * uGrain * cover;
+
+    float alpha = clamp(cover + fres * 0.9, 0.0, 1.0) * uOpacity;
+    gl_FragColor = vec4(col, alpha);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+  }
+`;

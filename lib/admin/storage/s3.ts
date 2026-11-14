@@ -53,7 +53,7 @@ const IMMUTABLE_CACHE = "public, max-age=31536000, immutable";
 const clients = new Map<string, S3Client>();
 
 /** One S3Client per distinct config, reused across requests in the same instance. */
-function clientFor(cfg: S3Config): S3Client {
+export function clientFor(cfg: S3Config): S3Client {
   // Hash the config so the secret never sits in a Map key in plain text.
   const id = createHash("sha256").update(JSON.stringify(cfg)).digest("hex");
   let client = clients.get(id);
