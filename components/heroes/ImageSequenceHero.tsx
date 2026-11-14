@@ -33,14 +33,31 @@ export type Frame = ImageBitmap | HTMLImageElement;
 
 const PRELOAD_CONCURRENCY = 6;
 /**
- * Sprint 15.5 calibration: the cursor across the window, nx ∈ [-1, 1], maps
- * linearly to a target yaw of nx × 180° (+ the admin's calibration offset):
- * 10% of the half-width right of centre is +18°, the edges are ±180°. The
- * angle then eases toward it by lerp(current, target, 0.1) per 60 fps frame —
- * applied frame-rate-independently as 1 − 0.9^(dt·60).
+ * Sprint 15.6 — the heavy camera pan.
+ *
+ * Mapping: the cursor across the window, nx ∈ [-1, 1], targets a yaw of
+ * nx × turnRange + calibrationOffset (admin → Genesis). Default range 90°:
+ * the edges of the screen look over each shoulder, and 10% of the half-width
+ * is a 9° turn — half as twitchy as Sprint 15.5's ±180°.
+ *
+ * Motion: a damped spring, not a lerp — a = k·(target − pos) − c·vel, with
+ * k = turnWeight (default 50) and c keeping the damping ratio at √2
+ * (k 50 → c 20). Over-damped on purpose: it starts slowly, glides, and
+ * settles without overshoot — like a camera head with weight. Integrated in
+ * fixed ≤ 1/120 s sub-steps, so it feels the same at 60 or 144 Hz.
  */
-const MOUSE_RANGE = 180;
-const LERP = 0.1;
+const DEFAULT_RANGE = 90;
+const DEFAULT_STIFFNESS = 50;
+/** c = 2ζ√k with ζ = √2 → 20 at k = 50. */
+const DAMPING_RATIO = Math.SQRT2;
+const SUBSTEP = 1 / 120;
+/**
+ * Cross-fade between the two frames around the current angle. Between close
+ * frames it blends across the whole gap (a continuous turn); across a wide
+ * gap it narrows to a quick dissolve at the midpoint — a long double
+ * exposure of two very different views would look like a ghost.
+ */
+const BLEND_DEGREES = 8;
 /** Arrow keys: one press turns this far (image-zoom-360: a keyboard alternative to dragging). */
 const KEY_STEP = 5;
 /** One full turn per this fraction of the stage width, when dragging. */
@@ -128,27 +145,6 @@ function orderFrames(frames: SequenceFrame[]): SequenceFrame[] {
     if (!last || f.angle - last.angle >= SAME_ANGLE) out.push(f);
   }
   return out;
-}
-
-/** Index of the angle nearest `deg` in an ascending list (circular: across the ±180 seam too). */
-function nearest(angles: number[], deg: number, circular: boolean): number {
-  const n = angles.length;
-  const a = circular ? ((((deg + 180) % 360) + 360) % 360) - 180 : deg;
-  let lo = 0;
-  let hi = n - 1;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (angles[mid] < a) lo = mid + 1;
-    else hi = mid;
-  }
-  const dist = (i: number) => {
-    const d = Math.abs(angles[i] - a);
-    return circular ? Math.min(d, 360 - d) : d;
-  };
-  let best = lo;
-  // The neighbour below, and across the seam the far end of the list.
-  for (const i of circular ? [lo - 1, 0, n - 1] : [lo - 1]) if (i >= 0 && dist(i) < dist(best)) best = i;
-  return best;
 }
 
 /** Frames that loaded without CORS (tainted): drawable on a Canvas 2D, but WebGL may not sample them. */
@@ -258,8 +254,12 @@ type Props = {
   reducedMotion: boolean;
   /** "pointer: coarse" — picks the hint. */
   coarse: boolean;
-  /** Sprint 15.5: degrees added to the mouse's nx × 180 target (admin → Genesis → Calibration). */
+  /** Sprint 15.5: degrees added to the mouse's target yaw (admin → Genesis → Calibration). */
   calibrationOffset?: number;
+  /** Sprint 15.6: yaw at the screen edge (30–180°, default 90). */
+  turnRange?: number;
+  /** Sprint 15.6: spring stiffness — lower is heavier (20–120, default 50). */
+  turnWeight?: number;
   /** Sprint 15.5: make a black photo backdrop transparent at load (connectivity matte — see lib/backdrop-matte). */
   matteBackdrop?: boolean;
   /** Keep drawing, but don't show the canvas: a WebGL pass (the Genesis hologram) samples and draws it instead. */
@@ -278,6 +278,8 @@ export default function ImageSequenceHero({
   reducedMotion,
   coarse,
   calibrationOffset = 0,
+  turnRange = DEFAULT_RANGE,
+  turnWeight = DEFAULT_STIFFNESS,
   hideCanvas = false,
   matteBackdrop = false,
   onReadyChange,
@@ -303,13 +305,13 @@ export default function ImageSequenceHero({
     if (!hideCanvas) redraw.current?.();
   }, [hideCanvas]);
 
-  // Live calibration: the pointer handler reads the latest offset without re-binding (or reloading frames).
-  const offsetRef = useRef(calibrationOffset);
+  // Live calibration: the pointer handler and the spring read the latest values without re-binding (or reloading frames).
+  const tuning = useRef({ offset: calibrationOffset, range: turnRange, stiffness: turnWeight });
   const retarget = useRef<(() => void) | null>(null);
   useEffect(() => {
-    offsetRef.current = calibrationOffset;
+    tuning.current = { offset: calibrationOffset, range: turnRange, stiffness: turnWeight };
     retarget.current?.();
-  }, [calibrationOffset]);
+  }, [calibrationOffset, turnRange, turnWeight]);
 
   const webglSafe = Boolean(frames?.length && frames.every((f) => !tainted.has(f)));
   useEffect(() => {
@@ -331,28 +333,63 @@ export default function ImageSequenceHero({
     const clamp = (a: number) => (circular ? a : Math.min(hi, Math.max(lo, a)));
 
     // Facing you at rest — through the calibration, so the centred cursor and the first frame agree.
-    let target = clamp(offsetRef.current);
+    let target = clamp(tuning.current.offset);
     let pos = target;
+    let vel = 0;
     let lastNx = 0;
-    let drawn = -1;
+    let shown = { a: -1, b: -1, t: -1 };
     let raf = 0;
     let last = 0;
 
+    /** The two frames around `deg` and how far between them (eased, narrowed across wide gaps). */
+    const bracket = (deg: number): { a: number; b: number; t: number } => {
+      const p = circular ? ((((deg - lo) % 360) + 360) % 360) + lo : Math.min(hi, Math.max(lo, deg));
+      let i = n - 1;
+      while (i > 0 && angles[i] > p) i--;
+      const j = i + 1 < n ? i + 1 : circular ? 0 : i;
+      if (i === j) return { a: i, b: i, t: 0 };
+      const gap = j === 0 ? angles[0] + 360 - angles[i] : angles[j] - angles[i];
+      const raw = gap > 0 ? (p - angles[i]) / gap : 0;
+      // Close frames: blend across the whole gap. Wide gaps: a short dissolve around the midpoint.
+      const w = Math.min(0.5, Math.max(0.08, BLEND_DEGREES / Math.max(gap, 1e-3)));
+      const e = Math.min(1, Math.max(0, (raw - (0.5 - w)) / (2 * w)));
+      return { a: i, b: j, t: e * e * (3 - 2 * e) };
+    };
+
     const draw = (force = false) => {
-      const idx = nearest(angles, pos, circular);
-      if (idx === drawn && !force) return;
-      drawn = idx;
-      const f = frames[idx];
-      heroSpin.frame = f;
-      heroSpin.version++;
-      // A WebGL pass draws the head: skip the (invisible) 2D redraw — it's the expensive part of a frame change.
+      const next = bracket(pos);
+      const same = next.a === shown.a && next.b === shown.b;
+      if (same && Math.abs(next.t - shown.t) < 0.002 && !force) return;
+      if (!same || force) {
+        heroSpin.frame = frames[next.a];
+        heroSpin.frameB = frames[next.b];
+        heroSpin.version++;
+      }
+      heroSpin.mix = next.t;
+      shown = next;
+      // A WebGL pass draws the head: skip the (invisible) 2D redraw.
       if (hiddenRef.current) return;
       const { width: cw, height: ch } = canvas;
-      const s = Math.min(cw / f.width, ch / f.height);
-      const w = f.width * s;
-      const h = f.height * s;
       ctx.clearRect(0, 0, cw, ch);
-      ctx.drawImage(f, (cw - w) / 2, (ch - h) / 2, w, h);
+      // Exact linear cross-fade, also for frames with transparent backdrops:
+      // A·(1−t), then B·t added with "lighter" (premultiplied sum, no ghost edges).
+      const paint = (f: Frame, alpha: number, op: GlobalCompositeOperation) => {
+        if (alpha <= 0.001) return;
+        const s = Math.min(cw / f.width, ch / f.height);
+        const w = f.width * s;
+        const h = f.height * s;
+        ctx.globalAlpha = alpha;
+        ctx.globalCompositeOperation = op;
+        ctx.drawImage(f, (cw - w) / 2, (ch - h) / 2, w, h);
+      };
+      if (next.a === next.b || next.t <= 0.001) paint(frames[next.a], 1, "source-over");
+      else if (next.t >= 0.999) paint(frames[next.b], 1, "source-over");
+      else {
+        paint(frames[next.a], 1 - next.t, "source-over");
+        paint(frames[next.b], next.t, "lighter");
+      }
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
     };
     // Shown again (cutout mode, a WebGL failure): paint the current frame at once.
     redraw.current = () => draw(true);
@@ -360,14 +397,39 @@ export default function ImageSequenceHero({
     const tick = (now: number) => {
       const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
       last = now;
-      // lerp(pos, target, 0.1) per 60 fps frame, the same feel at any refresh rate.
-      pos += (target - pos) * (reducedMotion ? 1 : 1 - Math.pow(1 - LERP, dt * 60));
-      if (Math.abs(target - pos) < 0.05) pos = target;
+      if (reducedMotion) {
+        pos = target;
+        vel = 0;
+      } else {
+        // Damped spring in fixed sub-steps (semi-implicit Euler).
+        const k = tuning.current.stiffness;
+        const c = 2 * DAMPING_RATIO * Math.sqrt(k);
+        for (let left = dt; left > 1e-6; left -= SUBSTEP) {
+          const h = Math.min(SUBSTEP, left);
+          vel += (k * (target - pos) - c * vel) * h;
+          pos += vel * h;
+        }
+        // Frame detent: never come to rest on a double exposure. Blending is for motion; as the
+        // head approaches rest between two frames, the target slides onto the nearer real frame —
+        // one continuous glide, no stop-then-snap.
+        if (Math.abs(target - pos) < 0.75 && Math.abs(vel) < 3) {
+          const rest = bracket(target);
+          if (rest.a !== rest.b && rest.t > 0.001 && rest.t < 0.999) {
+            const snap = angles[rest.t < 0.5 ? rest.a : rest.b];
+            // The nearer equivalent of that frame's angle (the seam on a closed turn).
+            target = circular ? snap + Math.round((target - snap) / 360) * 360 : snap;
+          }
+        }
+        if (Math.abs(target - pos) < 0.08 && Math.abs(vel) < 0.2) {
+          pos = target;
+          vel = 0;
+        }
+      }
       heroSpin.angle = (pos * Math.PI) / 180;
       // The settled yaw, for QA / assistive tooling (written only while the turn is moving).
       canvas.dataset.angle = pos.toFixed(1);
       draw();
-      raf = pos === target ? 0 : requestAnimationFrame(tick);
+      raf = pos === target && vel === 0 ? 0 : requestAnimationFrame(tick);
     };
     const kick = () => {
       if (raf) return;
@@ -388,10 +450,10 @@ export default function ImageSequenceHero({
     ro.observe(canvas);
     resize();
 
-    /** nx ∈ [-1, 1] → nx × 180° + calibration (clamped to the frames when the turn isn't closed). */
+    /** nx ∈ [-1, 1] → nx × turnRange + calibration (clamped to the frames when the turn isn't closed). */
     const aim = (nx: number) => {
       lastNx = nx;
-      target = clamp(nx * MOUSE_RANGE + offsetRef.current);
+      target = clamp(nx * tuning.current.range + tuning.current.offset);
       // Coming from a wrapped angle (touch drag, keys): close the gap the short way round.
       if (circular) pos -= Math.round((pos - target) / 360) * 360;
       kick();
@@ -451,6 +513,8 @@ export default function ImageSequenceHero({
       // The frames are closed when the sequence unloads: never leave a closed bitmap for WebGL to upload.
       if (heroSpin.frame && frames.includes(heroSpin.frame)) {
         heroSpin.frame = null;
+        heroSpin.frameB = null;
+        heroSpin.mix = 0;
         heroSpin.version++;
       }
       heroSpin.angle = 0;

@@ -5,6 +5,7 @@ import { btn, btnDanger, btnPrimary, micro, Segmented } from "@/components/admin
 import type { SequenceFrame } from "@/data/hero-config";
 import { HERO_SEQUENCE_MAX } from "@/data/hero-defaults";
 import { fetchImage, uploadHeroAsset } from "@/lib/admin/hero-assets";
+import { matteBlackBackdrop } from "@/lib/backdrop-matte";
 import {
   analyzeCoverage,
   angleDelta,
@@ -56,10 +57,15 @@ async function referenceBlob(url: string): Promise<Blob> {
 }
 
 /**
- * Sprint 15.5 — a generated frame, crisped up before it goes to B2: redrawn
- * through a canvas with `contrast(1.1) brightness(1.05)` at its native size,
- * re-encoded as a high-quality WebP (alpha kept). Browsers without canvas
- * filters (older Safari) upload the original untouched.
+ * A generated frame, finished before it goes to the media bucket:
+ *   1. graded — redrawn at native size through `contrast(1.1) brightness(1.05)`
+ *      (skipped where canvas filters aren't supported, e.g. older Safari);
+ *   2. Sprint 15.6: matted — a black studio backdrop becomes transparent with
+ *      the same connectivity matte the hero uses (lib/backdrop-matte: dark
+ *      skin / hair / clothes stay solid), so a new frame arrives ready for
+ *      the hologram and cutout modes, on any hero. A non-black backdrop is
+ *      left as it is.
+ * Re-encoded as a high-quality WebP with alpha.
  */
 async function enhanceFrame(blob: Blob): Promise<Blob> {
   const bitmap = await createImageBitmap(blob);
@@ -68,12 +74,13 @@ async function enhanceFrame(blob: Blob): Promise<Blob> {
     canvas.width = bitmap.width;
     canvas.height = bitmap.height;
     const ctx = canvas.getContext("2d");
-    if (!ctx || typeof ctx.filter !== "string") return blob;
-    ctx.filter = ENHANCE;
-    if (ctx.filter === "none") return blob; // the filter string wasn't accepted
+    if (!ctx) return blob;
+    // Where canvas filters aren't supported the assignment is a no-op and the frame is drawn ungraded.
+    if (typeof ctx.filter === "string") ctx.filter = ENHANCE;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(bitmap, 0, 0);
-    return await new Promise((resolve) => canvas.toBlob((b) => resolve(b ?? blob), "image/webp", 0.95));
+    const out = matteBlackBackdrop(canvas, canvas.width, canvas.height) ?? canvas;
+    return await new Promise((resolve) => out.toBlob((b) => resolve(b ?? blob), "image/webp", 0.95));
   } finally {
     bitmap.close();
   }
@@ -143,6 +150,8 @@ type Props = {
   setPoses: (fn: (p: PoseMap) => PoseMap) => void;
   adminKey: string;
   onError: (m: string) => void;
+  /** Sprint 15.6: a generated frame just landed (url, measured yaw) — the panel animates it in. */
+  onFrameAdded?: (url: string, yaw: number) => void;
 };
 
 /**
@@ -153,7 +162,7 @@ type Props = {
  * (±20° per hop), re-measures what came back, and adds only frames that land
  * on a still-empty step — so the sequence never gains duplicates.
  */
-export default function AngleEngine({ frames, setFrames, poses, setPoses, adminKey, onError }: Props) {
+export default function AngleEngine({ frames, setFrames, poses, setPoses, adminKey, onError, onFrameAdded }: Props) {
   const [running, setRunning] = useState<"analyze" | "generate" | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [log, setLog] = useState<string[]>([]);
@@ -296,6 +305,7 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
             const url = await uploadHeroAsset(await enhanceFrame(blob), "hero", name, adminKey);
             setPoses((p) => ({ ...p, [url]: pose }));
             setFrames((l) => sortByAngle([...l, { url, angle: pose.yaw }]));
+            onFrameAdded?.(url, pose.yaw);
             sources.push({ url, yaw: pose.yaw, pitch: pose.pitch });
             made++;
             setProgress({ done: made, total: budget });

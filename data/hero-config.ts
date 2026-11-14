@@ -239,6 +239,10 @@ export type GenesisConfig = {
   customWatermarkUrl: string;
   /** 0–1: glitch bursts + chromatic split. */
   watermarkGlitch: number;
+  /** Sprint 15.6: how often the glitch bursts fire, 0.25–3× (1 = a few per ten seconds). */
+  watermarkGlitchSpeed: number;
+  /** Sprint 15.6: neon glow around the logo, 0–2 (1 = the original). */
+  watermarkGlow: number;
   /** 0.1–1. */
   watermarkOpacity: number;
   /** Size multiplier, 0.5–3 (1× fits half the stage width / a third of its height). */
@@ -259,6 +263,10 @@ export type GenesisConfig = {
    * when the cursor is centred.
    */
   calibrationOffset: number;
+  /** Sprint 15.6: yaw at the screen edge, degrees (30–180). 90 = each edge looks over a shoulder. */
+  turnRange: number;
+  /** Sprint 15.6: spring stiffness of the turn (20–120) — lower is heavier and slower; damping keeps it overshoot-free. */
+  turnWeight: number;
   /** Slow infinite Ken Burns on the whole hero. */
   autoCamera: boolean;
   gravity: GenesisGravity;
@@ -657,6 +665,8 @@ export const heroConfig: HeroConfig = {
     themePrompt: "Blood Moon",
     customWatermarkUrl: "https://3skrino-portfolio.vercel.app/media/site/1794684869125-2953j4w812j8.png",
     watermarkGlitch: 0.6,
+    watermarkGlitchSpeed: 1,
+    watermarkGlow: 1,
     watermarkOpacity: 1,
     watermarkScale: 2,
     globalWatermark: false,
@@ -667,6 +677,8 @@ export const heroConfig: HeroConfig = {
     holoAberration: 0.5,
     holoGrain: 0.35,
     calibrationOffset: 0,
+    turnRange: 90,
+    turnWeight: 50,
     autoCamera: true,
     gravity: "repel",
     gravityStrength: 0.75,

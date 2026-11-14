@@ -92,18 +92,34 @@ export function matteBlackBackdrop(source: CanvasImageSource, width: number, hei
   for (let p = 0; p < n; p++) cleared += bg[p];
   if (cleared < n * MIN_CLEARED) return null;
 
+  // Sprint 15.6 — two-ring feather. Ring 1 touches the backdrop, ring 2 touches ring 1.
+  // Near-black boundary pixels (the dark rim around curls and shoulders) fade by
+  // brightness — fully in ring 1, half-strength in ring 2 — so the edge melts into
+  // whatever is behind instead of leaving a dark outline. Bright edges stay crisp.
+  const ring = new Uint8Array(n); // 1 = ring 1, 2 = ring 2
+  const touches = (p: number, mark: Uint8Array, value: number) => {
+    const x = p % width;
+    return (
+      (x > 0 && mark[p - 1] === value) ||
+      (x < width - 1 && mark[p + 1] === value) ||
+      (p >= width && mark[p - width] === value) ||
+      (p < n - width && mark[p + width] === value)
+    );
+  };
+  for (let p = 0; p < n; p++) if (!bg[p] && touches(p, bg, 1)) ring[p] = 1;
+  for (let p = 0; p < n; p++) if (!bg[p] && !ring[p] && touches(p, ring, 1)) ring[p] = 2;
+
+  const ramp = (v: number) => Math.min(1, Math.max(0, (v - HARD) / (SOFT - HARD)));
   for (let p = 0; p < n; p++) {
     if (bg[p]) {
       d[p * 4 + 3] = 0;
       continue;
     }
-    // Boundary: a subject pixel touching the backdrop fades by brightness.
-    const x = p % width;
-    const touches = (x > 0 && bg[p - 1]) || (x < width - 1 && bg[p + 1]) || (p >= width && bg[p - width]) || (p < n - width && bg[p + width]);
-    if (touches) {
-      const v = level(p);
-      if (v < SOFT) d[p * 4 + 3] = Math.round(((v - HARD) / (SOFT - HARD)) * 255);
-    }
+    if (!ring[p]) continue;
+    const v = level(p);
+    if (v >= SOFT) continue;
+    const a = ring[p] === 1 ? ramp(v) : 0.5 + 0.5 * ramp(v);
+    d[p * 4 + 3] = Math.round(a * 255);
   }
   ctx.putImageData(image, 0, 0);
   return canvas;

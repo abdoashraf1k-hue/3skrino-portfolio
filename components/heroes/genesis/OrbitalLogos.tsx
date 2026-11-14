@@ -177,8 +177,11 @@ export default function OrbitalLogos({ logos, reducedMotion, scale = 1, gravity,
         const fall = Math.exp(-((d / radius) ** 2));
         // Attraction never overshoots the cursor.
         const mag = Math.min(maxPush * fall, sign > 0 ? d * 0.55 : Infinity);
-        forces[i].x.set((dx / d) * mag * sign);
-        forces[i].y.set((dy / d) * mag * sign);
+        // Sprint 15.6: wherever the pull lands, never on the face — project it back out of the face ellipse.
+        const target = { x: p.x + (dx / d) * mag * sign, y: p.y + (dy / d) * mag * sign };
+        outOfFace(target, r.width, r.height, p.r + GAP);
+        forces[i].x.set(target.x - p.x);
+        forces[i].y.set(target.y - p.y);
       }
     };
     window.addEventListener("pointermove", onMove, { passive: true });
@@ -223,9 +226,13 @@ export default function OrbitalLogos({ logos, reducedMotion, scale = 1, gravity,
 function Orb({ logo, index, at, force, href }: { logo: BrandLogo; index: number; at: Placed; force: Force; href: string | null }) {
   const x = useSpring(force.x, SPRING);
   const y = useSpring(force.y, SPRING);
-  const size = at.r * 2;
   // Near logos brighter and a touch larger: the Fibonacci-sphere depth.
   const depth = (at.z + 1) / 2;
+  // Sprint 15.6 — crisp raster logos: the depth size is baked into whole pixels (no CSS
+  // scale), and the box sits on whole pixels (no -50% translate landing on half pixels).
+  const size = Math.round(at.r * 2 * (0.88 + depth * 0.16));
+  const left = Math.round(at.x - size / 2);
+  const top = Math.round(at.y - size / 2);
   const style: CSSProperties = { width: size, height: size, opacity: 0.55 + depth * 0.4 };
 
   const body = <Shape logo={logo} size={size} />;
@@ -239,9 +246,10 @@ function Orb({ logo, index, at, force, href }: { logo: BrandLogo; index: number;
   };
 
   return (
-    <motion.div className="absolute left-0 top-0" style={{ x, y, left: at.x, top: at.y }}>
-      <div className="-translate-x-1/2 -translate-y-1/2" style={{ scale: 0.88 + depth * 0.16 }}>
-        <div className="hero-logo" style={{ animationDelay: `${1.2 + index * 0.08}s, ${-index * 1.7}s`, animationDuration: `0.9s, ${9 + (index % 4) * 2.2}s` }}>
+    <motion.div className="absolute left-0 top-0" style={{ x, y, left, top }}>
+      <div>
+        {/* Translate-only drift: the old one rotated, which resamples a raster logo every frame (soft edges). */}
+        <div className="genesis-logo" style={{ animationDelay: `${1.2 + index * 0.08}s, ${-index * 1.7}s`, animationDuration: `0.9s, ${9 + (index % 4) * 2.2}s` }}>
           {href ? (
             <Link
               href={href}

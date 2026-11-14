@@ -84,5 +84,8 @@ export const heroSpin = {
    * never the whole full-width canvas.
    */
   frame: null as ImageBitmap | HTMLImageElement | null,
+  /** Sprint 15.6: the neighbouring frame the turn is cross-fading into, and how far (0 = all `frame`). */
+  frameB: null as ImageBitmap | HTMLImageElement | null,
+  mix: 0,
   version: 0,
 };

@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useTransition, type ChangeEvent, type FormEvent } from "react";
-import AngleEnginePanel from "@/components/admin/AngleEnginePanel";
 import MiniPreview from "@/components/admin/MiniPreview";
 import { btn, btnDanger, btnPrimary, ColorField, input, micro, Section, Segmented, Slider, Toggle } from "@/components/admin/ui";
-import type { GenesisBackground, GenesisConfig, GenesisGravity, GenesisPalette, SequenceFrame } from "@/data/hero-config";
-import { CALIBRATION_RANGE, DEFAULT_GENESIS, DEFAULT_GENESIS_PALETTE } from "@/data/hero-defaults";
+import type { GenesisBackground, GenesisConfig, GenesisGravity, GenesisPalette } from "@/data/hero-config";
+import { CALIBRATION_RANGE, DEFAULT_GENESIS, DEFAULT_GENESIS_PALETTE, TURN_RANGE, TURN_WEIGHT } from "@/data/hero-defaults";
 import { site as identity } from "@/data/site";
 import { assertLogoFile, uploadHeroAsset } from "@/lib/admin/hero-assets";
 import { sameOriginMedia } from "@/lib/media-url";
@@ -41,10 +40,11 @@ const PALETTE_FIELDS: { key: keyof GenesisPalette; label: string }[] = [
 /**
  * Poses → Genesis (Sprint 15): everything the primary hero paints with.
  * Every control edits the hero draft, which the preview below receives
- * instantly; Save commits data/hero-config.ts → genesis. Sprint 15.5: the
- * 360° sequence + AI Reality Engine live here too (the shared
- * AngleEnginePanel), plus the mouse calibration (saved on its own by a server
- * action), the hologram shader's controls and the site-wide watermark.
+ * instantly; Save commits data/hero-config.ts → genesis: the mouse
+ * calibration and turn feel (saved on its own by a server action), the
+ * hologram shader's controls and the watermark. Sprint 15.6: the 360°
+ * sequence + AI Reality Engine moved to their own hero-agnostic section
+ * (SequenceSection) above this one.
  */
 export default function GenesisSection({ adminKey, onError }: { adminKey: string; onError: (m: string) => void }) {
   const { hero, setHero, site, setSite, savedHero, markHeroSaved } = useConfigStore();
@@ -63,23 +63,25 @@ export default function GenesisSection({ adminKey, onError }: { adminKey: string
   const setPalette = (patch: Partial<GenesisPalette>) => setHero((c) => ({ ...c, genesis: { ...c.genesis, palette: { ...c.genesis.palette, ...patch } } }));
   const isLive = site.heroVariant === "genesis";
   const current = BACKGROUNDS.find((b) => b.value === g.background);
-  const setFrames = (fn: (l: SequenceFrame[]) => SequenceFrame[]) =>
-    setHero((c) => ({ ...c, model3d: { ...c.model3d, sequenceImages: fn(c.model3d.sequenceImages) } }));
-  const savedOffset = savedHero?.genesis.calibrationOffset ?? 0;
+  const saved = savedHero?.genesis;
+  const savedOffset = saved?.calibrationOffset ?? 0;
+  const turnDirty = !saved || g.calibrationOffset !== saved.calibrationOffset || g.turnRange !== saved.turnRange || g.turnWeight !== saved.turnWeight;
+  /** How the spring feels: time to cover 90% of a turn (over-damped, ζ = √2 → dominant pole ≈ √k·(√2 − 1)). */
+  const settleSeconds = 2.3 / (Math.sqrt(g.turnWeight) * (Math.SQRT2 - 1));
 
-  /** Commits only genesis.calibrationOffset (server action); other unsaved edits stay drafts. */
+  /** Commits only the turn calibration (offset, range, weight) via a server action; other unsaved edits stay drafts. */
   const persistCalibration = () => {
-    const offset = g.calibrationOffset;
+    const turn = { offset: g.calibrationOffset, range: g.turnRange, weight: g.turnWeight };
     setCalibrationNote(null);
     startCalibrating(async () => {
-      const res = await saveCalibration(adminKey, offset);
+      const res = await saveCalibration(adminKey, turn);
       if (!res.ok) {
         onError(res.error);
         return;
       }
       // The committed file is now the saved copy; the draft keeps everything else that's unsaved.
       markHeroSaved(res.config);
-      setCalibrationNote(`Calibration ${signed(res.offset)} committed to data/hero-config.ts — live after the next deploy`);
+      setCalibrationNote(`Turn saved (${signed(res.offset)}, ±${res.range}°, weight ${res.weight}) — committed to data/hero-config.ts, live after the next deploy`);
     });
   };
 
@@ -133,7 +135,7 @@ export default function GenesisSection({ adminKey, onError }: { adminKey: string
     <Section
       title="Genesis hero"
       hint="retro grid · GLSL backdrop · watermark · the 360° glowing head · changes preview live · save to publish"
-      onReset={() => set({ ...DEFAULT_GENESIS, customWatermarkUrl: g.customWatermarkUrl, calibrationOffset: g.calibrationOffset })}
+      onReset={() => set({ ...DEFAULT_GENESIS, customWatermarkUrl: g.customWatermarkUrl, calibrationOffset: g.calibrationOffset, turnRange: g.turnRange, turnWeight: g.turnWeight })}
       aside={<Toggle label="Live preview" checked={live} onChange={setLive} />}
     >
       {!isLive && (
@@ -248,6 +250,26 @@ export default function GenesisSection({ adminKey, onError }: { adminKey: string
               />
               <Slider label="Watermark opacity" min={0.1} max={1} step={0.01} value={g.watermarkOpacity} onChange={(watermarkOpacity) => set({ watermarkOpacity })} />
               <Slider label="Glitch" hint="bursts + RGB split" value={g.watermarkGlitch} onChange={(watermarkGlitch) => set({ watermarkGlitch })} />
+              <Slider
+                label="Glow intensity"
+                hint="0 = clean mark · 2 = blazing neon"
+                min={0}
+                max={2}
+                step={0.05}
+                format={(v) => `${v.toFixed(2)}×`}
+                value={g.watermarkGlow}
+                onChange={(watermarkGlow) => set({ watermarkGlow })}
+              />
+              <Slider
+                label="Glitch speed"
+                hint="how often the bursts fire"
+                min={0.25}
+                max={3}
+                step={0.05}
+                format={(v) => `${v.toFixed(2)}×`}
+                value={g.watermarkGlitchSpeed}
+                onChange={(watermarkGlitchSpeed) => set({ watermarkGlitchSpeed })}
+              />
             </div>
             <div className="mt-2">
               <Toggle
@@ -294,12 +316,36 @@ export default function GenesisSection({ adminKey, onError }: { adminKey: string
           {/* Calibration */}
           <div>
             <span className={`${micro} mb-2 flex items-center justify-between text-white/50`}>
-              <span>Mouse → angle calibration</span>
-              <span className="text-white/35">saved: {signed(savedOffset)}</span>
+              <span>Mouse → angle · the heavy camera pan</span>
+              <span className="text-white/35">
+                saved: {signed(savedOffset)} · ±{saved?.turnRange ?? 90}° · weight {saved?.turnWeight ?? 50}
+              </span>
             </span>
+            <div className="mb-2 grid gap-2 sm:grid-cols-2">
+              <Slider
+                label="Turn range"
+                hint="yaw at the screen edge · lower = slower, more cinematic"
+                min={TURN_RANGE.min}
+                max={TURN_RANGE.max}
+                step={1}
+                format={(v) => `±${Math.round(v)}°`}
+                value={g.turnRange}
+                onChange={(turnRange) => set({ turnRange })}
+              />
+              <Slider
+                label="Turn weight"
+                hint="spring stiffness · lower = heavier, never overshoots"
+                min={TURN_WEIGHT.min}
+                max={TURN_WEIGHT.max}
+                step={1}
+                format={(v) => String(Math.round(v))}
+                value={g.turnWeight}
+                onChange={(turnWeight) => set({ turnWeight })}
+              />
+            </div>
             <Slider
               label="Calibration offset"
-              hint="added to the cursor's turn (−1…1 across the window × 180°)"
+              hint="added to the cursor's turn — which way the head faces with the cursor centred"
               min={-CALIBRATION_RANGE}
               max={CALIBRATION_RANGE}
               step={0.5}
@@ -308,16 +354,21 @@ export default function GenesisSection({ adminKey, onError }: { adminKey: string
               onChange={(calibrationOffset) => set({ calibrationOffset })}
             />
             <p className={`${micro} mt-1.5 leading-relaxed text-white/35`}>
-              Cursor centred → {signed(g.calibrationOffset)} · 10% right of centre → {signed(Math.round((18 + g.calibrationOffset) * 10) / 10)} · right edge →{" "}
-              {signed(Math.round((180 + g.calibrationOffset) * 10) / 10)}. Turns too far for a small move? Fill the gaps with the AI engine below — a
-              sparse turn snaps to the nearest frame.
+              Cursor centred → {signed(g.calibrationOffset)} · 10% right of centre → {signed(Math.round((g.turnRange * 0.1 + g.calibrationOffset) * 10) / 10)} · right edge →{" "}
+              {signed(Math.round((g.turnRange + g.calibrationOffset) * 10) / 10)} · settles in ~{settleSeconds.toFixed(1)} s, no overshoot. Frames cross-fade;
+              wide gaps dissolve quickly at the midpoint — fill them with the AI engine above for a continuous turn.
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <button type="button" className={btnPrimary} disabled={calibrating || g.calibrationOffset === savedOffset} onClick={persistCalibration}>
+              <button type="button" className={btnPrimary} disabled={calibrating || !turnDirty} onClick={persistCalibration}>
                 {calibrating ? "Saving…" : "Save calibration"}
               </button>
-              <button type="button" className={btn} disabled={g.calibrationOffset === 0} onClick={() => set({ calibrationOffset: 0 })}>
-                ↺ 0°
+              <button
+                type="button"
+                className={btn}
+                disabled={g.calibrationOffset === 0 && g.turnRange === 90 && g.turnWeight === 50}
+                onClick={() => set({ calibrationOffset: 0, turnRange: 90, turnWeight: 50 })}
+              >
+                ↺ Defaults
               </button>
               {calibrationNote && (
                 <span className={`${micro} text-[#e7fe55]`} role="status">
@@ -328,7 +379,7 @@ export default function GenesisSection({ adminKey, onError }: { adminKey: string
           </div>
 
           {/* 360° sequence + AI engine (shared) */}
-          <AngleEnginePanel frames={hero.model3d.sequenceImages} setFrames={setFrames} adminKey={adminKey} onError={onError} />
+          <p className={`${micro} text-white/35`}>The 360° sequence and the AI Reality Engine have their own section above — shared by every hero that turns.</p>
 
           {/* Gravity */}
           <div>

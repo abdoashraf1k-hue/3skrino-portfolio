@@ -579,3 +579,35 @@ html[data-rack-focus] :focus-visible {
     animation: none;
   }
 }
+
+/* Sprint 15.6 — Genesis logos: same fade-in as .hero-logo, but a translate-only drift
+   (rotation resamples raster logos every frame and softens them). */
+.genesis-logo {
+  animation:
+    hero-logo-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both,
+    genesis-logo-drift 10s ease-in-out infinite alternate;
+}
+@keyframes genesis-logo-drift {
+  0% { transform: translate3d(0, 0, 0); }
+  33% { transform: translate3d(5px, -8px, 0); }
+  66% { transform: translate3d(-4px, -3px, 0); }
+  100% { transform: translate3d(2px, 6px, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .genesis-logo { animation: none; }
+}
+
+/* Sprint 15.6 — AI Reality Engine: a freshly generated frame drops in glowing. */
+@keyframes engine-frame-in {
+  0% { transform: translateY(-14px) scale(0.85); opacity: 0; box-shadow: 0 0 0 0 rgb(231 254 85 / 0); }
+  45% { transform: translateY(0) scale(1.06); opacity: 1; box-shadow: 0 0 18px 4px rgb(231 254 85 / 0.75); }
+  100% { transform: translateY(0) scale(1); box-shadow: 0 0 10px 1px rgb(231 254 85 / 0.35); }
+}
+.engine-frame-new {
+  animation: engine-frame-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  border-color: rgb(231 254 85 / 0.8) !important;
+  z-index: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .engine-frame-new { animation: none; }
+}

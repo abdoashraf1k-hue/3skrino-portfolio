@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ChangeEvent, type DragEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { btn, btnDanger, micro } from "@/components/admin/ui";
 import type { SequenceFrame } from "@/data/hero-config";
 import { HERO_SEQUENCE_MAX } from "@/data/hero-defaults";
@@ -38,6 +38,30 @@ export default function AngleEnginePanel({ frames, setFrames, adminKey, onError 
   const [busy, setBusy] = useState<string | null>(null);
   const [over, setOver] = useState(false);
   const [poses, setPoses] = useState<PoseMap>({});
+  // Sprint 15.6: frames the AI just generated glow and drop into the strip; the ticker names the angle.
+  const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set());
+  const [arrival, setArrival] = useState<{ yaw: number; count: number } | null>(null);
+  const timers = useRef<number[]>([]);
+  const stripRef = useRef<HTMLDivElement>(null);
+  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+
+  const onFrameAdded = (url: string, yaw: number) => {
+    setFresh((s) => new Set(s).add(url));
+    setArrival((a) => ({ yaw, count: (a?.count ?? 0) + 1 }));
+    timers.current.push(
+      window.setTimeout(() => {
+        setFresh((s) => {
+          const next = new Set(s);
+          next.delete(url);
+          return next;
+        });
+      }, 2600),
+    );
+    // Bring the new frame into view once it has rendered.
+    requestAnimationFrame(() =>
+      stripRef.current?.querySelector(`[data-url="${CSS.escape(url)}"]`)?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" }),
+    );
+  };
 
   /** Uploads a whole sequence (sorted by filename, angles spread evenly from 0°); it replaces the current one only once every frame is in. */
   const uploadSequence = async (list: File[]) => {
@@ -114,16 +138,27 @@ export default function AngleEnginePanel({ frames, setFrames, adminKey, onError 
       {frames.length > 0 && (
         <>
           <div className="mt-3">
-            <AngleEngine frames={frames} setFrames={setFrames} poses={poses} setPoses={setPoses} adminKey={adminKey} onError={onError} />
+            <AngleEngine frames={frames} setFrames={setFrames} poses={poses} setPoses={setPoses} adminKey={adminKey} onError={onError} onFrameAdded={onFrameAdded} />
           </div>
-          <div className="flex gap-1 overflow-x-auto pb-1">
+          {arrival && (
+            <p key={arrival.count} className={`${micro} mb-2 flex items-center gap-2 text-[#e7fe55]`} role="status">
+              <span className="size-1.5 animate-ping rounded-full bg-[#e7fe55]" />
+              New angle {deg(arrival.yaw)} arrived · {arrival.count} this session — matted, graded, saved to the media bucket
+            </p>
+          )}
+          <div ref={stripRef} className="flex gap-1 overflow-x-auto px-1 pb-2 pt-4">
             {[...frames]
               .sort((a, b) => a.angle - b.angle)
               .map((f, i) => {
                 const pose = poses[f.url];
                 const info = pose ? `Yaw ${deg(pose.yaw)} · Pitch ${deg(pose.pitch)} · Roll ${deg(pose.roll)}` : pose === null ? "No face detected" : "Not analysed";
                 return (
-                  <figure key={f.url} title={`#${i + 1} · placed at ${deg(f.angle)} · ${info}`} className="group relative w-12 shrink-0 border border-white/10 bg-[#111]">
+                  <figure
+                    key={f.url}
+                    data-url={f.url}
+                    title={`#${i + 1} · placed at ${deg(f.angle)} · ${info}`}
+                    className={`group relative w-12 shrink-0 border border-white/10 bg-[#111] ${fresh.has(f.url) ? "engine-frame-new" : ""}`}
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element -- thumbnails of uploaded URLs on any host */}
                     <img src={sameOriginMedia(f.url)} alt={`Frame at ${deg(f.angle)}`} loading="lazy" className="aspect-[3/4] w-full object-cover" />
                     <figcaption className="absolute bottom-0 left-0 bg-black/70 px-1 font-mono text-[9px] text-white/70">{deg(f.angle)}</figcaption>
@@ -150,9 +185,41 @@ export default function AngleEnginePanel({ frames, setFrames, adminKey, onError 
             <button type="button" className={btnDanger} onClick={() => setFrames(() => [])}>
               Remove sequence
             </button>
+            <DiffPortraitButton />
           </div>
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * Sprint 15.6 — the next step for the 360°: DiffPortrait360 (CVPR 2025) would
+ * generate the profiles and the back of the head from one front photo. Not
+ * wired yet (it needs a ≥ 30 GB GPU endpoint — docs/FUTURE-360.md); the
+ * button holds its place with a "Setup required" tooltip. aria-disabled (not
+ * disabled) so it stays focusable and the tooltip shows on hover and focus.
+ */
+function DiffPortraitButton() {
+  return (
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        aria-disabled="true"
+        aria-describedby="diffportrait-tip"
+        onClick={(e) => e.preventDefault()}
+        className={`${btn} cursor-not-allowed border-dashed opacity-60`}
+      >
+        ✦ Generate Full 360 (DiffPortrait360)
+      </button>
+      <span
+        id="diffportrait-tip"
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-0 z-20 mb-2 w-72 border border-white/15 bg-[#0d0d0d] p-3 text-xs leading-relaxed text-white/70 opacity-0 shadow-xl transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+      >
+        <span className="mb-1 block font-mono text-[10px] uppercase tracking-widest text-[#e7fe55]">Coming soon · setup required</span>
+        Generates the profiles and the back of the head from one front photo. Needs a GPU endpoint (≥ 30 GB VRAM) — the plan is in docs/FUTURE-360.md.
+      </span>
+    </span>
   );
 }

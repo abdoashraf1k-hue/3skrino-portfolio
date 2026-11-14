@@ -162,7 +162,14 @@ export default function GenesisHero() {
       >
         {/* CSS stage: before WebGL is up, without WebGL, or after a scene error. */}
         <div aria-hidden className={cn("pointer-events-none absolute inset-0 transition-opacity duration-1000", showCss ? "opacity-100" : "opacity-0")}>
-          <CssStage watermarkUrl={g.customWatermarkUrl} watermarkScale={g.watermarkScale} watermarkOpacity={g.watermarkOpacity} grid={g.grid} />
+          <CssStage
+            watermarkUrl={g.customWatermarkUrl}
+            watermarkScale={g.watermarkScale}
+            watermarkOpacity={g.watermarkOpacity}
+            watermarkGlow={g.watermarkGlow}
+            watermarkSpeed={g.watermarkGlitchSpeed}
+            grid={g.grid}
+          />
         </div>
 
         {scene && (
@@ -172,7 +179,15 @@ export default function GenesisHero() {
                 preset={g.background}
                 palette={g.palette}
                 grid={g.grid}
-                watermark={{ url: g.customWatermarkUrl, text: site.name, glitch: g.watermarkGlitch, opacity: g.watermarkOpacity, scale: g.watermarkScale }}
+                watermark={{
+                  url: g.customWatermarkUrl,
+                  text: site.name,
+                  glitch: g.watermarkGlitch,
+                  glow: g.watermarkGlow,
+                  speed: g.watermarkGlitchSpeed,
+                  opacity: g.watermarkOpacity,
+                  scale: g.watermarkScale,
+                }}
                 hologram={glHead ? holoSettings : null}
                 hologramFrames={glHead ? sequence.frames : null}
                 pointer={pointer}
@@ -216,6 +231,8 @@ export default function GenesisHero() {
             reducedMotion={reducedMotion}
             coarse={coarse}
             calibrationOffset={g.calibrationOffset}
+            turnRange={g.turnRange}
+            turnWeight={g.turnWeight}
             matteBackdrop
             hideCanvas={glHead}
             onReadyChange={setSequence}
@@ -252,7 +269,29 @@ export default function GenesisHero() {
 }
 
 /** No-WebGL stand-in: gradient sky, CSS perspective grid, and the watermark glitched in CSS. */
-function CssStage({ watermarkUrl, watermarkScale, watermarkOpacity, grid }: { watermarkUrl: string; watermarkScale: number; watermarkOpacity: number; grid: boolean }) {
+function CssStage({
+  watermarkUrl,
+  watermarkScale,
+  watermarkOpacity,
+  watermarkGlow,
+  watermarkSpeed,
+  grid,
+}: {
+  watermarkUrl: string;
+  watermarkScale: number;
+  watermarkOpacity: number;
+  watermarkGlow: number;
+  watermarkSpeed: number;
+  grid: boolean;
+}) {
+  // The CSS fallback honours the same glow / speed: drop-shadow radii and the glitch keyframes' duration.
+  const markStyle = {
+    filter:
+      watermarkGlow > 0.01
+        ? `drop-shadow(0 0 ${(6 * watermarkGlow).toFixed(1)}px var(--g-glow)) drop-shadow(0 0 ${(22 * watermarkGlow).toFixed(1)}px color-mix(in srgb, var(--g-glow) 55%, transparent))`
+        : "none",
+    animationDuration: `${(4.2 / Math.max(0.25, watermarkSpeed)).toFixed(2)}s`,
+  };
   return (
     <div className="absolute inset-0 overflow-hidden">
       <div
@@ -283,12 +322,12 @@ function CssStage({ watermarkUrl, watermarkScale, watermarkOpacity, grid }: { wa
             src={sameOriginMedia(watermarkUrl)}
             alt=""
             className="genesis-mark-css object-contain"
-            style={{ width: `${Math.min(115, 50 * watermarkScale)}%`, maxHeight: `${Math.min(92, 32 * watermarkScale)}svh` }}
+            style={{ ...markStyle, width: `${Math.min(115, 50 * watermarkScale)}%`, maxHeight: `${Math.min(92, 32 * watermarkScale)}svh` }}
           />
         ) : (
           <span
             className="genesis-mark-css type-display leading-none"
-            style={{ color: "var(--g-glow)", fontSize: `clamp(2rem, ${(11 * watermarkScale).toFixed(1)}vw, ${(12 * watermarkScale).toFixed(1)}rem)` }}
+            style={{ ...markStyle, color: "var(--g-glow)", fontSize: `clamp(2rem, ${(11 * watermarkScale).toFixed(1)}vw, ${(12 * watermarkScale).toFixed(1)}rem)` }}
           >
             {site.name}
           </span>

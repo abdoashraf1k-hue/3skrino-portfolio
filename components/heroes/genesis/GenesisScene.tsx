@@ -300,13 +300,16 @@ type MarkProps = {
   url: string;
   text: string;
   glitch: number;
+  /** Sprint 15.6: halo strength (0–2) and glitch clock speed (0.25–3). */
+  glow: number;
+  speed: number;
   opacity: number;
   scale: number;
   colors: PaletteUniforms;
   clock: RefObject<Clock>;
 };
 
-function Watermark({ url, text, glitch, opacity, scale, colors, clock }: MarkProps) {
+function Watermark({ url, text, glitch, glow, speed, opacity, scale, colors, clock }: MarkProps) {
   const texture = useWatermarkTexture(url, text);
   const mesh = useRef<ShaderMesh>(null);
   const material = useMemo(
@@ -320,6 +323,8 @@ function Watermark({ url, text, glitch, opacity, scale, colors, clock }: MarkPro
           uRect: { value: new THREE.Vector4(0, 0, 1, 1) },
           uTime: { value: 0 },
           uGlitch: { value: 0 },
+          uGlowAmt: { value: 1 },
+          uSpeed: { value: 1 },
           uOpacity: { value: 0 },
           uGlow: colors.uGlow,
           uAccent: colors.uAccent,
@@ -356,6 +361,8 @@ function Watermark({ url, text, glitch, opacity, scale, colors, clock }: MarkPro
     (u.uRes.value as THREE.Vector2).set(W * dpr, H * dpr);
     u.uTime.value = clock.current.t;
     u.uGlitch.value = clock.current.frozen ? 0 : glitch;
+    u.uGlowAmt.value = glow;
+    u.uSpeed.value = speed;
     // Fades in once the texture lands, eases on admin changes.
     u.uOpacity.value += (opacity - u.uOpacity.value) * ease(2.5, delta);
   });
@@ -438,6 +445,9 @@ function Hologram({
         fragmentShader: hologramFragment,
         uniforms: {
           uMap: { value: texture },
+          // Sprint 15.6: the frame being cross-faded into, and how far.
+          uMap2: { value: texture },
+          uMix: { value: 0 },
           // Not read by the shader: keeps the streaming texture reachable from the frame loop.
           uStream: { value: texture },
           uTexel: { value: new THREE.Vector2(1, 1) },
@@ -454,6 +464,7 @@ function Hologram({
           uGrain: { value: 0 },
           uOpacity: { value: 0 },
           uGlow: colors.uGlow,
+          uAccent: colors.uAccent,
           uTint: colors.uTint,
         },
         // Normal blending: the head occludes the watermark and grid behind it (no CSS occluder needed).
@@ -481,9 +492,11 @@ function Hologram({
     if (s.version !== heroSpin.version) {
       s.version = heroSpin.version;
       const resident = cache.get(frame);
+      const residentB = heroSpin.frameB ? cache.get(heroSpin.frameB) : undefined;
       if (resident) {
-        // Pre-uploaded: switching frames is a uniform swap.
+        // Pre-uploaded: switching frames is a uniform swap — for both frames of the cross-fade.
         u.uMap.value = resident;
+        u.uMap2.value = residentB ?? resident;
       } else {
         if (fw > MAX_TEXTURE || fh > MAX_TEXTURE) {
           m.visible = false;
@@ -495,11 +508,14 @@ function Hologram({
         tex.image = frame;
         tex.needsUpdate = true;
         u.uMap.value = tex;
+        u.uMap2.value = tex; // streaming holds one frame: no cross-fade past the GPU budget
         s.w = fw;
         s.h = fh;
       }
     }
     m.visible = true;
+    // Cross-fade only when the second frame is resident too (else uMap2 === uMap and the mix is moot).
+    u.uMix.value = u.uMap2.value === u.uMap.value ? 0 : heroSpin.mix;
 
     const dpr = state.viewport.dpr;
     const W = state.size.width * dpr;
@@ -540,7 +556,7 @@ type SceneProps = {
   preset: GenesisBackground;
   palette: GenesisPalette;
   grid: boolean;
-  watermark: { url: string; text: string; glitch: number; opacity: number; scale: number };
+  watermark: { url: string; text: string; glitch: number; glow: number; speed: number; opacity: number; scale: number };
   /** Sprint 15.5: draw the 360° head through the hologram shader (null → the DOM canvas shows it). */
   hologram: HologramSettings | null;
   /** The decoded 360° frames, for GPU pre-upload (null while there's none or they aren't WebGL-safe). */

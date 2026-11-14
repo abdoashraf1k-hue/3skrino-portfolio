@@ -367,6 +367,8 @@ export const watermarkFragment = /* glsl */ `
   uniform float uTime;
   uniform float uGlitch;
   uniform float uOpacity;
+  uniform float uGlowAmt;  // Sprint 15.6: halo strength, 0–2
+  uniform float uSpeed;    // Sprint 15.6: glitch clock speed, 0.25–3
   uniform vec3 uGlow;
   uniform vec3 uAccent;
 
@@ -384,7 +386,8 @@ export const watermarkFragment = /* glsl */ `
       gl_FragColor = vec4(0.0);
       return;
     }
-    float t = uTime;
+    // The glitch clock runs at the admin's speed (bursts, slices, jitter and flicker together).
+    float t = uTime * uSpeed;
 
     // Bursts: a few per ten seconds, more with uGlitch.
     float burst = step(0.86 - 0.32 * uGlitch, hash(vec2(floor(t * 2.5), 7.0)));
@@ -415,7 +418,8 @@ export const watermarkFragment = /* glsl */ `
     float flicker = 0.9 + 0.1 * sin(t * 31.0) * sin(t * 7.3) + burst * 0.25;
 
     vec3 core = vec3(r, gc, b) * mix(vec3(1.0), uGlow, 0.25) * scan;
-    vec3 col = core * 0.9 + uGlow * glow * 0.95 + uAccent * glow * glow * 0.5;
+    // Neon: the halo scales with the admin's glow (0 = a clean mark, 2 = a blazing sign); the core stays crisp.
+    vec3 col = core * (0.9 + 0.15 * uGlowAmt) + (uGlow * glow * 0.95 + uAccent * glow * glow * 0.5) * uGlowAmt;
     col *= flicker * uOpacity;
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
@@ -474,10 +478,13 @@ export const hologramVertex = /* glsl */ `
  */
 export const hologramFragment = /* glsl */ `
   uniform sampler2D uMap;
+  uniform sampler2D uMap2;    // Sprint 15.6: the neighbouring frame of the turn…
+  uniform float uMix;         // …and how far we are into it (0 = all uMap)
   uniform vec2 uTexel;        // 1 / frame size
   uniform vec2 uRes;
   uniform float uTime;
   uniform vec3 uGlow;         // rim / Fresnel colour
+  uniform vec3 uAccent;       // the rim's second colour (Fresnel gradient)
   uniform vec3 uTint;         // hologram colour
   uniform float uFresnel;     // 0–1
   uniform float uScan;        // 0–1
@@ -492,7 +499,16 @@ export const hologramFragment = /* glsl */ `
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 
   // Bitmaps upload top-down (flipY can't apply to an ImageBitmap): flip here, for every source alike.
-  vec4 tap(vec2 uv) { return texture(uMap, vec2(uv.x, 1.0 - uv.y)); }
+  // Sprint 15.6: the two frames around the angle, cross-faded in premultiplied space (no dark fringes
+  // where one frame is transparent and the other isn't).
+  vec4 tap(vec2 uv) {
+    vec2 st = vec2(uv.x, 1.0 - uv.y);
+    vec4 a = texture(uMap, st);
+    vec4 b = texture(uMap2, st);
+    vec3 c = mix(a.rgb * a.a, b.rgb * b.a, uMix);
+    float al = mix(a.a, b.a, uMix);
+    return vec4(al > 1e-4 ? c / al : vec3(0.0), al);
+  }
 
   // The key is the frame's alpha: a black photo backdrop was already removed at load by a
   // connectivity matte (lib/backdrop-matte), so dark skin and hair inside the silhouette stay solid.
@@ -501,22 +517,32 @@ export const hologramFragment = /* glsl */ `
   }
 
   void main() {
-    vec4 base = tap(vUv);
+    // Sprint 15.6 — signal tear: once in a while a few scanline-thin slices jolt sideways.
+    vec2 uv = vUv;
+    float tearBurst = step(0.97, hash(vec2(floor(uTime * 2.0), 11.0)));
+    float slice = floor(vUv.y * 48.0);
+    float tearOn = step(0.72, hash(vec2(slice, floor(uTime * 18.0))));
+    uv.x += (hash(vec2(slice, floor(uTime * 18.0) + 5.0)) - 0.5) * 0.035 * tearBurst * tearOn * uScan;
+
+    vec4 base = tap(uv);
     float m = keyOf(base);
 
     // Pseudo-normal from the key's gradient (2 texels each way).
     vec2 d = uTexel * 2.0;
-    float gx = keyOf(tap(vUv + vec2(d.x, 0.0))) - keyOf(tap(vUv - vec2(d.x, 0.0)));
-    float gy = keyOf(tap(vUv + vec2(0.0, d.y))) - keyOf(tap(vUv - vec2(0.0, d.y)));
+    float gx = keyOf(tap(uv + vec2(d.x, 0.0))) - keyOf(tap(uv - vec2(d.x, 0.0)));
+    float gy = keyOf(tap(uv + vec2(0.0, d.y))) - keyOf(tap(uv - vec2(0.0, d.y)));
     vec3 normal = normalize(vec3(-gx, -gy, 0.35));
     float edge = clamp(length(vec2(gx, gy)) * 1.5, 0.0, 1.0);
 
     // Chromatic aberration, strongest on the edges.
     float ca = uTexel.x * (1.0 + 9.0 * edge) * 2.0 * uAberration;
-    vec3 col = vec3(tap(vUv + vec2(ca, 0.0)).r, base.g, tap(vUv - vec2(ca, 0.0)).b);
-    float mR = keyOf(tap(vUv + vec2(ca, 0.0)));
-    float mB = keyOf(tap(vUv - vec2(ca, 0.0)));
+    vec3 col = vec3(tap(uv + vec2(ca, 0.0)).r, base.g, tap(uv - vec2(ca, 0.0)).b);
+    float mR = keyOf(tap(uv + vec2(ca, 0.0)));
+    float mB = keyOf(tap(uv - vec2(ca, 0.0)));
     float cover = max(m, max(mR, mB) * 0.85);
+    // Sprint 15.6: the projection fades out at its base (the photo crops the shoulders in a hard line).
+    float beam = smoothstep(0.0, 0.14, vUv.y);
+    cover *= beam;
 
     // Hologram colour. A projection emits light: lift the shadows with a tone curve first
     // (a dark subject's features live in linear 0.01–0.1), so faces read instead of
@@ -550,12 +576,19 @@ export const hologramFragment = /* glsl */ `
     fres *= uFresnel;
     // Blink on the rim only (ektogamat's blinkFresnelOnly), softened.
     float blink = mix(1.0, flicker(0.6 - signalSpeed, uTime * signalSpeed * 0.02), 0.35);
-    col += uGlow * fres * blink * 1.8;
+    // Sprint 15.6: the rim runs glow → accent up the silhouette, slowly cycling.
+    vec3 rim = mix(uGlow, uAccent, clamp(vUv.y * 0.8 + 0.2 * sin(uTime * 0.4), 0.0, 1.0));
+    col += rim * fres * blink * 1.8 * beam;
+
+    // Sprint 15.6: an interference band sweeping up the projection every ~8 s.
+    float sweep = fract(uTime * 0.12) * 1.5 - 0.25;
+    float band = exp(-pow((vUv.y - sweep) * 18.0, 2.0));
+    col += uTint * band * 0.55 * cover * uScan + uGlow * band * fres * 0.6;
 
     // Projection grain, re-rolled 24× a second.
     col += (hash(gl_FragCoord.xy + floor(uTime * 24.0) * 13.1) - 0.5) * 0.14 * uGrain * cover;
 
-    float alpha = clamp(cover + fres * 0.9, 0.0, 1.0) * uOpacity;
+    float alpha = clamp(cover + fres * 0.9 * beam, 0.0, 1.0) * uOpacity;
     gl_FragColor = vec4(col, alpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

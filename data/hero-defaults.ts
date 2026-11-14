@@ -221,6 +221,9 @@ export const GENESIS_BACKGROUNDS: readonly GenesisBackground[] = ["celestial-neb
 export const GENESIS_GRAVITY: readonly GenesisGravity[] = ["off", "repel", "attract"];
 /** Calibration offset bounds (degrees). */
 export const CALIBRATION_RANGE = 90;
+/** Sprint 15.6: the turn's range (degrees at the screen edge) and spring stiffness bounds. */
+export const TURN_RANGE = { min: 30, max: 180 } as const;
+export const TURN_WEIGHT = { min: 20, max: 120 } as const;
 export const GENESIS_HEAD_MODES: readonly GenesisHeadMode[] = ["hologram", "cutout"];
 export const BRAND_SHAPES: readonly BrandShape[] = ["diamond", "circle", "glitch-text"];
 
@@ -238,6 +241,8 @@ export const DEFAULT_GENESIS: GenesisConfig = {
   themePrompt: "",
   customWatermarkUrl: "",
   watermarkGlitch: 0.6,
+  watermarkGlitchSpeed: 1,
+  watermarkGlow: 1,
   watermarkOpacity: 0.85,
   watermarkScale: 1.5,
   globalWatermark: false,
@@ -248,6 +253,8 @@ export const DEFAULT_GENESIS: GenesisConfig = {
   holoAberration: 0.5,
   holoGrain: 0.35,
   calibrationOffset: 0,
+  turnRange: 90,
+  turnWeight: 50,
   autoCamera: true,
   gravity: "repel",
   gravityStrength: 0.6,

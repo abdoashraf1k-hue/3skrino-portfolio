@@ -58,7 +58,7 @@ export default function Hero3DSection() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,520px)]">
         <div className="flex min-w-0 flex-col gap-5">
           <p className={`${micro} border border-white/10 bg-white/[0.02] p-3 leading-relaxed text-white/50`}>
-            The 360° image sequence and the AI Reality Engine moved to <span className="text-[#e7fe55]">Genesis hero</span> (above) — this hero turns the same frames.
+            The 360° image sequence and the AI Reality Engine have their own section: <span className="text-[#e7fe55]">360° sequence · AI Reality Engine</span> (above) — this hero turns the same frames.
             {frames.length > 0 ? ` ${frames.length} frames loaded.` : " No sequence yet: the centre pose shows as a still."}
           </p>
 
