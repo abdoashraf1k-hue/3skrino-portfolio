@@ -409,7 +409,7 @@ export const heroConfig: HeroConfig = {
       {
         id: "northwind",
         name: "downtown katameya mall",
-        imageUrl: "https://3skrino-portfolio.vercel.app/media/brands/1794656904875-y7868224z864.png",
+        imageUrl: "/brands/downtown%20logo.png",
         size: 62,
         visible: true,
         x: 27,
@@ -419,7 +419,7 @@ export const heroConfig: HeroConfig = {
       {
         id: "solace",
         name: "Solace",
-        imageUrl: "https://3skrino-portfolio.vercel.app/media/brands/1794658343292-cfci2vrr5ca6.png",
+        imageUrl: "/brands/solace.svg",
         size: 134,
         visible: true,
         x: 78,
@@ -430,7 +430,7 @@ export const heroConfig: HeroConfig = {
       {
         id: "halcyon",
         name: "Halcyon",
-        imageUrl: "https://3skrino-portfolio.vercel.app/media/brands/1794657834190-3z610hkb2kph.png",
+        imageUrl: "/brands/halcyon.svg",
         size: 62,
         visible: true,
         x: 19,
@@ -440,7 +440,7 @@ export const heroConfig: HeroConfig = {
       {
         id: "vantablack",
         name: "GAD",
-        imageUrl: "https://3skrino-portfolio.vercel.app/media/brands/1794657868700-vua84i5whqxq.png",
+        imageUrl: "/brands/gad.svg",
         size: 130,
         visible: true,
         x: 28.5,
@@ -450,7 +450,7 @@ export const heroConfig: HeroConfig = {
       {
         id: "orbitra",
         name: "Orbitra",
-        imageUrl: "https://3skrino-portfolio.vercel.app/media/brands/1794658040925-71jw8oogac14.png",
+        imageUrl: "/brands/orbitra.svg",
         size: 88,
         visible: true,
         x: 71.5,
@@ -461,7 +461,7 @@ export const heroConfig: HeroConfig = {
       {
         id: "monolith",
         name: "Monolith",
-        imageUrl: "https://3skrino-portfolio.vercel.app/media/brands/1794658459432-aacic6n7mydo.png",
+        imageUrl: "/brands/monolith.svg",
         size: 134,
         visible: true,
         x: 19.5,
@@ -470,7 +470,7 @@ export const heroConfig: HeroConfig = {
       {
         id: "prism",
         name: "Prism",
-        imageUrl: "https://3skrino-portfolio.vercel.app/media/brands/1794658531624-lcfrvx45v6ye.png",
+        imageUrl: "/brands/prism.svg",
         size: 116,
         visible: true,
         x: 80,
@@ -479,7 +479,7 @@ export const heroConfig: HeroConfig = {
       {
         id: "kinetic",
         name: "Kinetic",
-        imageUrl: "https://3skrino-portfolio.vercel.app/media/brands/1794658106415-iir1mh3zvrrb.png",
+        imageUrl: "/brands/kinetic.svg",
         size: 62,
         visible: true,
         x: 74,
