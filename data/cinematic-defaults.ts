@@ -20,10 +20,10 @@ import type {
  * reproduce the site exactly as it looked before Sprint 10.
  */
 
-/** Sprint 15: the 360° photo hero is the primary hero when nothing else is picked. */
-export const DEFAULT_HERO_VARIANT: HeroVariant = "model3d";
+/** Sprint 15: "Genesis" (retro grid + the 360° glowing head) is the primary hero when nothing else is picked. */
+export const DEFAULT_HERO_VARIANT: HeroVariant = "genesis";
 
-export const HERO_VARIANTS: readonly HeroVariant[] = ["cinematic", "split", "gallery", "timeline", "mirror", "confrontation", "interview", "model3d"];
+export const HERO_VARIANTS: readonly HeroVariant[] = ["cinematic", "split", "gallery", "timeline", "mirror", "confrontation", "interview", "model3d", "genesis"];
 export const LUT_PRESETS: readonly LutPreset[] = ["none", "teal-orange", "bleach", "kodak", "noir", "warm", "cool", "vintage"];
 export const ASPECT_RATIOS: readonly AspectRatio[] = ["2.39:1", "16:9", "4:3", "1:1"];
 export const EFFECT_SCOPES: readonly EffectScope[] = ["global", "hero", "sections", "specific"];

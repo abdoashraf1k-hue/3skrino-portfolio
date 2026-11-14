@@ -3,6 +3,7 @@
 import { useState, type ChangeEvent } from "react";
 import ConfrontationSection from "./ConfrontationSection";
 import ExpressionsSection from "./ExpressionsSection";
+import GenesisSection from "./GenesisSection";
 import Hero3DSection from "./Hero3DSection";
 import ReorderList from "@/components/admin/ReorderList";
 import { btn, btnDanger, card, Field, input, micro, Section, Segmented, Slider, TabHeader, Toggle } from "@/components/admin/ui";
@@ -315,6 +316,8 @@ export default function HeroTab({ adminKey, onError, onSuccess }: Props) {
           {poseCard("down")}
         </div>
       </Section>
+
+      <GenesisSection adminKey={adminKey} onError={onError} />
 
       <Hero3DSection adminKey={adminKey} onError={onError} />
 

@@ -4,9 +4,10 @@ import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "r
 import ReorderList from "@/components/admin/ReorderList";
 import { NumberField } from "@/components/admin/fields";
 import { btn, card, Empty, input, micro, Section, Slider, TabHeader, Toggle } from "@/components/admin/ui";
+import OrbitalLogos from "@/components/heroes/genesis/OrbitalLogos";
 import HeroLogos from "@/components/sections/HeroLogos";
 import { brandHref, buildBrands } from "@/data/brands";
-import { LOGO_SIZE, type BrandLogo } from "@/data/hero-config";
+import { LOGO_SIZE, type BrandLogo, type BrandShape } from "@/data/hero-config";
 import { assertLogoFile, uploadHeroAsset } from "@/lib/admin/hero-assets";
 import { useConfigStore } from "../store";
 
@@ -36,6 +37,14 @@ function uniqueId(base: string, taken: Set<string>) {
 }
 
 type Props = { adminKey: string; onError: (m: string) => void };
+
+/** Sprint 15 — the Genesis hero's per-brand frame. */
+const SHAPES: { value: BrandShape | ""; label: string }[] = [
+  { value: "", label: "Plain logo" },
+  { value: "diamond", label: "◆ Diamond" },
+  { value: "circle", label: "● Circle" },
+  { value: "glitch-text", label: "⌁ Glitch text" },
+];
 
 /** The site's hero at desktop size (1440×900), scaled down to fit — logos sit exactly where they will live. */
 const STAGE = { w: 1440, h: 900 };
@@ -68,7 +77,7 @@ function MiniHero({ children, still }: { children: ReactNode; still: string }) {
 }
 
 export default function BrandsTab({ adminKey, onError }: Props) {
-  const { hero, setHero } = useConfigStore();
+  const { hero, setHero, site } = useConfigStore();
   const [busy, setBusy] = useState<Record<string, string>>({});
   const [placing, setPlacing] = useState<string | null>(null);
   if (!hero) return null;
@@ -230,6 +239,19 @@ export default function BrandsTab({ adminKey, onError }: Props) {
                     />
                     px
                   </label>
+                  <select
+                    aria-label={`${logo.name} shape`}
+                    title="Frame in the Genesis hero"
+                    value={logo.shape ?? ""}
+                    onChange={(e) => setLogo(logo.id, { shape: (e.target.value || undefined) as BrandShape | undefined })}
+                    className={`${input} w-auto cursor-pointer`}
+                  >
+                    {SHAPES.map((s) => (
+                      <option key={s.value} value={s.value} className="bg-[#111]">
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
                   <span className="flex gap-1">
                     <button type="button" className={btn} aria-pressed={logo.visible} onClick={() => setLogo(logo.id, { visible: !logo.visible })}>
                       {logo.visible ? "On" : "Off"}
@@ -275,7 +297,21 @@ export default function BrandsTab({ adminKey, onError }: Props) {
         <aside className="min-w-0 xl:sticky xl:top-24 xl:self-start">
           <Section title="Mini hero" hint="the ring as it floats on the site — move your mouse">
             <MiniHero still={hero.poses.ladder[3]?.src ?? "/hero/silhouette-900.webp"}>
-              <HeroLogos logos={shown} reducedMotion={false} scale={hero.logos.scale} linkable={false} />
+              {site?.heroVariant === "genesis" ? (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    ["--g-bg" as string]: hero.genesis.palette.background,
+                    ["--g-glow" as string]: hero.genesis.palette.glow,
+                    ["--g-tint" as string]: hero.genesis.palette.tint,
+                    ["--g-accent" as string]: hero.genesis.palette.accent,
+                  }}
+                >
+                  <OrbitalLogos logos={shown} reducedMotion={false} scale={hero.logos.scale} gravity={hero.genesis.gravity} strength={hero.genesis.gravityStrength} linkable={false} />
+                </div>
+              ) : (
+                <HeroLogos logos={shown} reducedMotion={false} scale={hero.logos.scale} linkable={false} />
+              )}
             </MiniHero>
             {!shown.length && (
               <p className={`${micro} mt-2 text-white/40`}>{hero.logos.enabled ? "No visible logos" : "Floating logos are switched off"}</p>

@@ -16,6 +16,9 @@ export type HeroPose = {
   tags?: string[];
 };
 
+/** Sprint 15 — how a brand renders in the Genesis hero. Missing → the plain logo. */
+export type BrandShape = "diamond" | "circle" | "glitch-text";
+
 export type BrandLogo = {
   id: string;
   name: string;
@@ -32,6 +35,8 @@ export type BrandLogo = {
   angle?: number;
   /** -1 (far) … 1 (near): parallax depth and opacity. Missing → a stable scatter. */
   depth?: number;
+  /** Genesis hero frame: diamond / circle (clip-path), or the name as glitch text. Missing → the plain logo. */
+  shape?: BrandShape;
 };
 
 /** Every state the Confrontation hero can be in. */
@@ -197,6 +202,57 @@ export type Hero3DConfig = {
   postFx: boolean;
 };
 
+/** Sprint 15 — the Genesis hero's procedural GLSL backdrops (admin → Poses → Genesis). */
+export type GenesisBackground = "celestial-nebula" | "neon-ring-field" | "liquid-metal" | "calm-dark";
+
+/**
+ * How the 360° head meets the scene: "hologram" screen-blends it (a black
+ * photo backdrop melts away, highlights glow), "cutout" keeps it solid with a
+ * neon rim traced from its alpha (needs transparent frames).
+ */
+export type GenesisHeadMode = "hologram" | "cutout";
+
+/** Logos drift away from (repel) or toward (attract) the cursor. */
+export type GenesisGravity = "off" | "repel" | "attract";
+
+/** Every colour the Genesis hero paints with — set by hand or from an AI theme prompt. */
+export type GenesisPalette = {
+  /** Page-level base behind everything. */
+  background: string;
+  /** Retro grid lines. */
+  grid: string;
+  /** Head rim glow, watermark neon. */
+  glow: string;
+  /** Main colour of the background shader. */
+  tint: string;
+  /** Second shader colour, horizon haze. */
+  accent: string;
+};
+
+/** "Genesis" — retro grid + the 360° glowing head (Sprint 15). Its frames are model3d.sequenceImages. */
+export type GenesisConfig = {
+  background: GenesisBackground;
+  palette: GenesisPalette;
+  /** The last AI theme prompt (shown back in the admin). */
+  themePrompt: string;
+  /** Logo behind the head; empty → the site name as text. Transparent PNG / SVG / WebP. */
+  watermarkUrl: string;
+  /** 0–1: glitch bursts + chromatic split. */
+  watermarkGlitch: number;
+  /** 0–1. */
+  watermarkOpacity: number;
+  /** Width as a fraction of the stage (0.3–1). */
+  watermarkScale: number;
+  /** Retro grid floor on / off. */
+  grid: boolean;
+  headMode: GenesisHeadMode;
+  /** Slow infinite Ken Burns on the whole hero. */
+  autoCamera: boolean;
+  gravity: GenesisGravity;
+  /** 0–1. */
+  gravityStrength: number;
+};
+
 export type HeroConfig = {
   poses: {
     /** Left → right. The middle entry is the resting (centre) pose. Always 7. */
@@ -216,6 +272,7 @@ export type HeroConfig = {
   confrontation: ConfrontationConfig;
   interview: InterviewConfig;
   model3d: Hero3DConfig;
+  genesis: GenesisConfig;
 };
 
 export const LADDER_SIZE = 7;
@@ -548,5 +605,19 @@ export const heroConfig: HeroConfig = {
     count: 320,
     seed: 1283890489,
     postFx: true,
+  },
+  genesis: {
+    background: "celestial-nebula",
+    palette: { background: "#05040a", grid: "#e7fe55", glow: "#ff2d2d", tint: "#2f6bff", accent: "#ff2bd6" },
+    themePrompt: "",
+    watermarkUrl: "",
+    watermarkGlitch: 0.6,
+    watermarkOpacity: 0.55,
+    watermarkScale: 0.8,
+    grid: true,
+    headMode: "hologram",
+    autoCamera: true,
+    gravity: "repel",
+    gravityStrength: 0.6,
   },
 };

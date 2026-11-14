@@ -10,6 +10,13 @@ import { useConfigStore } from "../store";
 
 const HEROES: { id: HeroVariant; name: string; idea: string; fallback: string; tech: string }[] = [
   {
+    id: "genesis",
+    name: "Genesis",
+    idea: "The primary hero: a retro grid running into a glowing horizon over a live GLSL backdrop (nebula, neon rings, liquid metal or calm dark), your logo glitching behind the 360° glowing head, brand logos orbiting clear of the face and reacting to the cursor. Tune it in Poses → Genesis.",
+    fallback: "No WebGL: CSS gradient, CSS grid and a CSS-glitched watermark. Reduced motion: shaders freeze, no Ken Burns.",
+    tech: "GLSL · R3F · Canvas 2D",
+  },
+  {
     id: "cinematic",
     name: "Cinematic",
     idea: "The silhouette on the neon grid — 9 poses that follow the pointer, prism, bloom, embers.",

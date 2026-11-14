@@ -1,4 +1,19 @@
-import type { ConfrontationConfig, Hero3DConfig, Hero3DTheme, HeroConfig, HeroFeatures, HeroFloatingType, HeroPose, InterviewConfig } from "./hero-config";
+import type {
+  BrandShape,
+  ConfrontationConfig,
+  GenesisBackground,
+  GenesisConfig,
+  GenesisGravity,
+  GenesisHeadMode,
+  GenesisPalette,
+  Hero3DConfig,
+  Hero3DTheme,
+  HeroConfig,
+  HeroFeatures,
+  HeroFloatingType,
+  HeroPose,
+  InterviewConfig,
+} from "./hero-config";
 
 /**
  * Factory settings for the hero — what "Reset" in the admin goes back to.
@@ -201,6 +216,35 @@ export const DEFAULT_MODEL3D: Hero3DConfig = {
   postFx: true,
 };
 
+/** Sprint 15 — the Genesis hero. */
+export const GENESIS_BACKGROUNDS: readonly GenesisBackground[] = ["celestial-nebula", "neon-ring-field", "liquid-metal", "calm-dark"];
+export const GENESIS_GRAVITY: readonly GenesisGravity[] = ["off", "repel", "attract"];
+export const GENESIS_HEAD_MODES: readonly GenesisHeadMode[] = ["hologram", "cutout"];
+export const BRAND_SHAPES: readonly BrandShape[] = ["diamond", "circle", "glitch-text"];
+
+export const DEFAULT_GENESIS_PALETTE: GenesisPalette = {
+  background: "#05040a",
+  grid: "#e7fe55",
+  glow: "#ff2d2d",
+  tint: "#2f6bff",
+  accent: "#ff2bd6",
+};
+
+export const DEFAULT_GENESIS: GenesisConfig = {
+  background: "celestial-nebula",
+  palette: DEFAULT_GENESIS_PALETTE,
+  themePrompt: "",
+  watermarkUrl: "",
+  watermarkGlitch: 0.6,
+  watermarkOpacity: 0.55,
+  watermarkScale: 0.8,
+  grid: true,
+  headMode: "hologram",
+  autoCamera: true,
+  gravity: "repel",
+  gravityStrength: 0.6,
+};
+
 export const DEFAULT_HERO_CONFIG: HeroConfig = {
   poses: { ladder: DEFAULT_LADDER, up: DEFAULT_UP, down: DEFAULT_DOWN },
   expressions: DEFAULT_EXPRESSIONS,
@@ -224,4 +268,5 @@ export const DEFAULT_HERO_CONFIG: HeroConfig = {
   confrontation: DEFAULT_CONFRONTATION,
   interview: DEFAULT_INTERVIEW,
   model3d: DEFAULT_MODEL3D,
+  genesis: DEFAULT_GENESIS,
 };

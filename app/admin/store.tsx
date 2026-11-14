@@ -26,6 +26,7 @@ const HERO_SECTIONS: Record<keyof HeroConfig, string> = {
   confrontation: "confrontation",
   interview: "interview",
   model3d: "3D hero",
+  genesis: "Genesis hero",
 };
 const SITE_SECTIONS: Record<keyof SiteConfig, string> = {
   theme: "theme",

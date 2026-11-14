@@ -2,6 +2,7 @@ import {
   LADDER_SIZE,
   LOGO_SIZE,
   type BrandLogo,
+  type GenesisConfig,
   type ConfrontationConfig,
   type ConfrontState,
   type HeroConfig,
@@ -18,7 +19,12 @@ import {
   DEFAULT_EXPRESSIONS,
   DEFAULT_FEATURES,
   DEFAULT_INTERVIEW,
+  DEFAULT_GENESIS,
   DEFAULT_MODEL3D,
+  BRAND_SHAPES,
+  GENESIS_BACKGROUNDS,
+  GENESIS_GRAVITY,
+  GENESIS_HEAD_MODES,
   HERO3D_FLOATING_TYPES,
   HERO_SEQUENCE_MAX,
 } from "@/data/hero-defaults";
@@ -99,6 +105,7 @@ function logo(v: unknown, i: number): BrandLogo {
     y: optNum(o, "y", what, 0, 100, 0.1),
     angle: optNum(o, "angle", what, -180, 180, 1),
     depth: optNum(o, "depth", what, -1, 1, 0.01),
+    shape: o.shape === undefined || o.shape === null || o.shape === "" ? undefined : oneOf(o, "shape", what, BRAND_SHAPES, "circle"),
   };
 }
 
@@ -248,6 +255,32 @@ function model3d(v: unknown): Hero3DConfig {
   };
 }
 
+/** Sprint 15 — the Genesis hero. Files written before it existed get the defaults. */
+function genesis(v: unknown): GenesisConfig {
+  const d = DEFAULT_GENESIS;
+  if (v === undefined) return d;
+  const o = rec(v, "genesis");
+  const W = "Genesis hero";
+  const p = o.palette === undefined ? null : rec(o.palette, "genesis.palette");
+  const palette = p
+    ? { background: hex(p, "background", W), grid: hex(p, "grid", W), glow: hex(p, "glow", W), tint: hex(p, "tint", W), accent: hex(p, "accent", W) }
+    : d.palette;
+  return {
+    background: oneOf(o, "background", W, GENESIS_BACKGROUNDS, d.background),
+    palette,
+    themePrompt: o.themePrompt === undefined ? "" : text(o, "themePrompt", W, 120, false),
+    watermarkUrl: o.watermarkUrl === undefined ? "" : asset(o, "watermarkUrl", W, false),
+    watermarkGlitch: num(o, "watermarkGlitch", W, 0, 1, 0.01, d.watermarkGlitch),
+    watermarkOpacity: num(o, "watermarkOpacity", W, 0, 1, 0.01, d.watermarkOpacity),
+    watermarkScale: num(o, "watermarkScale", W, 0.3, 1, 0.01, d.watermarkScale),
+    grid: bool(o, "grid", W, d.grid),
+    headMode: oneOf(o, "headMode", W, GENESIS_HEAD_MODES, d.headMode),
+    autoCamera: bool(o, "autoCamera", W, d.autoCamera),
+    gravity: oneOf(o, "gravity", W, GENESIS_GRAVITY, d.gravity),
+    gravityStrength: num(o, "gravityStrength", W, 0, 1, 0.01, d.gravityStrength),
+  };
+}
+
 /** Validates an unknown value into a HeroConfig. Throws ProjectsFileError (400). */
 export function validateHeroConfig(input: unknown): HeroConfig {
   const o = rec(input, "Hero config");
@@ -322,6 +355,7 @@ export function validateHeroConfig(input: unknown): HeroConfig {
     confrontation: confrontation(o.confrontation, idSet),
     interview: interview(o.interview, idSet),
     model3d: model3d(o.model3d),
+    genesis: genesis(o.genesis),
   };
 }
 

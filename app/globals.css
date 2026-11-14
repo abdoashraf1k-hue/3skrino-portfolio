@@ -512,3 +512,70 @@ html[data-rack-focus] :focus-visible {
     scale: none;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Sprint 15 — Genesis hero                                            */
+/* ------------------------------------------------------------------ */
+
+/* Brand frames (OrbitalLogos). The glow sits on the parent: clip-path would clip a box-shadow. */
+.genesis-diamond {
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.genesis-shape-glow {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--g-glow) 60%, transparent));
+}
+
+/* Glitch text: two clipped RGB copies jolting on a stepped clock. */
+.genesis-glitch {
+  position: relative;
+  color: var(--g-fg, #f5f5f5);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--g-glow) 70%, transparent);
+}
+.genesis-glitch::before,
+.genesis-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.genesis-glitch::before {
+  color: var(--g-glow);
+  mix-blend-mode: screen;
+  animation: genesis-glitch-a 2.6s steps(1, end) infinite;
+}
+.genesis-glitch::after {
+  color: var(--g-tint);
+  mix-blend-mode: screen;
+  animation: genesis-glitch-b 3.1s steps(1, end) infinite;
+}
+@keyframes genesis-glitch-a {
+  0%, 86%, 100% { transform: translate(0); clip-path: inset(0 0 0 0); opacity: 0.55; }
+  88% { transform: translate(-3px, -1px); clip-path: inset(10% 0 55% 0); opacity: 1; }
+  91% { transform: translate(4px, 1px); clip-path: inset(60% 0 8% 0); }
+  94% { transform: translate(-2px, 0); clip-path: inset(30% 0 35% 0); }
+}
+@keyframes genesis-glitch-b {
+  0%, 80%, 100% { transform: translate(0); clip-path: inset(0 0 0 0); opacity: 0.5; }
+  83% { transform: translate(3px, 1px); clip-path: inset(50% 0 20% 0); opacity: 1; }
+  87% { transform: translate(-4px, -1px); clip-path: inset(5% 0 70% 0); }
+}
+
+/* Watermark without WebGL: the same idea in CSS — RGB split + jolts + neon. */
+.genesis-mark-css {
+  filter: drop-shadow(0 0 6px var(--g-glow)) drop-shadow(0 0 22px color-mix(in srgb, var(--g-glow) 55%, transparent));
+  animation: genesis-mark-jolt 4.2s steps(1, end) infinite;
+}
+@keyframes genesis-mark-jolt {
+  0%, 92%, 100% { transform: translate(0); clip-path: inset(0); }
+  93% { transform: translate(-6px, 0); clip-path: inset(20% 0 45% 0); }
+  95% { transform: translate(5px, 0); clip-path: inset(55% 0 10% 0); }
+  97% { transform: translate(-2px, 0); clip-path: inset(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .genesis-glitch::before,
+  .genesis-glitch::after,
+  .genesis-mark-css {
+    animation: none;
+  }
+}
