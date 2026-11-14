@@ -626,7 +626,22 @@ export const heroConfig: HeroConfig = {
     waveform: true,
   },
   model3d: {
-    sequenceImages: [],
+    sequenceImages: [
+      {
+        url: "https://3skrino-portfolio.vercel.app/media/hero/1794699109273-uzoe3nq7luwt.png",
+        angle: -168.9,
+      },
+      {
+        url: "https://3skrino-portfolio.vercel.app/media/hero/1794699109268-lyt5n5kl0pwe.png",
+        angle: -123.9,
+      },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794699109396-1mok4xfahpp0.png", angle: -78.9 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794699110052-p7zjxdleh1kq.png", angle: -0.6 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794699109226-g10zsum05lo2.png", angle: 25.6 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794699110212-e8qmu30s2cme.png", angle: 29.3 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794699110287-6v8hy7hykj73.png", angle: 56.1 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794699108569-xgai6jc758bd.png", angle: 101.1 },
+    ],
     theme: { primary: "#e7fe55", secondary: "#ff2d2d", background: "#0a0a0a" },
     floatingType: "fish",
     rotateSpeed: 0.5,
