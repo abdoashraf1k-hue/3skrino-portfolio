@@ -644,7 +644,7 @@ export const heroConfig: HeroConfig = {
     themePrompt: "Blood Moon",
     watermarkUrl: "https://3skrino-portfolio.vercel.app/media/site/1794684869125-2953j4w812j8.png",
     watermarkGlitch: 0.6,
-    watermarkOpacity: 0.55,
+    watermarkOpacity: 1,
     watermarkScale: 1,
     grid: true,
     headMode: "hologram",
