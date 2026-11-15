@@ -143,8 +143,11 @@ export default function GenesisHero() {
   // Frames that loaded without CORS can't be sampled by WebGL: those keep the CSS hologram.
   const glHead = hologram && scene && ready && sequence.ready && sequence.webgl;
   const holoSettings = useMemo(
-    () => (hologram ? { fresnel: g.holoFresnel, scanlines: g.holoScanlines, aberration: g.holoAberration, grain: g.holoGrain } : null),
-    [hologram, g.holoFresnel, g.holoScanlines, g.holoAberration, g.holoGrain],
+    () =>
+      hologram
+        ? { fresnel: g.holoFresnel, scanlines: g.holoScanlines, aberration: g.holoAberration, grain: g.holoGrain, scale: g.characterScale }
+        : null,
+    [hologram, g.holoFresnel, g.holoScanlines, g.holoAberration, g.holoGrain, g.characterScale],
   );
   const onContextLost = useCallback(() => setFailed(true), []);
 
@@ -233,6 +236,7 @@ export default function GenesisHero() {
             calibrationOffset={g.calibrationOffset}
             turnRange={g.turnRange}
             turnWeight={g.turnWeight}
+            characterScale={g.characterScale}
             matteBackdrop
             hideCanvas={glHead}
             onReadyChange={setSequence}

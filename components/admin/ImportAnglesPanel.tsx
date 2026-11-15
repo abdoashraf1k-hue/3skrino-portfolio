@@ -5,27 +5,42 @@ import { btn, btnDanger, btnPrimary, input, micro } from "@/components/admin/ui"
 import type { SequenceFrame } from "@/data/hero-config";
 import { HERO_SEQUENCE_MAX } from "@/data/hero-defaults";
 import { assertSiteImage, uploadHeroAsset } from "@/lib/admin/hero-assets";
+import { detectAngle } from "@/lib/ai/angle-detector";
 import { matteBlackBackdrop } from "@/lib/backdrop-matte";
 
 /**
  * Import & Map — the recommended way to build the 360° turn: generate each
  * angle outside (Midjourney, Stable Diffusion …) from the centre pose, drop
- * the files here, type each one's exact yaw, and upload. The frames go to
- * the media bucket through the same presigned PUT as every hero asset, merge
- * into the sequence (an angle already there is overwritten) and come out
- * sorted from -180° to +180°. The hero places frames by these numbers and
- * cross-fades linearly between the two around the cursor's angle.
+ * the files here and upload. Each file's yaw is detected in the browser the
+ * moment it lands (the same face-pose model as the AI engine — nothing is
+ * uploaded to find it); the admin only types an angle when no face is found
+ * (the back of the head) or to correct one. A file within ±3° of a frame the
+ * sequence already has is flagged and skipped unless "Replace existing" is
+ * ticked. The frames go to the media bucket through the same presigned PUT as
+ * every hero asset, merge into the sequence and come out sorted -180° → +180°.
+ * The hero cross-fades linearly between the two frames around the cursor.
  *
  * The Angle Guide above it lists the angles still missing for an even turn.
  */
 
 const UPLOAD_CONCURRENCY = 4;
-/** Two frames this close (degrees) are the same angle: the import replaces the old one. */
-const SAME_ANGLE = 0.5;
+/** Two frames this close (degrees) are the same angle: an import there replaces the old one (when allowed). */
+const SAME_ANGLE = 3;
 const STEPS = [15, 20] as const;
 type Step = (typeof STEPS)[number];
 
-type Pending = { id: string; file: File; preview: string; angle: string };
+type Detect = "detecting" | "face" | "noface";
+type Pending = {
+  id: string;
+  file: File;
+  preview: string;
+  angle: string;
+  detect: Detect;
+  /** The admin typed the angle: detection never overwrites it. */
+  edited: boolean;
+  /** Overwrite the existing frame within ±3° (otherwise this file is skipped). */
+  replace: boolean;
+};
 
 const fmt = (v: number) => `${v > 0 ? "+" : ""}${Math.round(v * 10) / 10}°`;
 /** -180 and +180 are the same view. */
@@ -48,7 +63,7 @@ function parseAngle(raw: string): number | null {
   return Number.isFinite(v) && v >= -180 && v <= 180 ? Math.round(v * 10) / 10 : null;
 }
 
-/** A yaw named in the filename ("yaw-45.png", "angle_+30", "90deg", "-15.png") — a pre-fill the admin checks, never trusted blindly. */
+/** A yaw named in the filename ("yaw-45.png", "angle_+30", "90deg", "-15.png") — the fallback when no face is found. */
 function angleFromName(name: string): string {
   const base = name.replace(/\.[a-z0-9]+$/i, "");
   const m =
@@ -70,7 +85,7 @@ async function matteFile(file: File): Promise<Blob> {
   }
 }
 
-/** New frames over old: same angle → the new one wins. Sorted -180 → +180. */
+/** New frames over old: an existing frame within ±3° of a new one is replaced. Sorted -180 → +180. */
 export function mergeFrames(current: SequenceFrame[], incoming: SequenceFrame[]): SequenceFrame[] {
   const kept = current.filter((f) => !incoming.some((n) => dist(n.angle, f.angle) < SAME_ANGLE));
   return [...kept, ...incoming].sort((a, b) => a.angle - b.angle);
@@ -94,6 +109,8 @@ export default function ImportAnglesPanel({ frames, setFrames, adminKey, onError
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [done, setDone] = useState<string | null>(null);
   const urls = useRef(new Set<string>());
+  // Detection runs one image at a time (the pose model is heavy); cards fill in order.
+  const detectQueue = useRef<Promise<void>>(Promise.resolve());
   useEffect(() => {
     const live = urls.current;
     return () => live.forEach((u) => URL.revokeObjectURL(u));
@@ -139,9 +156,34 @@ export default function ImportAnglesPanel({ frames, setFrames, adminKey, onError
       }
       const preview = URL.createObjectURL(file);
       urls.current.add(preview);
-      ok.push({ id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2, 7)}`, file, preview, angle: angleFromName(file.name) });
+      ok.push({
+        id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2, 7)}`,
+        file,
+        preview,
+        angle: "",
+        detect: "detecting",
+        edited: false,
+        replace: false,
+      });
     }
     setPending((p) => [...p, ...ok]);
+    for (const item of ok) {
+      detectQueue.current = detectQueue.current.then(async () => {
+        let yaw: number | null = null;
+        try {
+          yaw = (await detectAngle(item.file))?.yaw ?? null;
+        } catch {
+          yaw = null; // the model failed to load: treated like no face — the admin types it
+        }
+        setPending((all) =>
+          all.map((x) => {
+            if (x.id !== item.id) return x;
+            const angle = x.edited ? x.angle : yaw !== null ? String(wrap(Math.round(yaw))) : angleFromName(x.file.name);
+            return { ...x, angle, detect: yaw !== null ? "face" : "noface" };
+          }),
+        );
+      });
+    }
   };
   const remove = (id: string) =>
     setPending((p) => {
@@ -153,7 +195,7 @@ export default function ImportAnglesPanel({ frames, setFrames, adminKey, onError
       return p.filter((x) => x.id !== id);
     });
   const setAngle = (id: string, angle: string) => {
-    setPending((p) => p.map((x) => (x.id === id ? { ...x, angle } : x)));
+    setPending((p) => p.map((x) => (x.id === id ? { ...x, angle, edited: true } : x)));
     setErrors((e) => {
       if (!e[id]) return e;
       const next = { ...e };
@@ -161,6 +203,14 @@ export default function ImportAnglesPanel({ frames, setFrames, adminKey, onError
       return next;
     });
   };
+  const setReplace = (id: string, replace: boolean) => setPending((p) => p.map((x) => (x.id === id ? { ...x, replace } : x)));
+  /** The existing frame this angle would overwrite (within ±3°), if any. */
+  const clashWith = (raw: string) => {
+    const v = parseAngle(raw);
+    return v === null ? null : (frames.find((f) => dist(f.angle, wrap(v)) < SAME_ANGLE) ?? null);
+  };
+  const detecting = pending.filter((p) => p.detect === "detecting").length;
+  const skipped = pending.filter((p) => !p.replace && clashWith(p.angle)).length;
   const clearAll = () => {
     pending.forEach((p) => {
       URL.revokeObjectURL(p.preview);
@@ -170,40 +220,44 @@ export default function ImportAnglesPanel({ frames, setFrames, adminKey, onError
     setErrors({});
   };
 
-  /** Validates every angle, then uploads, merges and sorts. Nothing changes unless every file made it. */
+  /** Validates the angles, then uploads, merges and sorts. Nothing changes unless every file made it. */
   const confirm = async () => {
+    if (detecting) return onError(`Still detecting ${detecting} angle${detecting === 1 ? "" : "s"} — a moment`);
+    // Duplicates the admin didn't choose to replace are skipped, not uploaded.
+    const queue = pending.filter((p) => p.replace || !clashWith(p.angle));
+    if (!queue.length) return onError("Every image matches an existing angle — tick “Replace existing” on the ones to overwrite");
     const errs: Record<string, string> = {};
     const seen = new Map<number, string>();
-    for (const p of pending) {
+    for (const p of queue) {
       const v = parseAngle(p.angle);
-      if (p.angle.trim() === "") errs[p.id] = "Angle required";
+      if (p.angle.trim() === "") errs[p.id] = "No face found — type this angle";
       else if (v === null) errs[p.id] = "Enter a number from -180 to 180";
       else {
         const key = wrap(v);
         const dup = [...seen.entries()].find(([a]) => dist(a, key) < SAME_ANGLE);
-        if (dup) errs[p.id] = `Same angle as ${pending.find((x) => x.id === dup[1])?.file.name ?? "another file"}`;
+        if (dup) errs[p.id] = `Within ±${SAME_ANGLE}° of ${pending.find((x) => x.id === dup[1])?.file.name ?? "another file"} — remove one`;
         else seen.set(key, p.id);
       }
     }
     setErrors(errs);
     const bad = Object.keys(errs).length;
-    if (bad) return onError(`${bad} image${bad === 1 ? " needs" : "s need"} a valid angle (-180 to 180) — nothing was uploaded`);
+    if (bad) return onError(`${bad} image${bad === 1 ? " needs" : "s need"} an angle (-180 to 180) — nothing was uploaded`);
     const projected = mergeFrames(
       frames,
-      pending.map((p) => ({ url: p.id, angle: parseAngle(p.angle) as number })),
+      queue.map((p) => ({ url: p.id, angle: parseAngle(p.angle) as number })),
     ).length;
     if (projected > HERO_SEQUENCE_MAX) return onError(`At most ${HERO_SEQUENCE_MAX} frames — this import would make ${projected}`);
 
     const stamp = Date.now().toString(36);
-    const out: (SequenceFrame | null)[] = new Array(pending.length).fill(null);
+    const out: (SequenceFrame | null)[] = new Array(queue.length).fill(null);
     let next = 0;
     let count = 0;
     let failed = 0;
-    setBusy(`Uploading 0/${pending.length}`);
+    setBusy(`Uploading 0/${queue.length}`);
     const worker = async () => {
-      while (next < pending.length) {
+      while (next < queue.length) {
         const i = next++;
-        const p = pending[i];
+        const p = queue[i];
         const angle = wrap(parseAngle(p.angle) as number);
         try {
           const blob = matte ? await matteFile(p.file) : p.file;
@@ -215,17 +269,22 @@ export default function ImportAnglesPanel({ frames, setFrames, adminKey, onError
           setErrors((e) => ({ ...e, [p.id]: err instanceof Error ? err.message : "upload failed" }));
           onError(`${p.file.name}: ${err instanceof Error ? err.message : "upload failed"}`);
         }
-        setBusy(`Uploading ${++count}/${pending.length}`);
+        setBusy(`Uploading ${++count}/${queue.length}`);
       }
     };
-    await Promise.all(Array.from({ length: Math.min(UPLOAD_CONCURRENCY, pending.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(UPLOAD_CONCURRENCY, queue.length) }, worker));
     setBusy(null);
     if (failed) return onError(`${failed} upload${failed === 1 ? "" : "s"} failed — the sequence wasn't changed. Fix and press Confirm again.`);
     const incoming = out.filter((f): f is SequenceFrame => f !== null);
     const replaced = incoming.filter((n) => frames.some((f) => dist(f.angle, n.angle) < SAME_ANGLE)).length;
+    const skippedNow = pending.length - queue.length;
     setFrames((cur) => mergeFrames(cur, incoming));
     clearAll();
-    setDone(`${incoming.length} angle${incoming.length === 1 ? "" : "s"} imported${replaced ? ` · ${replaced} replaced` : ""} — save to publish`);
+    setDone(
+      `${incoming.length} angle${incoming.length === 1 ? "" : "s"} imported${replaced ? ` · ${replaced} replaced` : ""}${
+        skippedNow ? ` · ${skippedNow} duplicate${skippedNow === 1 ? "" : "s"} skipped` : ""
+      } — save to publish`,
+    );
   };
 
   const onPick = (e: ChangeEvent<HTMLInputElement>) => {
@@ -243,7 +302,7 @@ export default function ImportAnglesPanel({ frames, setFrames, adminKey, onError
     <div className="border border-[#e7fe55]/25 bg-[#e7fe55]/[0.03] p-4">
       <div className={`${micro} mb-3 flex flex-wrap items-center justify-between gap-2`}>
         <span className="text-[#e7fe55]">Import custom angles · recommended</span>
-        <span className="text-white/35">generate outside from your centre pose · map each file to its exact yaw</span>
+        <span className="text-white/35">generate outside from your centre pose · angles are detected for you</span>
       </div>
 
       {/* ---------------- Angle Guide ---------------- */}
@@ -320,7 +379,7 @@ export default function ImportAnglesPanel({ frames, setFrames, adminKey, onError
         } ${busy ? "pointer-events-none opacity-60" : ""}`}
       >
         <span className="text-sm text-white/85">{busy ?? "Drop custom angle images, or click to pick"}</span>
-        <span className={`${micro} text-white/40`}>several at once · a yaw in the filename (yaw-45.png, 30deg.png) pre-fills the angle</span>
+        <span className={`${micro} text-white/40`}>several at once · each angle is detected automatically in your browser</span>
         <input type="file" multiple accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={onPick} disabled={Boolean(busy)} />
       </label>
 
@@ -329,35 +388,74 @@ export default function ImportAnglesPanel({ frames, setFrames, adminKey, onError
           <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {pending.map((p) => {
               const v = parseAngle(p.angle);
-              const clash = v !== null && frames.some((f) => dist(f.angle, wrap(v)) < SAME_ANGLE);
+              const clash = clashWith(p.angle);
+              const skip = Boolean(clash) && !p.replace;
+              const needsTyping = p.detect === "noface" && !p.angle;
+              const tone = errors[p.id]
+                ? "border-[#ff2d2d]/60"
+                : clash
+                  ? "border-[#ff8a1f] shadow-[0_0_0_1px_rgba(255,138,31,0.35)]"
+                  : needsTyping
+                    ? "border-[#ffb54d]/50"
+                    : "border-white/10";
               return (
-                <li key={p.id} className={`border p-2 ${errors[p.id] ? "border-[#ff2d2d]/60" : "border-white/10"} bg-black/30`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- local blob previews */}
-                  <img src={p.preview} alt="" className="mb-2 aspect-square w-full bg-black object-contain" />
+                <li key={p.id} className={`border bg-black/30 p-2 transition-colors ${tone}`}>
+                  <div className="relative mb-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- local blob previews */}
+                    <img src={p.preview} alt="" className={`aspect-square w-full bg-black object-contain transition-opacity ${skip ? "opacity-40" : ""}`} />
+                    {p.detect === "detecting" ? (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60" role="status">
+                        <span className="size-5 animate-spin rounded-full border-2 border-white/20 border-t-[#e7fe55]" aria-hidden />
+                        <span className={`${micro} text-white/80`}>Detecting angle…</span>
+                      </div>
+                    ) : v !== null ? (
+                      <span className={`absolute left-1.5 top-1.5 px-1.5 py-0.5 font-mono text-xs font-bold text-black ${clash ? "bg-[#ff8a1f]" : "bg-[#e7fe55]"}`}>
+                        {fmt(wrap(v))}
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="mb-1 truncate font-mono text-[10px] text-white/45" title={p.file.name}>
                     {p.file.name}
                   </p>
-                  <label className={`${micro} block text-white/55`}>
-                    Angle (yaw) *
+                  <p className={`${micro} mb-1 ${needsTyping ? "text-[#ffcf8a]" : "text-white/40"}`}>
+                    {p.detect === "detecting"
+                      ? "reading the head pose…"
+                      : p.edited
+                        ? "angle set by hand"
+                        : p.detect === "face"
+                          ? "✓ detected from the face"
+                          : p.angle
+                            ? "no face · angle from the filename"
+                            : "no face found — type the angle"}
+                  </p>
+                  <label className={`${micro} flex items-center gap-2 text-white/45`}>
+                    <span className="shrink-0">Yaw</span>
                     <input
                       type="number"
                       inputMode="decimal"
                       min={-180}
                       max={180}
-                      step={0.5}
-                      required
+                      step={1}
                       value={p.angle}
-                      placeholder="-180 … 180"
+                      placeholder={p.detect === "detecting" ? "…" : "-180 … 180"}
                       onChange={(e) => setAngle(p.id, e.target.value)}
                       aria-invalid={Boolean(errors[p.id])}
-                      className={`${input} mt-1 font-mono`}
+                      aria-label={`Angle (yaw) for ${p.file.name}`}
+                      className={`${input} py-1 font-mono text-xs`}
                       disabled={Boolean(busy)}
                     />
                   </label>
                   {errors[p.id] ? (
                     <p className="mt-1 text-[11px] text-[#ff6b6b]">{errors[p.id]}</p>
                   ) : clash ? (
-                    <p className="mt-1 text-[11px] text-[#ffcf8a]">Replaces the existing {fmt(wrap(v))} frame</p>
+                    <div className="mt-2 border border-[#ff8a1f]/50 bg-[#ff8a1f]/10 p-1.5">
+                      <p className="text-[11px] text-[#ffb46b]">Angle already exists ({fmt(clash.angle)}). Overwrite?</p>
+                      <label className={`${micro} mt-1 flex cursor-pointer items-center gap-1.5 text-[#ffb46b]`}>
+                        <input type="checkbox" checked={p.replace} onChange={(e) => setReplace(p.id, e.target.checked)} disabled={Boolean(busy)} />
+                        Replace existing
+                      </label>
+                      {skip && <p className={`${micro} mt-1 text-white/35`}>will be skipped</p>}
+                    </div>
                   ) : null}
                   <button type="button" className={`${btnDanger} mt-2 w-full`} onClick={() => remove(p.id)} disabled={Boolean(busy)}>
                     Remove
@@ -367,12 +465,13 @@ export default function ImportAnglesPanel({ frames, setFrames, adminKey, onError
             })}
           </ul>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <button type="button" className={btnPrimary} onClick={() => void confirm()} disabled={Boolean(busy)}>
-              {busy ?? `Confirm & upload ${pending.length}`}
+            <button type="button" className={btnPrimary} onClick={() => void confirm()} disabled={Boolean(busy) || detecting > 0}>
+              {busy ?? (detecting ? `Detecting ${detecting}…` : `Confirm & upload ${pending.length - skipped}`)}
             </button>
             <button type="button" className={btn} onClick={clearAll} disabled={Boolean(busy)}>
               Clear
             </button>
+            {skipped > 0 && <span className={`${micro} text-[#ffb46b]`}>{skipped} duplicate{skipped === 1 ? "" : "s"} will be skipped</span>}
             <label className={`${micro} flex items-center gap-2 text-white/55`}>
               <input type="checkbox" checked={matte} onChange={(e) => setMatte(e.target.checked)} disabled={Boolean(busy)} />
               Matte black backdrop on upload

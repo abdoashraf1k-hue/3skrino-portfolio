@@ -294,6 +294,7 @@ function genesis(v: unknown): GenesisConfig {
     calibrationOffset: num(o, "calibrationOffset", W, -CALIBRATION_RANGE, CALIBRATION_RANGE, 0.5, d.calibrationOffset),
     turnRange: num(o, "turnRange", W, TURN_RANGE.min, TURN_RANGE.max, 1, d.turnRange),
     turnWeight: num(o, "turnWeight", W, TURN_WEIGHT.min, TURN_WEIGHT.max, 1, d.turnWeight),
+    characterScale: num(o, "characterScale", W, 0.5, 1.5, 0.01, d.characterScale),
     autoCamera: bool(o, "autoCamera", W, d.autoCamera),
     gravity: oneOf(o, "gravity", W, GENESIS_GRAVITY, d.gravity),
     gravityStrength: num(o, "gravityStrength", W, 0, 1, 0.01, d.gravityStrength),

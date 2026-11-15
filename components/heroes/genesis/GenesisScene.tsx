@@ -379,7 +379,8 @@ function Watermark({ url, text, glitch, glow, speed, opacity, scale, colors, clo
 /* 4. Hologram head (Sprint 15.5)                                      */
 /* ------------------------------------------------------------------ */
 
-export type HologramSettings = { fresnel: number; scanlines: number; aberration: number; grain: number };
+/** `scale`: the admin's Character Scale (0.5–1.5), about the face pivot — matches ImageSequenceHero's canvas. */
+export type HologramSettings = { fresnel: number; scanlines: number; aberration: number; grain: number; scale: number };
 
 /**
  * The 360° frame on screen, drawn as a tilted plane through the hologram
@@ -523,11 +524,16 @@ function Hologram({
     // The portrait box (y up), and the frame fitted inside it like the Canvas 2D draws it.
     const boxH = H * PORTRAIT.height;
     const boxY = H * (1 - PORTRAIT.top - PORTRAIT.height);
+    // Character Scale: the fitted frame grows / shrinks about the face pivot (the same point the tilt turns on).
+    const sc = settings.scale;
     const k = Math.min(W / fw, boxH / fh);
     const w = fw * k;
     const h = fh * k;
-    (u.uRect.value as THREE.Vector4).set((W - w) / 2, boxY + (boxH - h) / 2, w, h);
-    (u.uPivot.value as THREE.Vector2).set(W / 2, boxY + boxH * (1 - PORTRAIT.pivotFromTop));
+    const pivotY = boxY + boxH * (1 - PORTRAIT.pivotFromTop);
+    const x0 = W / 2 + ((W - w) / 2 - W / 2) * sc;
+    const y0 = pivotY + (boxY + (boxH - h) / 2 - pivotY) * sc;
+    (u.uRect.value as THREE.Vector4).set(x0, y0, w * sc, h * sc);
+    (u.uPivot.value as THREE.Vector2).set(W / 2, pivotY);
     (u.uRes.value as THREE.Vector2).set(W, H);
     (u.uTexel.value as THREE.Vector2).set(1 / fw, 1 / fh);
     (u.uTilt.value as THREE.Vector2).set(heroSpin.tiltX, heroSpin.tiltY);

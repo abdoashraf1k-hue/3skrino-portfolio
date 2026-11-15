@@ -303,6 +303,18 @@ export default function GenesisSection({ adminKey, onError }: { adminKey: string
               hologram: a GLSL projection of every frame — Fresnel rim, scanlines, RGB split, grain; black photo backdrops drop out · cutout: solid head + neon rim
               (needs transparent PNG / WebP frames)
             </p>
+            <div className="mt-3">
+              <Slider
+                label="Character Scale"
+                hint="shrink the head to give the logos and grid room · scales about the face"
+                min={0.5}
+                max={1.5}
+                step={0.01}
+                format={(v) => `${Math.round(v * 100)}%`}
+                value={g.characterScale}
+                onChange={(characterScale) => set({ characterScale })}
+              />
+            </div>
             {g.headMode === "hologram" && (
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <Slider label="Fresnel rim" hint="edge glow" value={g.holoFresnel} onChange={(holoFresnel) => set({ holoFresnel })} />

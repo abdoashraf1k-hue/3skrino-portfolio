@@ -262,6 +262,8 @@ type Props = {
   turnRange?: number;
   /** Sprint 15.6: spring stiffness — lower is heavier (20–120, default 50). */
   turnWeight?: number;
+  /** Sprint 16: size of the character in its box (0.5–1.5, default 1), scaled about the face (FACE_Y). */
+  characterScale?: number;
   /** Sprint 15.5: make a black photo backdrop transparent at load (connectivity matte — see lib/backdrop-matte). */
   matteBackdrop?: boolean;
   /** Keep drawing, but don't show the canvas: a WebGL pass (the Genesis hologram) samples and draws it instead. */
@@ -282,6 +284,7 @@ export default function ImageSequenceHero({
   calibrationOffset = 0,
   turnRange = DEFAULT_RANGE,
   turnWeight = DEFAULT_STIFFNESS,
+  characterScale = 1,
   hideCanvas = false,
   matteBackdrop = false,
   onReadyChange,
@@ -306,6 +309,13 @@ export default function ImageSequenceHero({
     hiddenRef.current = hideCanvas;
     if (!hideCanvas) redraw.current?.();
   }, [hideCanvas]);
+  // Character Scale: read by draw() without re-binding; a change repaints at once.
+  const scale = Math.min(1.5, Math.max(0.5, characterScale));
+  const scaleRef = useRef(scale);
+  useEffect(() => {
+    scaleRef.current = scale;
+    redraw.current?.();
+  }, [scale]);
 
   // Live calibration: the pointer handler and the spring read the latest values without re-binding (or reloading frames).
   const tuning = useRef({ offset: calibrationOffset, range: turnRange, stiffness: turnWeight });
@@ -378,6 +388,10 @@ export default function ImageSequenceHero({
       ctx.clearRect(0, 0, cw, ch);
       // Exact linear cross-fade, also for frames with transparent backdrops:
       // A·(1−t), then B·t added with "lighter" (premultiplied sum, no ghost edges).
+      // Fitted into the box, then scaled about the face (cw/2, ch·FACE_Y) by the Character Scale.
+      const sc = scaleRef.current;
+      const px = cw / 2;
+      const py = ch * FACE_Y;
       const paint = (f: Frame, alpha: number, op: GlobalCompositeOperation) => {
         if (alpha <= 0.001) return;
         const s = Math.min(cw / f.width, ch / f.height);
@@ -385,7 +399,7 @@ export default function ImageSequenceHero({
         const h = f.height * s;
         ctx.globalAlpha = alpha;
         ctx.globalCompositeOperation = op;
-        ctx.drawImage(f, (cw - w) / 2, (ch - h) / 2, w, h);
+        ctx.drawImage(f, px + ((cw - w) / 2 - px) * sc, py + ((ch - h) / 2 - py) * sc, w * sc, h * sc);
       };
       if (next.a === next.b || next.t <= 0.001) paint(frames[next.a], 1, "source-over");
       else if (next.t >= 0.999) paint(frames[next.b], 1, "source-over");
@@ -550,7 +564,8 @@ export default function ImageSequenceHero({
             alt=""
             aria-hidden
             draggable={false}
-            className={cn("absolute inset-0 size-full object-contain transition-opacity duration-700", ready ? "opacity-0" : "opacity-100")}
+            className={cn("absolute inset-0 size-full origin-[50%_42%] object-contain transition-opacity duration-700", ready ? "opacity-0" : "opacity-100")}
+            style={scale === 1 ? undefined : { transform: `scale(${scale})` }}
           />
           {total > 0 && (
             <canvas

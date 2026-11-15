@@ -267,6 +267,8 @@ export type GenesisConfig = {
   turnRange: number;
   /** Sprint 15.6: spring stiffness of the turn (20–120) — lower is heavier and slower; damping keeps it overshoot-free. */
   turnWeight: number;
+  /** Size of the 360° character in the hero (0.5–1.5, 1 = fills the portrait box), scaled about the face. */
+  characterScale: number;
   /** Slow infinite Ken Burns on the whole hero. */
   autoCamera: boolean;
   gravity: GenesisGravity;
@@ -677,6 +679,7 @@ export const heroConfig: HeroConfig = {
     calibrationOffset: 0,
     turnRange: 90,
     turnWeight: 50,
+    characterScale: 1,
     autoCamera: true,
     gravity: "repel",
     gravityStrength: 0.75,

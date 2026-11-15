@@ -255,6 +255,7 @@ export const DEFAULT_GENESIS: GenesisConfig = {
   calibrationOffset: 0,
   turnRange: 90,
   turnWeight: 50,
+  characterScale: 1,
   autoCamera: true,
   gravity: "repel",
   gravityStrength: 0.6,
