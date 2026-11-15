@@ -312,10 +312,10 @@ export const siteConfig: SiteConfig = {
       hover: { scale: 1, color: "accent", glow: false },
     },
     sound: {
-      enabled: false,
+      enabled: true,
       volume: 70,
       sounds: {
-        hover: { enabled: true, volume: 35, src: "" },
+        hover: { enabled: true, volume: 61, src: "" },
         click: { enabled: true, volume: 60, src: "" },
         transition: { enabled: true, volume: 60, src: "" },
         notification: { enabled: true, volume: 60, src: "" },
