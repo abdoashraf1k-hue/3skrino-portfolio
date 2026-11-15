@@ -1,0 +1,687 @@
+/**
+ * Hero settings — edited from /admin?tab=hero, which rewrites ONLY the
+ * `heroConfig` object literal below (types and comments are kept verbatim).
+ */
+
+export type HeroPose = {
+  id: string;
+  label: string;
+  /** Local path (/hero/...) or an https URL (Vercel Blob). Square, transparent, same framing as the others. */
+  src: string;
+  /** Rim-light tint this pose pulls toward (reactive lighting). */
+  tint: string;
+  /** Manual nudge in UV units (x, y), added on top of auto-alignment. */
+  offset?: [number, number];
+  /** Free-form labels ("smile", "talking"…) the poses manager filters by. */
+  tags?: string[];
+};
+
+/** Sprint 15 — how a brand renders in the Genesis hero. Missing → the plain logo. */
+export type BrandShape = "diamond" | "circle" | "glitch-text";
+
+export type BrandLogo = {
+  id: string;
+  name: string;
+  imageUrl: string;
+  /** Kept for reference only — clicks never navigate. */
+  href?: string;
+  /** Rendered size in px (20–600). */
+  size?: number;
+  visible: boolean;
+  /** Manual placement, % of the stage (0–100). Missing → the automatic two-arc slot. */
+  x?: number;
+  y?: number;
+  /** Rotation in degrees (-180…180). */
+  angle?: number;
+  /** -1 (far) … 1 (near): parallax depth and opacity. Missing → a stable scatter. */
+  depth?: number;
+  /** Genesis hero frame: diamond / circle (clip-path), or the name as glitch text. Missing → the plain logo. */
+  shape?: BrandShape;
+};
+
+/** Every state the Confrontation hero can be in. */
+export type ConfrontState = "idle" | "eyeContact" | "smile" | "surprise" | "turnAway" | "scoff";
+
+export type ConfrontationConfig = {
+  behaviors: {
+    /** Head follows the pointer across the pose ladder. */
+    tracking: boolean;
+    eyeContact: boolean;
+    smile: boolean;
+    surprise: boolean;
+    turnAway: boolean;
+    scoff: boolean;
+    breathing: boolean;
+    /** A glossy highlight inside the lenses that slides toward the cursor. */
+    eyeGlint: boolean;
+    /** A tiny synthesised gasp on click (needs the site's sound switched on). */
+    gaspSound: boolean;
+    /** Typographic overlays (sparkle, "!", "ha") composited over the expression poses. */
+    overlays: boolean;
+  };
+  /** Pose id per state (+ the still shown on phones / reduced motion) — any ladder, up / down or expression pose. */
+  poses: Record<ConfrontState | "static", string>;
+  sensitivity: {
+    /** 0–1: how strongly the pointer swings the head. */
+    tracking: number;
+    /** Seconds of stillness on the silhouette before the smile. */
+    smileAfter: number;
+    /** Milliseconds the surprise holds. */
+    surpriseHold: number;
+    /** Seconds away from the silhouette before he turns away. */
+    turnAwayAfter: number;
+    /** Scale while you hold his gaze (1–1.2). */
+    eyeContactZoom: number;
+    /** 0–1. */
+    glint: number;
+    /** 0–1. */
+    breathing: number;
+  };
+  /** Lens centres as image fractions (x right, y down) + radius, for the glint. */
+  lenses: { left: [number, number]; right: [number, number]; radius: number };
+};
+
+export type InterviewQuestion = {
+  id: string;
+  question: string;
+  /** 2–3 sentences, read aloud and subtitled. */
+  answer: string;
+  /** Words that route a typed question here (fuzzy). */
+  keywords: string[];
+  /** Shown as a one-click chip. */
+  preset: boolean;
+};
+
+export type InterviewConfig = {
+  /** The show's name on the TV's lower third. */
+  title: string;
+  /** Channel number in the TV corner (1–99). */
+  channel: number;
+  intro: string;
+  outro: string;
+  /** Answers before "Thank you for watching" (1–12). */
+  maxQuestions: number;
+  /** When nothing matches a typed question. */
+  fallback: string;
+  questions: InterviewQuestion[];
+  poses: { waiting: string; talking: string; emphasis: string; pensive: string; thanks: string };
+  tts: {
+    enabled: boolean;
+    /** SpeechSynthesis voice name; empty → the browser's default for the page language. */
+    voice: string;
+    /** 0.5–2. */
+    rate: number;
+    /** 0–2. */
+    pitch: number;
+    /** 0–1. */
+    volume: number;
+  };
+  crt: boolean;
+  subtitles: boolean;
+  waveform: boolean;
+};
+
+/** Per-role look, keyed by the role's text. */
+export type RoleStyle = {
+  /** A glyph ("✦") or an icon id from admin → Icons ("icon:film"). */
+  icon: string;
+  /** Font weight 100–900. */
+  weight: number;
+  /** #hex, or "" for the theme colour. */
+  color: string;
+};
+
+/** Whole-hero colour grade. */
+export type HeroFilter = "none" | "warm" | "cool" | "vintage" | "contrast";
+
+export type HeroFeatures = {
+  ambientSound: boolean;
+  cinematicBars: boolean;
+  /** 0–1: how far the back layers drift with the pointer. */
+  parallax: number;
+  reactiveLighting: boolean;
+  cameraShake: boolean;
+  glitch: boolean;
+  /** 0–1 (0 = off; 0.5 = the original look). */
+  chromaticAberration: number;
+  /** 0–1 (0.5 = the original look). */
+  bloom: number;
+  /** Snap every pose's shoulders onto the centre pose's (image-difference anchor search). */
+  autoAlign: boolean;
+  /** Dust / embers rising around the silhouette. */
+  particles: boolean;
+  /** 0–1: count + brightness. */
+  particleIntensity: number;
+  /** Coloured fog in front of the silhouette, drifting with the pointer. */
+  fog: boolean;
+  /** God-rays from the sun. */
+  lightRays: boolean;
+  /** 0–1. */
+  rayIntensity: number;
+  /** Background layers soften while the pointer rests near the centre. */
+  depthOfField: boolean;
+  filter: HeroFilter;
+  /** The scene's hue drifts as the hero scrolls away. */
+  hueShift: boolean;
+  /** A soft ripple from the cursor after 3s without movement. */
+  cursorRipple: boolean;
+};
+
+/** Sprint 13 — what orbits the 3D hero's head (one InstancedMesh, any of these shapes). */
+export type HeroFloatingType = "fish" | "orbs" | "shards" | "cubes";
+
+export type Hero3DTheme = {
+  /** Key light, the model's main material and the near end of the orbit gradient. */
+  primary: string;
+  /** Rim light and the far end of the orbit gradient. */
+  secondary: string;
+  /** Canvas clear colour + fog. */
+  background: string;
+};
+
+/** One frame of the 360° sequence. `angle`: head yaw in degrees, [-180, 180) — 0 faces the camera, ±180 is the back. */
+export type SequenceFrame = { url: string; angle: number };
+
+/** The "3D model" hero (admin → Poses → Hero 3D controls). */
+export type Hero3DConfig = {
+  /**
+   * The 360° image sequence: one photo per step of the turn, each with its
+   * head yaw (Sprint 14). The hero sorts by angle; mouse X / touch drag
+   * scrubs through them. Empty → the centre pose of the ladder as a still.
+   */
+  sequenceImages: SequenceFrame[];
+  theme: Hero3DTheme;
+  floatingType: HeroFloatingType;
+  /** Extra drift of the floating orbit around the photo: 0 = none, 5 max. */
+  rotateSpeed: number;
+  /** Instances in the orbit (100–500). */
+  count: number;
+  /** Orbit layout seed — "Regenerate" picks a new one; the same seed always draws the same orbit. */
+  seed: number;
+  /** Bloom, depth of field, film grain and vignette. */
+  postFx: boolean;
+};
+
+/** Sprint 15 — the Genesis hero's procedural GLSL backdrops (admin → Poses → Genesis). */
+export type GenesisBackground = "celestial-nebula" | "neon-ring-field" | "liquid-metal" | "calm-dark";
+
+/**
+ * How the 360° head meets the scene: "hologram" screen-blends it (a black
+ * photo backdrop melts away, highlights glow), "cutout" keeps it solid with a
+ * neon rim traced from its alpha (needs transparent frames).
+ */
+export type GenesisHeadMode = "hologram" | "cutout";
+
+/** Logos drift away from (repel) or toward (attract) the cursor. */
+export type GenesisGravity = "off" | "repel" | "attract";
+
+/** Every colour the Genesis hero paints with — set by hand or from an AI theme prompt. */
+export type GenesisPalette = {
+  /** Page-level base behind everything. */
+  background: string;
+  /** Retro grid lines. */
+  grid: string;
+  /** Head rim glow, watermark neon. */
+  glow: string;
+  /** Main colour of the background shader. */
+  tint: string;
+  /** Second shader colour, horizon haze. */
+  accent: string;
+};
+
+/** "Genesis" — retro grid + the 360° glowing head (Sprint 15). Its frames are model3d.sequenceImages. */
+export type GenesisConfig = {
+  background: GenesisBackground;
+  palette: GenesisPalette;
+  /** The last AI theme prompt (shown back in the admin). */
+  themePrompt: string;
+  /** Your logo: behind the head, and the site-wide signature. Empty → the site name as text. Transparent PNG / SVG / WebP. */
+  customWatermarkUrl: string;
+  /** 0–1: glitch bursts + chromatic split. */
+  watermarkGlitch: number;
+  /** Sprint 15.6: how often the glitch bursts fire, 0.25–3× (1 = a few per ten seconds). */
+  watermarkGlitchSpeed: number;
+  /** Sprint 15.6: neon glow around the logo, 0–2 (1 = the original). */
+  watermarkGlow: number;
+  /** 0.1–1. */
+  watermarkOpacity: number;
+  /** Size multiplier, 0.5–3 (1× fits half the stage width / a third of its height). */
+  watermarkScale: number;
+  /** A small signature of the logo in the bottom-right corner of every page. */
+  globalWatermark: boolean;
+  /** Retro grid floor on / off. */
+  grid: boolean;
+  headMode: GenesisHeadMode;
+  /** Hologram shader (0–1 each): Fresnel rim, moving scanlines, RGB split on the edges, projection grain. */
+  holoFresnel: number;
+  holoScanlines: number;
+  holoAberration: number;
+  holoGrain: number;
+  /**
+   * Mouse → head turn calibration, degrees (-90…90), added to nx × 180 where
+   * nx is the cursor across the window in -1…1. Shifts which frame faces you
+   * when the cursor is centred.
+   */
+  calibrationOffset: number;
+  /** Sprint 15.6: yaw at the screen edge, degrees (30–180). 90 = each edge looks over a shoulder. */
+  turnRange: number;
+  /** Sprint 15.6: spring stiffness of the turn (20–120) — lower is heavier and slower; damping keeps it overshoot-free. */
+  turnWeight: number;
+  /** Size of the 360° character in the hero (0.5–1.5, 1 = fills the portrait box), scaled about the face. */
+  characterScale: number;
+  /** Slow infinite Ken Burns on the whole hero. */
+  autoCamera: boolean;
+  gravity: GenesisGravity;
+  /** 0–1. */
+  gravityStrength: number;
+};
+
+export type HeroConfig = {
+  poses: {
+    /** Left → right. The middle entry is the resting (centre) pose. Always 7. */
+    ladder: HeroPose[];
+    up: HeroPose;
+    down: HeroPose;
+  };
+  /** Sprint 11: expression poses derived from the ladder (scripts/generate-poses.mjs) or uploaded. */
+  expressions: HeroPose[];
+  /** scale multiplies every logo's size (0.25–4). */
+  logos: { enabled: boolean; scale: number; items: BrandLogo[] };
+  features: HeroFeatures;
+  /** Ambient loop: empty → a synthesised WebAudio drone; else a file such as /audio/hero-ambient.mp3. */
+  ambientSrc: string;
+  /** The nav's cycling descriptor. */
+  roles: { items: string[]; interval: number; styles: Record<string, RoleStyle> };
+  confrontation: ConfrontationConfig;
+  interview: InterviewConfig;
+  model3d: Hero3DConfig;
+  genesis: GenesisConfig;
+};
+
+export const LADDER_SIZE = 7;
+/** Brand logo size bounds in px (the slider stops at `slider`; typed values reach `max`). */
+export const LOGO_SIZE = { min: 20, slider: 500, max: 600 } as const;
+
+export const heroConfig: HeroConfig = {
+  poses: {
+    ladder: [
+      {
+        id: "very-hard-left",
+        label: "Very hard left",
+        src: "/hero/poses/very-hard-left.webp",
+        tint: "#e7fe55",
+        offset: [-0.0156, 0.0469],
+      },
+      {
+        id: "hard-left",
+        label: "Hard left",
+        src: "/hero/poses/hard-left.webp",
+        tint: "#d4f73c",
+        offset: [0, 0.0391],
+      },
+      {
+        id: "slight-left",
+        label: "Slight left",
+        src: "/hero/poses/slight-left.webp",
+        tint: "#eefb9a",
+        offset: [-0.0156, 0.0469],
+      },
+      { id: "center", label: "Center", src: "/hero/silhouette-1600.webp", tint: "#ffffff" },
+      {
+        id: "slight-right",
+        label: "Slight right",
+        src: "/hero/poses/slight-right.webp",
+        tint: "#ffb27a",
+        offset: [0.0156, 0.0469],
+      },
+      {
+        id: "hard-right",
+        label: "Hard right",
+        src: "/hero/poses/hard-right.webp",
+        tint: "#ff6a1f",
+        offset: [0.0234, 0.0234],
+      },
+      {
+        id: "very-hard-right",
+        label: "Very hard right",
+        src: "/hero/poses/very-hard-right.webp",
+        tint: "#ff2d2d",
+        offset: [-0.0078, 0.0391],
+      },
+    ],
+    up: { id: "up", label: "Up", src: "/hero/poses/up.webp", tint: "#e7fe55", offset: [0, 0.0234] },
+    down: {
+      id: "down",
+      label: "Down",
+      src: "/hero/poses/down.webp",
+      tint: "#ff6a1f",
+      offset: [-0.0078, 0.0859],
+    },
+  },
+  expressions: [
+    {
+      id: "smile",
+      label: "Smile",
+      src: "/hero/poses/smile.webp",
+      tint: "#ffd9a8",
+      tags: ["smile", "warm", "confrontation", "frontal"],
+    },
+    { id: "laugh", label: "Laugh", src: "/hero/poses/laugh.webp", tint: "#ffc46b", tags: ["laugh", "warm"] },
+    {
+      id: "surprise",
+      label: "Surprise",
+      src: "/hero/poses/surprise.webp",
+      tint: "#bfe4ff",
+      tags: ["surprise", "confrontation", "frontal"],
+    },
+    { id: "anger", label: "Anger", src: "/hero/poses/anger.webp", tint: "#ff3b2b", tags: ["anger"] },
+    {
+      id: "side-eye",
+      label: "Side-eye",
+      src: "/hero/poses/side-eye.webp",
+      tint: "#d8d0ff",
+      tags: ["side-eye", "scoff", "confrontation"],
+    },
+    {
+      id: "talking",
+      label: "Talking",
+      src: "/hero/poses/talking.webp",
+      tint: "#ffffff",
+      tags: ["talking", "interview", "frontal"],
+    },
+    {
+      id: "emphasis",
+      label: "Emphasis",
+      src: "/hero/poses/emphasis.webp",
+      tint: "#fff2c2",
+      tags: ["emphasis", "interview"],
+    },
+    {
+      id: "pensive",
+      label: "Pensive",
+      src: "/hero/poses/pensive.webp",
+      tint: "#a9c4ff",
+      tags: ["pensive", "interview"],
+    },
+  ],
+  logos: {
+    enabled: true,
+    scale: 1.5,
+    items: [
+      {
+        id: "northwind",
+        name: "downtown katameya mall",
+        imageUrl: "/brands/downtown%20logo.png",
+        size: 62,
+        visible: true,
+        x: 27,
+        y: 70,
+        depth: 1,
+      },
+      {
+        id: "solace",
+        name: "Solace",
+        imageUrl: "/brands/solace.svg",
+        size: 134,
+        visible: true,
+        x: 78,
+        y: 70.5,
+        angle: 9,
+        depth: 0.7,
+      },
+      {
+        id: "halcyon",
+        name: "Halcyon",
+        imageUrl: "/brands/halcyon.svg",
+        size: 62,
+        visible: true,
+        x: 19,
+        y: 52.5,
+        depth: 1,
+      },
+      {
+        id: "vantablack",
+        name: "GAD",
+        imageUrl: "/brands/gad.svg",
+        size: 130,
+        visible: true,
+        x: 28.5,
+        y: 42.5,
+        depth: 1,
+      },
+      {
+        id: "orbitra",
+        name: "Orbitra",
+        imageUrl: "/brands/orbitra.svg",
+        size: 88,
+        visible: true,
+        x: 71.5,
+        y: 52,
+        angle: 0,
+        depth: -0.1,
+      },
+      {
+        id: "monolith",
+        name: "Monolith",
+        imageUrl: "/brands/monolith.svg",
+        size: 134,
+        visible: true,
+        x: 19.5,
+        y: 21,
+      },
+      { id: "prism", name: "Prism", imageUrl: "/brands/prism.svg", size: 116, visible: true, x: 80, y: 40.5 },
+      {
+        id: "kinetic",
+        name: "Kinetic",
+        imageUrl: "/brands/kinetic.svg",
+        size: 62,
+        visible: true,
+        x: 74,
+        y: 20.5,
+        depth: 1,
+      },
+    ],
+  },
+  features: {
+    ambientSound: false,
+    cinematicBars: false,
+    parallax: 0.8,
+    reactiveLighting: true,
+    cameraShake: true,
+    glitch: true,
+    chromaticAberration: 0.35,
+    bloom: 0.5,
+    autoAlign: false,
+    particles: true,
+    particleIntensity: 0.45,
+    fog: true,
+    lightRays: true,
+    rayIntensity: 0.15,
+    depthOfField: true,
+    filter: "none",
+    hueShift: true,
+    cursorRipple: true,
+  },
+  ambientSrc: "",
+  roles: {
+    items: [
+      "Director",
+      "Video Editor",
+      "Colorist",
+      "Content Creator",
+      "Cinematographer",
+      "AI Artist",
+      "Visionary",
+      "Storyteller",
+    ],
+    interval: 1.5,
+    styles: {},
+  },
+  confrontation: {
+    behaviors: {
+      tracking: true,
+      eyeContact: true,
+      smile: true,
+      surprise: true,
+      turnAway: true,
+      scoff: true,
+      breathing: true,
+      eyeGlint: true,
+      gaspSound: false,
+      overlays: true,
+    },
+    poses: {
+      idle: "center",
+      eyeContact: "center",
+      smile: "smile",
+      surprise: "surprise",
+      turnAway: "very-hard-right",
+      scoff: "side-eye",
+      static: "smile",
+    },
+    sensitivity: {
+      tracking: 0.7,
+      smileAfter: 3,
+      surpriseHold: 200,
+      turnAwayAfter: 10,
+      eyeContactZoom: 1.05,
+      glint: 0.7,
+      breathing: 0.5,
+    },
+    lenses: { left: [0.376, 0.449], right: [0.615, 0.449], radius: 0.075 },
+  },
+  interview: {
+    title: "The Final Cut",
+    channel: 3,
+    intro: "Pick a question, or type your own. Three answers, then we cut to black.",
+    outro: "Thank you for watching. The rest is in the reel.",
+    maxQuestions: 3,
+    fallback: "Good question — and not one I can answer in a sentence. Write to me and I'll give it the long version.",
+    questions: [
+      {
+        id: "who",
+        question: "Who are you?",
+        answer: "I'm 3SKRINO — a video editor and content creator from Cairo. Nine years on the timeline, cutting brand films, commercials and the reels you stop scrolling for.",
+        keywords: ["who", "you", "name", "about", "yourself"],
+        preset: true,
+      },
+      {
+        id: "what",
+        question: "What do you actually do?",
+        answer: "Edit, colour, motion and sound — under one roof. You hand me the footage, I hand back a film that has rhythm. No hand-offs, one point of view.",
+        keywords: ["do", "services", "work", "job", "edit", "color", "colour"],
+        preset: true,
+      },
+      {
+        id: "style",
+        question: "How would you describe your style?",
+        answer: "Fast where it should hit, patient where it should land. I cut to the music and the breath, not the timeline ruler.",
+        keywords: ["style", "look", "aesthetic", "signature", "taste"],
+        preset: true,
+      },
+      {
+        id: "ai",
+        question: "What about AI video?",
+        answer: "I treat generative tools like a new camera department. The machine makes shots; the edit still decides which ones deserve to exist.",
+        keywords: ["ai", "generative", "runway", "sora", "kling", "midjourney", "artificial"],
+        preset: true,
+      },
+      {
+        id: "clients",
+        question: "Who have you worked with?",
+        answer: "Sports clubs, car launches, fashion labels, restaurants, developers and tour operators — across the Middle East and beyond. Different worlds, same obsession with the first three seconds.",
+        keywords: ["clients", "brands", "worked", "portfolio", "companies"],
+        preset: true,
+      },
+      {
+        id: "process",
+        question: "What's your process?",
+        answer: "I watch everything once without touching it. Then I build the spine, find the music, and cut until nothing can come out without the film falling apart.",
+        keywords: ["process", "workflow", "how", "approach", "method"],
+        preset: true,
+      },
+      {
+        id: "time",
+        question: "How fast can you turn a project around?",
+        answer: "A social reel in a day or two, a brand film in about a week. Being a one-man studio means nobody waits on anybody.",
+        keywords: ["fast", "time", "turnaround", "deadline", "long", "quick"],
+        preset: true,
+      },
+      {
+        id: "hire",
+        question: "How do I hire you?",
+        answer: "Send me the brief and a deadline from the contact page. I answer within a day — usually with questions that make the brief better.",
+        keywords: ["hire", "contact", "book", "price", "cost", "rate", "email", "work together"],
+        preset: true,
+      },
+    ],
+    poses: {
+      waiting: "center",
+      talking: "talking",
+      emphasis: "emphasis",
+      pensive: "pensive",
+      thanks: "smile",
+    },
+    tts: { enabled: true, voice: "", rate: 1, pitch: 0.9, volume: 0.9 },
+    crt: true,
+    subtitles: true,
+    waveform: true,
+  },
+  model3d: {
+    sequenceImages: [
+      {
+        url: "https://3skrino-portfolio.vercel.app/media/hero/1794699109273-uzoe3nq7luwt.png",
+        angle: -168.9,
+      },
+      {
+        url: "https://3skrino-portfolio.vercel.app/media/hero/1794699109268-lyt5n5kl0pwe.png",
+        angle: -123.9,
+      },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794699109396-1mok4xfahpp0.png", angle: -78.9 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794699110052-p7zjxdleh1kq.png", angle: -0.6 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794753802280-2cid001p6x1m.png", angle: 1 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794753803072-woevv17c5ud1.png", angle: 2 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794753802373-p65z1gpq9oru.png", angle: 3 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794753803072-cwcfs0m8u5in.png", angle: 4 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794753803295-vzth6n5atz0r.png", angle: 5 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794753803318-wiv2of8g71lk.png", angle: 6 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794753803857-jogvu4jcht7s.png", angle: 7 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794753803907-1m1j5a87rfmk.png", angle: 8 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794699109226-g10zsum05lo2.png", angle: 25.6 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794699110212-e8qmu30s2cme.png", angle: 29.3 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794699110287-6v8hy7hykj73.png", angle: 56.1 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794699108569-xgai6jc758bd.png", angle: 101.1 },
+    ],
+    theme: { primary: "#e7fe55", secondary: "#ff2d2d", background: "#0a0a0a" },
+    floatingType: "fish",
+    rotateSpeed: 0.5,
+    count: 320,
+    seed: 1283890489,
+    postFx: true,
+  },
+  genesis: {
+    background: "calm-dark",
+    palette: { background: "#0a0102", grid: "#ff2d2d", glow: "#ff4d1a", tint: "#7a0010", accent: "#ffb199" },
+    themePrompt: "Blood Moon",
+    customWatermarkUrl: "https://3skrino-portfolio.vercel.app/media/site/1794697914236-hixot0lypeop.png",
+    watermarkGlitch: 0.6,
+    watermarkOpacity: 1,
+    watermarkGlitchSpeed: 1,
+    watermarkGlow: 1,
+    watermarkScale: 2.65,
+    globalWatermark: false,
+    grid: true,
+    headMode: "hologram",
+    holoFresnel: 0.7,
+    holoScanlines: 0.5,
+    holoAberration: 0.5,
+    holoGrain: 0.35,
+    calibrationOffset: 0,
+    turnRange: 90,
+    turnWeight: 50,
+    characterScale: 1,
+    autoCamera: true,
+    gravity: "repel",
+    gravityStrength: 0.75,
+  },
+};
