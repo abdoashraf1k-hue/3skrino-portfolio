@@ -629,9 +629,13 @@ export const heroConfig: HeroConfig = {
   },
   model3d: {
     sequenceImages: [
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794761674716-gws9au8qznfd.webp", angle: -60 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794761562070-oh82872ng8bw.webp", angle: -40 },
       { url: "https://3skrino-portfolio.vercel.app/media/hero/1794761444456-2kraqe3h3g2x.webp", angle: -22 },
       { url: "https://3skrino-portfolio.vercel.app/media/hero/1794756749886-labia6mdk45g.png", angle: 0 },
       { url: "https://3skrino-portfolio.vercel.app/media/hero/1794761402719-wddezu0i58ep.webp", angle: 18 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794761502485-jpumm30bssas.webp", angle: 40 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794761635318-dqub6jnl930o.webp", angle: 60 },
     ],
     theme: { primary: "#e7fe55", secondary: "#ff2d2d", background: "#0a0a0a" },
     floatingType: "fish",
