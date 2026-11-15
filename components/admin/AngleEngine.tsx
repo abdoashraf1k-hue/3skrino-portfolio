@@ -23,6 +23,8 @@ export type PoseMap = Record<string, HeadPose | null>;
 
 /** The model's limit per pass (route.ts MAX_ROTATE): each hop reaches this much further from a real face. */
 const HOP = 20;
+/** The smaller step a "no face" result is retried with, once: the model holds a face far better over 10° than 20°. */
+const FALLBACK_STEP = 10;
 /** Free Spaces: one request at a time (a shared queue, and a daily GPU quota). */
 const JOB_CONCURRENCY = 1;
 /** Most frames one Generate run may create (~8 s of free GPU each). Sprint 15.5: 36 — the 5° grid has 72 steps. */
@@ -166,7 +168,7 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
   const [running, setRunning] = useState<"analyze" | "generate" | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [log, setLog] = useState<string[]>([]);
-  const [hops, setHops] = useState<"1" | "2" | "3">("2");
+  const [hops, setHops] = useState<"0.5" | "1" | "2" | "3">("2");
   const stop = useRef(false);
   const say = (line: string) => setLog((l) => [...l.slice(-199), `${new Date().toLocaleTimeString()}  ${line}`]);
 
@@ -175,6 +177,9 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
   const cov = analyzeCoverage(frames.map(effective));
   const faceYaws = frames.flatMap((f) => (poses[f.url] ? [poses[f.url]!.yaw] : []));
   const reach = HOP * Number(hops);
+  /** Degrees per hop (±10° reach = one 10° hop) and how many hops make up the reach. */
+  const hopStep = Math.min(HOP, reach);
+  const hopCount = Math.ceil(reach / hopStep);
   const reachable = new Set(reachableAngles(cov.missingAngles, faceYaws.map((y) => gridAngle(y)), reach));
   const faceGrid = new Set(faceYaws.map((y) => gridAngle(y)));
   const cells = new Map<number, Cell>(
@@ -253,11 +258,11 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
     let made = 0;
     let tried = 0;
 
-    for (let hop = 1; hop <= Number(hops) && made < budget && !stop.current; hop++) {
+    for (let hop = 1; hop <= hopCount && made < budget && !stop.current; hop++) {
       const wave = reachableAngles(
         [...cells.keys()].filter((a) => !covered.has(a)),
         sources.map((s) => gridAngle(s.yaw)),
-        HOP,
+        hopStep,
       ).slice(0, budget - made);
       if (!wave.length) break;
       say(`Hop ${hop}: ${wave.length} angle${wave.length === 1 ? "" : "s"} — ${formatRanges(wave)}`);
@@ -286,12 +291,32 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
             }
             const plan = res.attempts.find((a) => a.ok);
             say(`${deg(target)}: Plan ${res.planUsed} worked (${res.space}, ${plan ? (plan.ms / 1000).toFixed(0) : "?"}s, rotate ${deg(res.rotateYaw)})`);
-            const blob = await (await fetch(res.imageUrl)).blob();
+            let blob = await (await fetch(res.imageUrl)).blob();
             const job = { rotateYaw: res.rotateYaw };
-            const pose = await detectAngle(blob);
+            let pose = await detectAngle(blob);
             if (!pose) {
-              say(`${deg(target)}: no face in the result — discarded`);
-              continue;
+              // One automatic retry with a smaller step toward the same target; the result then lands on an
+              // in-between step (still checked below), and the next hop can build on it.
+              const full = angleDelta(src.yaw, target);
+              const step = Math.min(FALLBACK_STEP, Math.abs(full) / 2);
+              const retryYaw = src.yaw + Math.sign(full) * step;
+              say(`${deg(target)}: no face in the result — FALLBACK: retrying once with a smaller step (${deg(Math.sign(full) * step)} instead of ${deg(full)}, toward ${deg(retryYaw)})…`);
+              if (stop.current) continue;
+              const retry = await generateAngle(adminKey, reference, src.yaw, retryYaw, 0, gain());
+              for (const a of retry.attempts ?? []) if (!a.ok) say(`${deg(target)}: fallback Plan ${a.plan} failed on ${a.space} after ${(a.ms / 1000).toFixed(0)}s — ${a.error}`);
+              if (!retry.success) {
+                say(`${deg(target)}: fallback failed — ${retry.error} — discarded`);
+                continue;
+              }
+              say(`${deg(target)}: fallback Plan ${retry.planUsed} returned (${retry.space}, rotate ${deg(retry.rotateYaw)})`);
+              blob = await (await fetch(retry.imageUrl)).blob();
+              job.rotateYaw = retry.rotateYaw;
+              pose = await detectAngle(blob);
+              if (!pose) {
+                say(`${deg(target)}: no face in the fallback result either — discarded`);
+                continue;
+              }
+              say(`${deg(target)}: fallback kept a face at ${deg(pose.yaw)}`);
             }
             const turned = angleDelta(src.yaw, pose.yaw);
             if (Math.abs(job.rotateYaw) >= 5 && Math.abs(turned) >= 1) gains.push(job.rotateYaw / turned);
@@ -388,6 +413,7 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
                 label="Hops from a real face"
                 value={hops}
                 options={[
+                  { value: "0.5", label: "±10°" },
                   { value: "1", label: "±20°" },
                   { value: "2", label: "±40°" },
                   { value: "3", label: "±60°" },
@@ -396,6 +422,7 @@ export default function AngleEngine({ frames, setFrames, poses, setPoses, adminK
               />
             </span>
           </div>
+          <p className={`${micro} leading-relaxed text-white/35`}>If generation fails often, lower the AI Reach to ±10° in the settings.</p>
 
           {progress && (
             <div className="flex items-center gap-3" role="status">
