@@ -299,7 +299,7 @@ export const siteConfig: SiteConfig = {
       letterbox: { enabled: false, ratio: "2.39:1" },
       timeRemap: { enabled: false, strength: 1 },
       shutterFlash: { enabled: false },
-      filmScratch: { enabled: false, density: 0.4 },
+      filmScratch: { enabled: false, density: 0.1 },
     },
     scopes: { lightLeaks: { scope: "hero", sections: [] } },
     lutProjects: {},
