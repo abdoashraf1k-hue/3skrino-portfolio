@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AngleEnginePanel from "@/components/admin/AngleEnginePanel";
+import ImportAnglesPanel from "@/components/admin/ImportAnglesPanel";
 import MiniPreview from "@/components/admin/MiniPreview";
 import { btn, micro, Section, Toggle } from "@/components/admin/ui";
 import type { SequenceFrame } from "@/data/hero-config";
@@ -32,7 +33,7 @@ export default function SequenceSection({ adminKey, onError }: { adminKey: strin
   return (
     <Section
       title="360° sequence · AI Reality Engine"
-      hint="the turning head of every 360° hero · AI fills missing angles · frames arrive matted and land in the media bucket · save to publish"
+      hint="the turning head of every 360° hero · import your own angles (recommended) or let the AI fill gaps · frames arrive matted and land in the media bucket · save to publish"
       aside={<Toggle label="Live preview" checked={live} onChange={setLive} />}
     >
       <p className={`${micro} mb-4 flex flex-wrap items-center gap-3 ${turns ? "text-white/45" : "border border-[#ffb54d]/40 bg-[#ffb54d]/10 p-3 text-[#ffcf8a]"}`}>
@@ -50,7 +51,14 @@ export default function SequenceSection({ adminKey, onError }: { adminKey: strin
         )}
       </p>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,520px)]">
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-6">
+          <ImportAnglesPanel
+            frames={hero.model3d.sequenceImages}
+            setFrames={setFrames}
+            adminKey={adminKey}
+            onError={onError}
+            reach={{ offset: hero.genesis.calibrationOffset, range: hero.genesis.turnRange }}
+          />
           <AngleEnginePanel frames={hero.model3d.sequenceImages} setFrames={setFrames} adminKey={adminKey} onError={onError} />
         </div>
         <div className="min-w-0">

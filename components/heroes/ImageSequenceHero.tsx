@@ -52,12 +52,14 @@ const DEFAULT_STIFFNESS = 50;
 const DAMPING_RATIO = Math.SQRT2;
 const SUBSTEP = 1 / 120;
 /**
- * Cross-fade between the two frames around the current angle. Between close
- * frames it blends across the whole gap (a continuous turn); across a wide
- * gap it narrows to a quick dissolve at the midpoint — a long double
- * exposure of two very different views would look like a ghost.
+ * Sprint 16 — exact linear mapping for unevenly spaced (imported) angles.
+ * The two frames that bracket the current yaw are cross-faded by plain
+ * linear interpolation across the whole gap, whatever its width: frames at
+ * 0° and +30° are 50/50 at +15°, 75/25 at +7.5°. The spring on the yaw keeps
+ * the blend moving smoothly; double exposure only exists in motion — once the
+ * pointer has been still for IDLE_MS the head glides onto the nearest real frame.
  */
-const BLEND_DEGREES = 8;
+const IDLE_MS = 180;
 /** Arrow keys: one press turns this far (image-zoom-360: a keyboard alternative to dragging). */
 const KEY_STEP = 5;
 /** One full turn per this fraction of the stage width, when dragging. */
@@ -341,7 +343,7 @@ export default function ImageSequenceHero({
     let raf = 0;
     let last = 0;
 
-    /** The two frames around `deg` and how far between them (eased, narrowed across wide gaps). */
+    /** The two frames that bracket `deg`, and the exact linear position between them (0 = a, 1 = b). */
     const bracket = (deg: number): { a: number; b: number; t: number } => {
       const p = circular ? ((((deg - lo) % 360) + 360) % 360) + lo : Math.min(hi, Math.max(lo, deg));
       let i = n - 1;
@@ -349,12 +351,15 @@ export default function ImageSequenceHero({
       const j = i + 1 < n ? i + 1 : circular ? 0 : i;
       if (i === j) return { a: i, b: i, t: 0 };
       const gap = j === 0 ? angles[0] + 360 - angles[i] : angles[j] - angles[i];
-      const raw = gap > 0 ? (p - angles[i]) / gap : 0;
-      // Close frames: blend across the whole gap. Wide gaps: a short dissolve around the midpoint.
-      const w = Math.min(0.5, Math.max(0.08, BLEND_DEGREES / Math.max(gap, 1e-3)));
-      const e = Math.min(1, Math.max(0, (raw - (0.5 - w)) / (2 * w)));
-      return { a: i, b: j, t: e * e * (3 - 2 * e) };
+      const t = gap > 0 ? (p - angles[i]) / gap : 0;
+      return { a: i, b: j, t: Math.min(1, Math.max(0, t)) };
     };
+    /** Resting between two frames (a double exposure)? */
+    const between = (deg: number) => {
+      const r = bracket(deg);
+      return r.a !== r.b && r.t > 0.001 && r.t < 0.999;
+    };
+    let movedAt = 0;
 
     const draw = (force = false) => {
       const next = bracket(pos);
@@ -409,12 +414,12 @@ export default function ImageSequenceHero({
           vel += (k * (target - pos) - c * vel) * h;
           pos += vel * h;
         }
-        // Frame detent: never come to rest on a double exposure. Blending is for motion; as the
-        // head approaches rest between two frames, the target slides onto the nearer real frame —
-        // one continuous glide, no stop-then-snap.
-        if (Math.abs(target - pos) < 0.75 && Math.abs(vel) < 3) {
+        // Frame detent: never come to rest on a double exposure. While the pointer moves the
+        // blend follows it exactly; once it has been still for IDLE_MS and the head is nearly
+        // there, the target slides onto the nearer real frame — one spring glide, no snap.
+        if (now - movedAt > IDLE_MS && Math.abs(target - pos) < 0.75 && Math.abs(vel) < 3) {
           const rest = bracket(target);
-          if (rest.a !== rest.b && rest.t > 0.001 && rest.t < 0.999) {
+          if (between(target)) {
             const snap = angles[rest.t < 0.5 ? rest.a : rest.b];
             // The nearer equivalent of that frame's angle (the seam on a closed turn).
             target = circular ? snap + Math.round((target - snap) / 360) * 360 : snap;
@@ -429,7 +434,9 @@ export default function ImageSequenceHero({
       // The settled yaw, for QA / assistive tooling (written only while the turn is moving).
       canvas.dataset.angle = pos.toFixed(1);
       draw();
-      raf = pos === target && vel === 0 ? 0 : requestAnimationFrame(tick);
+      // Settled — unless it settled between two frames before the idle detent could fire: keep ticking until it does.
+      const settled = pos === target && vel === 0 && (reducedMotion || !between(pos));
+      raf = settled ? 0 : requestAnimationFrame(tick);
     };
     const kick = () => {
       if (raf) return;
@@ -453,6 +460,7 @@ export default function ImageSequenceHero({
     /** nx ∈ [-1, 1] → nx × turnRange + calibration (clamped to the frames when the turn isn't closed). */
     const aim = (nx: number) => {
       lastNx = nx;
+      movedAt = performance.now();
       target = clamp(nx * tuning.current.range + tuning.current.offset);
       // Coming from a wrapped angle (touch drag, keys): close the gap the short way round.
       if (circular) pos -= Math.round((pos - target) / 360) * 360;
@@ -469,6 +477,7 @@ export default function ImageSequenceHero({
       if (e.pointerType === "touch") {
         if (dragX === null) return;
         target = clamp(target + ((e.clientX - dragX) / (rect.width * DRAG_TURN)) * 360);
+        movedAt = performance.now();
         dragX = e.clientX;
         kick();
       } else {
@@ -484,6 +493,7 @@ export default function ImageSequenceHero({
       if (el && el !== document.body && el !== track && !track.contains(el)) return;
       if (!onScreen(track.getBoundingClientRect())) return;
       target = clamp(target + (e.key === "ArrowRight" ? KEY_STEP : -KEY_STEP));
+      movedAt = performance.now();
       setTouched(true);
       kick();
     };
