@@ -628,7 +628,11 @@ export const heroConfig: HeroConfig = {
     waveform: true,
   },
   model3d: {
-    sequenceImages: [],
+    sequenceImages: [
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794761444456-2kraqe3h3g2x.webp", angle: -22 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794756749886-labia6mdk45g.png", angle: 0 },
+      { url: "https://3skrino-portfolio.vercel.app/media/hero/1794761402719-wddezu0i58ep.webp", angle: 18 },
+    ],
     theme: { primary: "#e7fe55", secondary: "#ff2d2d", background: "#0a0a0a" },
     floatingType: "fish",
     rotateSpeed: 0.5,
