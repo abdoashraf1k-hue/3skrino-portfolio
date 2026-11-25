@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
     "backups/**",
     // Hand-written service worker (plain browser JS).
     "public/sw.js",
+    // Autopilot test scripts (Node + Playwright, CommonJS) — tooling, not site source.
+    "docs/autopilot/scripts/**",
   ]),
 ]);
 
