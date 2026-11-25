@@ -116,16 +116,30 @@ const velocityListeners = new Set<VelocityFn>();
 let velRaf = 0;
 let lastY = 0;
 let lastT = 0;
+let stillFrames = 0;
+/** Frames without movement before the loop parks (~0.7s at 60fps): long enough for blur/shake to settle. */
+const PARK_AFTER = 40;
 
+// The loop only runs while the page is moving: a scroll event (native or Lenis) wakes it, and
+// it parks itself once the page has been still for PARK_AFTER frames — an idle page costs nothing.
 function velocityLoop(t: number) {
-  velRaf = requestAnimationFrame(velocityLoop);
   const y = window.scrollY;
   const dt = lastT ? Math.max(1, t - lastT) : 16.7;
   // Normalised to a 60fps frame so thresholds read the same on 120Hz screens.
   const v = ((y - lastY) / dt) * 16.7;
+  stillFrames = Math.abs(y - lastY) < 0.5 ? stillFrames + 1 : 0;
   lastY = y;
   lastT = t;
   for (const l of velocityListeners) l(v);
+  velRaf = stillFrames > PARK_AFTER ? 0 : requestAnimationFrame(velocityLoop);
+}
+
+function wakeVelocity() {
+  if (velRaf || !velocityListeners.size) return;
+  lastY = window.scrollY;
+  lastT = 0;
+  stillFrames = 0;
+  velRaf = requestAnimationFrame(velocityLoop);
 }
 
 export function useScrollVelocity(fn: VelocityFn, enabled = true): void {
@@ -137,14 +151,11 @@ export function useScrollVelocity(fn: VelocityFn, enabled = true): void {
     if (!enabled) return;
     const l: VelocityFn = (v) => ref.current(v);
     velocityListeners.add(l);
-    if (velocityListeners.size === 1) {
-      lastY = window.scrollY;
-      lastT = 0;
-      velRaf = requestAnimationFrame(velocityLoop);
-    }
+    if (velocityListeners.size === 1) window.addEventListener("scroll", wakeVelocity, { passive: true });
     return () => {
       velocityListeners.delete(l);
       if (!velocityListeners.size) {
+        window.removeEventListener("scroll", wakeVelocity);
         cancelAnimationFrame(velRaf);
         velRaf = 0;
       }
