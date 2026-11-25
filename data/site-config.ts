@@ -286,7 +286,7 @@ export const siteConfig: SiteConfig = {
   seo: { projects: {} },
   backups: { schedule: "weekly" },
   heroVariant: "genesis",
-  activeHero: "default",
+  activeHero: "breaking-news",
   cinematic: {
     effects: {
       filmGrain: { enabled: false, intensity: 0.08, flicker: 12, dust: 0.3 },
