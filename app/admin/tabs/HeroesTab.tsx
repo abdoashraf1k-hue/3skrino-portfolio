@@ -4,6 +4,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import MiniPreview from "@/components/admin/MiniPreview";
 import { card, Field, input, micro, Section, Slider, TabHeader, Toggle } from "@/components/admin/ui";
 import { DEFAULT_CINEMATIC } from "@/data/cinematic-defaults";
+import { DEFAULT_ACTIVE_HERO, PACK_HEROES, packHero, packHeroUrl, packThumbUrl } from "@/data/hero-pack";
 import type { Project } from "@/data/projects";
 import type { HeroVariant } from "@/data/site-config";
 import { useConfigStore } from "../store";
@@ -96,6 +97,11 @@ export default function HeroesTab({ projects }: Props) {
   const setOptions = (patch: Partial<typeof options>) =>
     setSite((c) => ({ ...c, cinematic: { ...c.cinematic, heroOptions: { ...c.cinematic.heroOptions, ...patch } } }));
   const reels = projects.filter((p) => p.videoUrl);
+  // Missing in an older imported config → "default".
+  const activeHero = site.activeHero ?? DEFAULT_ACTIVE_HERO;
+  const packOn = packHero(activeHero) !== null;
+  const variantName = HEROES.find((h) => h.id === site.heroVariant)?.name ?? site.heroVariant;
+  const pickHero = (id: string) => setSite((c) => ({ ...c, activeHero: id }));
 
   const togglePreviews = (on: boolean) => {
     setLive(on);
@@ -119,6 +125,11 @@ export default function HeroesTab({ projects }: Props) {
         aside={<Toggle label="Live previews" checked={live} onChange={togglePreviews} help="Each frame is the real home page. Turn off to keep the admin light on slower machines." />}
         onReset={() => setSite((c) => ({ ...c, heroVariant: "cinematic" }))}
       >
+        {packOn && (
+          <p className="mb-3 border border-[#e7fe55]/40 px-3 py-2 text-xs text-white/60">
+            A pack hero is on the home page (desktop). The one marked here is the default hero — phones always show it, and picking one switches the home page back to it.
+          </p>
+        )}
         <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
           {HEROES.map((h, i) => {
             const on = site.heroVariant === h.id;
@@ -128,7 +139,12 @@ export default function HeroesTab({ projects }: Props) {
                 className={`admin-stagger ${card} flex flex-col overflow-hidden transition-colors ${on ? "border-[#e7fe55]" : "hover:border-white/30"}`}
                 style={{ "--i": i } as CSSProperties}
               >
-                <button type="button" onClick={() => setSite((c) => ({ ...c, heroVariant: h.id }))} aria-pressed={on} className="block text-left">
+                <button
+                  type="button"
+                  onClick={() => setSite((c) => ({ ...c, heroVariant: h.id, activeHero: DEFAULT_ACTIVE_HERO }))}
+                  aria-pressed={on}
+                  className="block text-left"
+                >
                   <MiniPreview path={`/?heroVariant=${h.id}`} hero={hero} site={site} enabled={live} title={`${h.name} preview`} />
                   <span className="flex items-start justify-between gap-3 p-3">
                     <span className="min-w-0">
@@ -144,13 +160,70 @@ export default function HeroesTab({ projects }: Props) {
                     <span
                       className={`shrink-0 px-2 py-1 font-mono text-[9px] uppercase tracking-widest ${on ? "bg-[#e7fe55] text-black" : "border border-white/15 text-white/45"}`}
                     >
-                      {on ? "Active" : "Use"}
+                      {on ? (packOn ? "Default" : "Active") : "Use"}
                     </span>
                   </span>
                 </button>
                 <a href={`/?heroVariant=${h.id}`} target="_blank" rel="noreferrer" className={`${micro} border-t border-white/10 px-3 py-2 text-white/40 hover:text-white`}>
                   Open full-size ↗
                 </a>
+              </div>
+            );
+          })}
+        </div>
+      </Section>
+
+      <Section
+        title="Pack heroes"
+        hint={`${PACK_HEROES.length} interactive designs · desktop only, phones keep the default hero`}
+        help="Standalone pages from public/heroes/ (heroes.json is the list). The active one fills the top of the home page under the site menu; its buttons open your real pages. Save to publish."
+        onReset={() => pickHero(DEFAULT_ACTIVE_HERO)}
+      >
+        <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+          {[
+            {
+              id: DEFAULT_ACTIVE_HERO,
+              title: "Default hero",
+              description: `The hero the site has today — ${variantName}. Pick it in Active hero above.`,
+              preview: `/?${new URLSearchParams({ activeHero: DEFAULT_ACTIVE_HERO })}`,
+              thumb: null as string | null,
+            },
+            ...PACK_HEROES.map((h) => ({ id: h.id, title: h.title, description: h.description, preview: packHeroUrl(h), thumb: packThumbUrl(h) })),
+          ].map((h, i) => {
+            const on = activeHero === h.id;
+            return (
+              <div
+                key={h.id}
+                className={`admin-stagger ${card} flex flex-col overflow-hidden transition-colors ${on ? "border-[#e7fe55]" : "hover:border-white/30"}`}
+                style={{ "--i": i } as CSSProperties}
+              >
+                {h.thumb ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- static 960×540 screenshot from the pack
+                  <img src={h.thumb} alt={`${h.title} thumbnail`} loading="lazy" className="aspect-video w-full object-cover" />
+                ) : (
+                  <MiniPreview path={`/?heroVariant=${site.heroVariant}`} hero={hero} site={site} enabled={live} title="Default hero preview" />
+                )}
+                <div className="flex flex-1 items-start justify-between gap-3 p-3">
+                  <span className="min-w-0">
+                    <span className="text-sm font-black uppercase tracking-tight">{h.title}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-white/55">{h.description}</span>
+                  </span>
+                  {on && <span className="shrink-0 bg-[#e7fe55] px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-black">Active</span>}
+                </div>
+                <div className="flex border-t border-white/10">
+                  <a href={h.preview} target="_blank" rel="noreferrer" className={`${micro} flex-1 px-3 py-2 text-white/40 hover:text-white`}>
+                    Preview ↗
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => pickHero(h.id)}
+                    disabled={on}
+                    aria-pressed={on}
+                    className={`${micro} flex-1 border-l border-white/10 px-3 py-2 text-right ${on ? "text-[#e7fe55]" : "text-white/60 hover:text-white"}`}
+                  >
+                    {on ? "On the homepage" : "Use on homepage"}
+                  </button>
+                </div>
               </div>
             );
           })}

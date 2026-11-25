@@ -27,7 +27,7 @@ export const TAB_SLICES: Record<string, readonly Slice[]> = {
   brands: [hero(["logos"], "brands")],
   roles: [hero(["roles"], "roles")],
   interview: [hero(["interview"], "interview")],
-  heroes: [site(["heroVariant"], "hero variant"), site(["cinematic", "heroOptions"], "hero options")],
+  heroes: [site(["heroVariant"], "hero variant"), site(["activeHero"], "active hero"), site(["cinematic", "heroOptions"], "hero options")],
   effects: [site(["cinematic", "effects"], "effects"), site(["cinematic", "scopes"], "effect scopes"), site(["cinematic", "lutProjects"], "project grades")],
   experiments: [site(["cinematic", "experiments"], "experiments")],
   cursor: [site(["cinematic", "cursor"], "cursor")],

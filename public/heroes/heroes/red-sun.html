@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3SKRINO hero: Red Sun</title>
+<style>
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+#hero-stage{position:fixed;inset:0;overflow:hidden}
+.dc-root{position:absolute;left:50%;top:50%;width:1440px;height:810px;transform-origin:center center}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;800;900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f4f2ee;text-decoration:none}a:hover{color:#ff8a7d}
+</style>
+</head>
+<body>
+<div id="hero-stage"></div>
+<template id="dc-template">
+<div onMouseMove="{{onMove}}" onMouseLeave="{{onLeave}}" style="width: 1440px; height: 810px; position: relative; overflow: hidden; box-sizing: border-box; background: #080606; color: #f4f2ee; font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif">
+
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; background: radial-gradient(ellipse 760px 560px at 720px 640px, rgba(120, 14, 8, 0.55), rgba(8, 6, 6, 0) 70%)"></div>
+
+<div aria-hidden="true" style="position: absolute; left: 390px; top: 70px; width: 660px; height: 660px; transform: translate3d(calc(var(--mx, 0) * -22px), calc(var(--my, 0) * -12px), 0); transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1)">
+<div style="width: 660px; height: 660px; border-radius: 50%; background: radial-gradient(circle at 50% 40%, #ff7a5c, {{accent}} 55%); box-shadow: 0 0 140px 30px rgba(255,43,28,0.45)"></div>
+</div>
+
+<h1 style="margin: 0; position: absolute; left: 0; top: 315px; width: 1440px; height: 276px; font-family: 'Anton', Impact, 'Arial Narrow', sans-serif; font-weight: 400; font-size: 150px; line-height: 0.92; letter-spacing: 0.01em; color: #f4f2ee; transform: translate3d(calc(var(--mx, 0) * -8px), calc(var(--my, 0) * -4px), 0); transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1)">
+<span style="position: absolute; right: 950px; top: 0; text-align: right; white-space: nowrap">CUTS<br>YOU</span>
+<span style="position: absolute; left: 950px; top: 0; text-align: left; white-space: nowrap">CAN’T<br>SKIP</span>
+</h1>
+
+<div style="position: absolute; left: 290px; top: 70px; width: 860px; height: 860px; transform: translate3d(calc(var(--mx, 0) * 14px), calc(var(--my, 0) * 7px), 0); transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1)">
+<img src="../assets/abdo-natural.webp" alt="Backlit portrait of 3SKRINO in chrome wraparound sunglasses and a red puffer jacket and gold chains" style="width: 860px; height: 860px; display: block">
+</div>
+
+<div aria-hidden="true" style="position: absolute; left: 0; bottom: 0; width: 1440px; height: 150px; background: linear-gradient(to top, #080606 8%, rgba(8, 6, 6, 0))"></div>
+
+<nav aria-label="Primary" style="position: absolute; left: 0; top: 0; width: 1440px; height: 72px; box-sizing: border-box; padding: 0 48px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center">
+<div style="display: flex; align-items: baseline; gap: 12px">
+<a href="#top" style="font-weight: 900; font-size: 17px; letter-spacing: 0.04em; padding: 14px 0">3SKRINO™</a>
+<span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 11px; letter-spacing: 0.16em; color: #aaa5a0">— CINEMATOGRAPHER</span>
+</div>
+<div style="display: flex; gap: 40px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.16em">
+<a href="#vertical" style="padding: 14px 0">VERTICAL CUTS</a>
+<a href="#horizontal" style="padding: 14px 0">HORIZONTAL CUTS</a>
+<a href="#ai" style="padding: 14px 0">AI CUTS</a>
+<a href="#about" style="padding: 14px 0">ABOUT</a>
+<a href="#contact" style="padding: 14px 0">CONTACT</a>
+</div>
+<div style="display: flex; justify-content: flex-end; align-items: center; gap: 14px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 12px; letter-spacing: 0.14em; color: #aaa5a0">
+<span>{{clock}}</span>
+<span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: {{accent}}"></span>
+<span>CAIRO</span>
+</div>
+</nav>
+
+<div style="position: absolute; left: 48px; bottom: 40px; height: 48px; display: flex; align-items: center; gap: 12px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 12px; letter-spacing: 0.16em; color: #f4f2ee">
+<span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: {{accent}}"></span>
+<span>AVAILABLE FOR WORK — 2026</span>
+</div>
+
+<div style="position: absolute; right: 48px; bottom: 40px; display: flex; align-items: center; gap: 28px">
+<a href="#work" style="display: flex; align-items: center; justify-content: center; height: 48px; padding: 0 30px; background: #f4f2ee; color: #080606; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.2em">VIEW WORK</a>
+<a href="#showreel" style="display: flex; align-items: center; gap: 12px; height: 48px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.2em">
+<span>SHOWREEL</span>
+<svg aria-hidden="true" width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="15" cy="15" r="14"></circle><path d="M12.5 10.5 L19.5 15 L12.5 19.5 Z" fill="currentColor" stroke="none"></path></svg>
+</a>
+</div>
+
+</div>
+</template>
+<script src="../runtime/dc-lite.js"></script>
+<script>
+class Component extends DCLogic {
+componentDidMount() {
+this.timer = setInterval(() => this.setState({ tick: Date.now() }), 1000);
+}
+componentWillUnmount() {
+clearInterval(this.timer);
+}
+renderVals() {
+const motion = this.props.motion ?? true;
+let clock = '00:00:00';
+try {
+clock = new Date().toLocaleTimeString('en-GB', { timeZone: 'Africa/Cairo', hour12: false });
+} catch (e) {}
+return {
+accent: this.props.accent ?? '#FF2B1C',
+clock: clock,
+onMove: (e) => {
+if (!motion) return;
+const el = e.currentTarget;
+const r = el.getBoundingClientRect();
+el.style.setProperty('--mx', (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
+el.style.setProperty('--my', (((e.clientY - r.top) / r.height) * 2 - 1).toFixed(3));
+},
+onLeave: (e) => {
+e.currentTarget.style.setProperty('--mx', '0');
+e.currentTarget.style.setProperty('--my', '0');
+}
+};
+}
+}
+DCLite.mount(Component, document.getElementById('dc-template'), document.getElementById('hero-stage'), {"accent": "#FF2B1C", "motion": true});
+</script>
+</body>
+</html>

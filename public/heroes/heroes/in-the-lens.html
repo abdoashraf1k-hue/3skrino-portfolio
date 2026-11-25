@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3SKRINO hero: In the Lens</title>
+<style>
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+#hero-stage{position:fixed;inset:0;overflow:hidden}
+.dc-root{position:absolute;left:50%;top:50%;width:1440px;height:810px;transform-origin:center center}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f4f1ee;text-decoration:none}a:hover{color:#ff8a72}
+@keyframes reelLoop{from{transform:translateX(0)}to{transform:translateX(-2214px)}}
+@keyframes glintSweep{0%{transform:translateX(-900px);opacity:0}15%{opacity:1}100%{transform:translateX(900px);opacity:0}}
+@keyframes reelIn{0%{opacity:0}40%{opacity:0}100%{opacity:0.62}}
+.reel{animation:reelLoop 22s linear infinite}
+.reel-wrap{opacity:0.62;animation:reelIn 2.2s ease-out 1;transition:opacity 0.3s}
+.lens:hover .reel-wrap{opacity:0.95}
+.lens:focus-visible{outline:2px solid #ff3b1f}
+.glint{animation:glintSweep 1.4s cubic-bezier(0.3, 0.6, 0.2, 1) 0.5s 1 both}
+@media (prefers-reduced-motion: reduce){.reel,.glint,.reel-wrap{animation:none}}
+</style>
+</head>
+<body>
+<div id="hero-stage"></div>
+<template id="dc-template">
+<div onMouseMove="{{onMove}}" onMouseLeave="{{onLeave}}" style="width: 1440px; height: 810px; position: relative; overflow: hidden; box-sizing: border-box; background: #000000; color: #f4f1ee; font-family: 'Syne', 'Helvetica Neue', Arial, sans-serif">
+
+<img src="../assets/abdo-lens-closeup.jpg" alt="Extreme close-up of Abdo Ashraf, 3SKRINO, in chrome wraparound sunglasses, with his showreel playing as a reflection in the lenses" style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; display: block; transform: scale(1.02) translate3d(calc(var(--mx, 0) * 6px), calc(var(--my, 0) * 4px), 0); transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1)">
+
+<a class="lens" href="#showreel" aria-label="Play showreel" style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; display: block; mix-blend-mode: screen; clip-path: polygon(663px 333px, 650px 374px, 632px 411px, 599px 435px, 561px 442px, 527px 440px, 497px 435px, 468px 429px, 440px 415px, 415px 395px, 391px 369px, 370px 333px, 357px 288px, 384px 251px, 431px 240px, 469px 240px, 498px 241px, 524px 244px, 550px 248px, 580px 254px, 615px 266px, 657px 291px); transform: scale(1.02) translate3d(calc(var(--mx, 0) * 6px), calc(var(--my, 0) * 4px), 0); transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1)">
+<div class="reel-wrap" style="position: absolute; left: 200px; top: 205px; width: 4428px; height: 260px; filter: blur(0.7px) saturate(1.2); transform: translate3d(calc(var(--mx, 0) * -90px), calc(var(--my, 0) * -24px), 0) skewY(-7deg); transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1)">
+<div class="reel" style="display: flex; width: 4428px; height: 260px">
+<img src="../assets/reel-strip.webp" alt="" style="width: 2214px; height: 260px; display: block">
+<img src="../assets/reel-strip.webp" alt="" style="width: 2214px; height: 260px; display: block">
+</div>
+</div>
+<div style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; background: linear-gradient(118deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.3) 34%, rgba(255, 255, 255, 0) 38%); transform: translate3d(calc(var(--mx, 0) * 160px), 0, 0); transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1)"></div>
+<div class="glint" style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; background: linear-gradient(110deg, rgba(255, 255, 255, 0) 44%, rgba(255, 255, 255, 0.85) 48%, rgba(255, 255, 255, 0) 52%)"></div>
+</a>
+
+<a class="lens" href="#showreel" aria-label="Play showreel" style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; display: block; mix-blend-mode: screen; clip-path: polygon(1073px 333px, 1054px 368px, 1029px 395px, 1002px 414px, 975px 426px, 946px 433px, 917px 439px, 882px 443px, 843px 435px, 810px 411px, 791px 374px, 776px 333px, 781px 288px, 825px 264px, 862px 251px, 892px 245px, 919px 243px, 945px 241px, 974px 241px, 1009px 243px, 1055px 254px, 1090px 286px); transform: scale(1.02) translate3d(calc(var(--mx, 0) * 6px), calc(var(--my, 0) * 4px), 0); transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1)">
+<div class="reel-wrap" style="position: absolute; left: 200px; top: 215px; width: 4428px; height: 260px; filter: blur(0.7px) saturate(1.2); transform: translate3d(calc(var(--mx, 0) * -90px), calc(var(--my, 0) * -24px), 0) skewY(7deg); transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1)">
+<div class="reel" style="display: flex; width: 4428px; height: 260px">
+<img src="../assets/reel-strip.webp" alt="" style="width: 2214px; height: 260px; display: block">
+<img src="../assets/reel-strip.webp" alt="" style="width: 2214px; height: 260px; display: block">
+</div>
+</div>
+<div style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; background: linear-gradient(118deg, rgba(255, 255, 255, 0) 62%, rgba(255, 255, 255, 0.3) 66%, rgba(255, 255, 255, 0) 70%); transform: translate3d(calc(var(--mx, 0) * 160px), 0, 0); transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1)"></div>
+<div class="glint" style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; background: linear-gradient(110deg, rgba(255, 255, 255, 0) 44%, rgba(255, 255, 255, 0.85) 48%, rgba(255, 255, 255, 0) 52%)"></div>
+</a>
+
+<div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 900px 560px at 720px 360px, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55)); "></div>
+<div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; opacity: 0.08; background-image: radial-gradient(rgba(255,255,255,0.9) 0.6px, rgba(0,0,0,0) 1px); background-size: 3px 3px"></div>
+<div aria-hidden="true" style="position: absolute; left: 0; bottom: 0; width: 1440px; height: 260px; pointer-events: none; background: linear-gradient(to top, rgba(0, 0, 0, 0.94) 12%, rgba(0, 0, 0, 0))"></div>
+
+<nav aria-label="Primary" style="position: absolute; left: 0; top: 0; width: 1440px; height: 84px; box-sizing: border-box; padding: 0 56px; display: flex; align-items: center; justify-content: space-between">
+<a href="#top" style="font-weight: 800; font-size: 19px; padding: 12px 0">3SKRINO</a>
+<div style="display: flex; gap: 32px; font-size: 15px; font-weight: 500">
+<a href="#vertical" style="padding: 12px 0">Vertical cuts</a>
+<a href="#horizontal" style="padding: 12px 0">Horizontal cuts</a>
+<a href="#ai" style="padding: 12px 0">AI cuts</a>
+<a href="#about" style="padding: 12px 0">About</a>
+<a href="#contact" style="padding: 12px 0">Contact</a>
+</div>
+</nav>
+
+<div style="position: absolute; left: 56px; bottom: 46px; width: 620px; display: flex; flex-direction: column; gap: 12px">
+<h1 style="margin: 0; font-size: 88px; line-height: 0.92; font-weight: 800; letter-spacing: -0.035em">Look closer.</h1>
+<p style="margin: 0; max-width: 470px; font-size: 17px; line-height: 1.5; color: #cdc7c1">My reel is playing in the lenses. Click either one to watch it full screen. Abdo Ashraf, cinematographer and editor in Cairo.</p>
+</div>
+
+<div style="position: absolute; right: 56px; bottom: 50px; display: flex; align-items: center; gap: 12px">
+<a href="#showreel" style="display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 24px; border: 1.5px solid rgba(244, 241, 238, 0.7); box-sizing: border-box; font-size: 16px; font-weight: 700">
+<svg aria-hidden="true" width="13" height="13" viewBox="0 0 14 14"><path d="M3 1.5 L12 7 L3 12.5 Z" fill="currentColor"></path></svg>
+<span>Play showreel</span>
+</a>
+<a href="#work" style="display: flex; align-items: center; height: 54px; padding: 0 26px; background: #ff3b1f; color: #000000; font-size: 16px; font-weight: 700">View work</a>
+</div>
+
+</div>
+</template>
+<script src="../runtime/dc-lite.js"></script>
+<script>
+class Component extends DCLogic {
+renderVals() {
+const motion = this.props.motion ?? true;
+return {
+onMove: (e) => {
+if (!motion) return;
+const el = e.currentTarget;
+const r = el.getBoundingClientRect();
+el.style.setProperty('--mx', (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
+el.style.setProperty('--my', (((e.clientY - r.top) / r.height) * 2 - 1).toFixed(3));
+},
+onLeave: (e) => {
+e.currentTarget.style.setProperty('--mx', '0');
+e.currentTarget.style.setProperty('--my', '0');
+}
+};
+}
+}
+DCLite.mount(Component, document.getElementById('dc-template'), document.getElementById('hero-stage'), {"motion": true});
+</script>
+</body>
+</html>

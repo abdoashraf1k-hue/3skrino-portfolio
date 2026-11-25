@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3SKRINO heroes: preview</title>
+<style>
+body{margin:0;background:#0b0b0c;color:#f2f2f2;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:28px 32px 8px}
+h1{margin:0;font-size:28px}
+p{margin:6px 0 0;color:#a8a8ad;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:20px;padding:24px 32px 48px}
+.card{background:#161618;border-radius:12px;overflow:hidden}
+.card img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
+.meta{padding:14px 16px 16px}
+.meta h2{margin:0;font-size:18px}
+.meta p{font-size:14px}
+.meta a{display:inline-block;margin-top:10px;color:#ffe600;font-weight:600;text-decoration:none}
+</style>
+</head>
+<body>
+<header><h1>3SKRINO heroes</h1><p>Open any hero full screen. Add ?fit=contain to see the whole frame, or ?nav=0 to hide its own top menu.</p></header>
+<div class="grid" id="grid"></div>
+<script>
+fetch('heroes.json').then(r => r.json()).then(m => {
+  const g = document.getElementById('grid');
+  m.heroes.forEach(h => {
+    const c = document.createElement('div');
+    c.className = 'card';
+    c.innerHTML = '<img alt=""><div class="meta"><h2></h2><p></p><a>Open full screen</a></div>';
+    c.querySelector('img').src = h.thumbnail;
+    c.querySelector('h2').textContent = h.title;
+    c.querySelector('p').textContent = h.description;
+    c.querySelector('a').href = h.file;
+    g.appendChild(c);
+  });
+}).catch(() => {
+  document.getElementById('grid').textContent = 'Open this page through a local server (for example: npx serve .) so it can read heroes.json.';
+});
+</script>
+</body>
+</html>

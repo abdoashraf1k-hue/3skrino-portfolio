@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3SKRINO hero: The Daily Cut</title>
+<style>
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+#hero-stage{position:fixed;inset:0;overflow:hidden}
+.dc-root{position:absolute;left:50%;top:50%;width:1440px;height:810px;transform-origin:center center}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Libre+Baskerville:wght@400;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#111111;text-decoration:none}a:hover{color:#d21a10}
+@keyframes pap{0%,100%{opacity:0}10%{opacity:0.95}25%{opacity:0}55%{opacity:0.8}65%{opacity:0}}
+.photo:hover .pap{animation:pap 0.9s steps(1) infinite}
+@keyframes slam{0%{transform:scale(1.25) rotate(-2deg);opacity:0}60%{transform:scale(0.98);opacity:1}100%{transform:scale(1)}}
+.slam{animation:slam 300ms cubic-bezier(0.16,1,0.3,1) both;transform-origin:0 50%}
+</style>
+</head>
+<body>
+<div id="hero-stage"></div>
+<template id="dc-template">
+<div onMouseMove="{{onMove}}" onMouseLeave="{{onLeave}}" style="width: 1440px; height: 810px; position: relative; overflow: hidden; box-sizing: border-box; background: #efe9dc; color: #111111; font-family: 'Libre Baskerville', Georgia, serif">
+<svg aria-hidden="true" width="1440" height="810" style="position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0.35; mix-blend-mode: multiply"><filter id="pn"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4"></feTurbulence><feColorMatrix values="0 0 0 0 0.35  0 0 0 0 0.3  0 0 0 0 0.25  0 0 0 0.9 0"></feColorMatrix></filter><rect width="1440" height="810" filter="url(#pn)"></rect></svg>
+<div aria-hidden="true" style="position: absolute; left: 718px; top: 0; width: 4px; height: 810px; background: linear-gradient(90deg, rgba(0,0,0,0.06), rgba(255,255,255,0.4), rgba(0,0,0,0.08))"></div>
+<div style="position: absolute; left: 40px; top: 84px; width: 1360px; height: 88px; background: #d21a10; color: #ffffff; display: flex; align-items: center; justify-content: space-between; padding: 0 26px; box-sizing: border-box">
+<span style="font-family: 'Anton', sans-serif; font-size: 66px">THE DAILY CUT</span>
+<span style="font-size: 14px; text-align: right; line-height: 1.45">Cairo edition, Wednesday<br>EGP 5. Free with every brief</span></div>
+<div class="photo" style="position: absolute; left: 40px; top: 188px; width: 560px; height: 590px; overflow: hidden; background: #cfcac0">
+<img src="../assets/abdo-natural.webp" alt="Abdo Ashraf, 3SKRINO, in chrome wraparound sunglasses, a red puffer jacket and gold chains" style="position: absolute; left: -130px; top: -20px; width: 820px; height: 820px; filter: grayscale(1) contrast(1.45) brightness(1.05)">
+<div aria-hidden="true" style="position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(0,0,0,0.5) 0.9px, rgba(0,0,0,0) 1.3px); background-size: 4px 4px; mix-blend-mode: multiply; opacity: 0.5"></div>
+<div class="pap" aria-hidden="true" style="position: absolute; inset: 0; background: #ffffff; opacity: 0"></div>
+<span style="position: absolute; right: 16px; top: 16px; width: 124px; height: 124px; border-radius: 50%; background: #ffd400; display: flex; align-items: center; justify-content: center; text-align: center; font-family: 'Anton', sans-serif; font-size: 22px; line-height: 1.05; transform: rotate(12deg); box-shadow: 0 4px 0 rgba(0,0,0,0.25)">WORLD<br>EXCLUSIVE</span>
+<span style="position: absolute; left: 0; bottom: 0; background: #111111; color: #ffffff; font-size: 13px; padding: 8px 12px">Pictured: suspect leaving the edit suite at 4am</span>
+</div>
+<div style="position: absolute; left: 630px; top: 186px; width: 770px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 12px"><span style="background: #111111; color: #ffd400; font-family: 'Anton', sans-serif; font-size: 18px; padding: 3px 10px">SCANDAL {{n}} OF 5</span><button type="button" onClick="{{next}}" style="height: 44px; padding: 0 16px; border: 2px solid #111111; background: transparent; font: 700 14px 'Libre Baskerville', serif; cursor: pointer">Next scandal</button></div>
+<sc-if value="{{odd}}" hint-placeholder-val="{{ true }}"><h1 class="slam" style="margin: 0; font-family: 'Anton', sans-serif; font-weight: 400; font-size: {{fs}}px; line-height: 0.9; white-space: pre-line">{{h}}</h1></sc-if>
+<sc-if value="{{even}}" hint-placeholder-val="{{ false }}"><h1 class="slam" style="margin: 0; font-family: 'Anton', sans-serif; font-weight: 400; font-size: {{fs}}px; line-height: 0.9; white-space: pre-line">{{h}}</h1></sc-if>
+<p style="margin: 0; font-size: 19px; line-height: 1.35; font-weight: 700">{{d}}</p>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; font-size: 14px; line-height: 1.5; border-top: 2px solid #111111; padding-top: 12px">
+<span><b>Reels.</b> Vertical cuts that make thumbs stop scrolling.</span>
+<span><b>Promos.</b> Horizontal cuts for Birell, Nilco, Toyota and more.</span>
+<span><b>AI films.</b> Yes, those too. Sources confirm.</span></div>
+<div style="display: flex; gap: 12px"><a href="#showreel" style="display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 22px; border: 2px solid #111111; box-sizing: border-box; font-size: 16px; font-weight: 700"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 14 14"><path d="M3 1.5 L12 7 L3 12.5 Z" fill="currentColor"></path></svg><span>Play showreel</span></a><a href="#contact" style="display: flex; align-items: center; height: 54px; padding: 0 28px; background: #111111; color: #efe9dc; font-size: 16px; font-weight: 800">Read the full story</a></div>
+</div><nav aria-label="Primary" style="position: absolute; left: 0; top: 0; width: 1440px; height: 80px; box-sizing: border-box; padding: 0 56px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; z-index: 5">
+<a href="#top" style="justify-self: start; padding: 12px 0; font-weight: 800; font-size: 19px">3SKRINO</a>
+<div style="display: flex; gap: 32px; font-size: 15px; font-weight: 500">
+<a href="#vertical" style="padding: 12px 0">Vertical cuts</a>
+<a href="#horizontal" style="padding: 12px 0">Horizontal cuts</a>
+<a href="#ai" style="padding: 12px 0">AI cuts</a>
+<a href="#about" style="padding: 12px 0">About</a>
+<a href="#contact" style="padding: 12px 0">Contact</a>
+</div>
+<div style="justify-self: end"></div>
+</nav>
+</div>
+</template>
+<script src="../runtime/dc-lite.js"></script>
+<script>
+class Component extends DCLogic {
+renderVals() {
+const s = this.state || {};
+const H = [
+['SHOCK: HE\nDELIVERED\nEARLY!', 104, 'Clients left speechless as Cairo editor hands over the final cut before the deadline. Experts baffled.'],
+['LOCK UP\nYOUR\nTIMELINES', 108, 'Chrome shades, two gold chains, zero revisions. Witnesses say he was armed with Premiere.'],
+['TOO COLD\nFOR CAIRO', 136, 'Weather office issues drip warning after local editor steps out in a red puffer at 30 degrees.'],
+['EX-CLIENT:\n\u2018I PICKED\nWRONG\u2019', 104, 'Brand that went with the cheaper editor breaks its silence. \u2018The reel had no hook,\u2019 they sobbed.'],
+['RIVAL EDITORS\nFILE\nCOMPLAINT', 100, 'Group claims his reels are \u2018unfair to everyone else\u2019. Judge watches showreel, asks for his number.']];
+const k = (s.k ?? 0) % 5;
+return {
+h: H[k][0], fs: H[k][1], d: H[k][2], n: k + 1, odd: (s.k ?? 0) % 2 === 0, even: (s.k ?? 0) % 2 === 1, next: () => this.setState({ k: (s.k ?? 0) + 1 }),
+onMove: (e) => {
+const el=e.currentTarget;const r=el.getBoundingClientRect();const fx=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),fy=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height));el.style.setProperty('--mx',(fx*2-1).toFixed(3));el.style.setProperty('--my',(fy*2-1).toFixed(3));el.style.setProperty('--px',(fx*1440).toFixed(0)+'px');el.style.setProperty('--py',(fy*810).toFixed(0)+'px');
+
+},
+onLeave: (e) => {
+const el=e.currentTarget;el.style.setProperty('--mx','0');el.style.setProperty('--my','0');
+
+}
+};
+}
+}
+DCLite.mount(Component, document.getElementById('dc-template'), document.getElementById('hero-stage'), {});
+</script>
+</body>
+</html>

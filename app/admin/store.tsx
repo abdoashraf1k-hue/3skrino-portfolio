@@ -35,6 +35,7 @@ const SITE_SECTIONS: Record<keyof SiteConfig, string> = {
   seo: "SEO",
   backups: "backup schedule",
   heroVariant: "hero variant",
+  activeHero: "active hero",
   cinematic: "cinematic",
   storage: "storage",
 };

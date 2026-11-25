@@ -23,6 +23,7 @@ import {
   type ConfigSpec,
   bool,
 } from "./config-file";
+import { ACTIVE_HERO_IDS, DEFAULT_ACTIVE_HERO } from "@/data/hero-pack";
 import { validateCinematic, validateHeroVariant } from "./cinematic-file";
 import { PROVIDER_SETTINGS } from "./storage/contract";
 
@@ -135,13 +136,15 @@ export function validateSiteConfig(input: unknown): SiteConfig {
   // Sprint 10: missing in older files / backups → factory defaults.
   const heroVariant = validateHeroVariant(o);
   const cinematic = validateCinematic(o.cinematic);
+  // Hero pack: missing in older files / backups → "default" (heroVariant).
+  const activeHero = oneOf(o, "activeHero", "Active hero", ACTIVE_HERO_IDS, DEFAULT_ACTIVE_HERO);
 
   // Sprint 12: missing in older files / backups → "auto".
   const storage = {
     videoProvider: oneOf(rec(o.storage ?? {}, "storage"), "videoProvider", "Storage", PROVIDER_SETTINGS, "auto"),
   };
 
-  return { theme, layout, content, seo: { projects }, backups, heroVariant, cinematic, storage };
+  return { theme, layout, content, seo: { projects }, backups, heroVariant, activeHero, cinematic, storage };
 }
 
 export const SITE_SPEC: ConfigSpec<SiteConfig> = {

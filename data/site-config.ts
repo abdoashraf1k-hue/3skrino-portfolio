@@ -199,6 +199,12 @@ export type SiteConfig = {
   seo: { projects: Record<string, ProjectSeo> };
   backups: { schedule: BackupSchedule };
   heroVariant: HeroVariant;
+  /**
+   * Hero pack (admin → Heroes → Pack heroes): an id from
+   * public/heroes/heroes.json shown full-width in an iframe on desktop, or
+   * "default" for heroVariant. Missing in older files → "default".
+   */
+  activeHero: string;
   cinematic: CinematicConfig;
   /**
    * Sprint 12 — media storage (admin → Settings → Storage). videoProvider:
@@ -280,6 +286,7 @@ export const siteConfig: SiteConfig = {
   seo: { projects: {} },
   backups: { schedule: "weekly" },
   heroVariant: "genesis",
+  activeHero: "default",
   cinematic: {
     effects: {
       filmGrain: { enabled: false, intensity: 0.08, flicker: 12, dust: 0.3 },

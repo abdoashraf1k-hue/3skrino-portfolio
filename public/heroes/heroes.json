@@ -1,0 +1,209 @@
+{
+  "name": "3SKRINO hero collection",
+  "runtime": "runtime/dc-lite.js",
+  "heroes": [
+    {
+      "id": "depth",
+      "title": "Depth",
+      "description": "Layered 3D: logo behind, glasses and chains pop out toward the viewer with the mouse.",
+      "file": "heroes/depth.html",
+      "thumbnail": "thumbs/depth.jpg",
+      "design_size": [
+        1440,
+        810
+      ],
+      "links_used": [
+        "#about",
+        "#ai",
+        "#contact",
+        "#horizontal",
+        "#showreel",
+        "#top",
+        "#vertical"
+      ]
+    },
+    {
+      "id": "museum",
+      "title": "Museum",
+      "description": "Gilded frame in a gallery. Move close to the frame and the lasers arm.",
+      "file": "heroes/museum.html",
+      "thumbnail": "thumbs/museum.jpg",
+      "design_size": [
+        1440,
+        810
+      ],
+      "links_used": [
+        "#about",
+        "#ai",
+        "#contact",
+        "#horizontal",
+        "#showreel",
+        "#top",
+        "#vertical"
+      ]
+    },
+    {
+      "id": "billboard-too-cold",
+      "title": "Billboard: TOO COLD",
+      "description": "Night billboard, he breaks out of the top edge. Tilts with the mouse.",
+      "file": "heroes/billboard-too-cold.html",
+      "thumbnail": "thumbs/billboard-too-cold.jpg",
+      "design_size": [
+        1440,
+        810
+      ],
+      "links_used": [
+        "#about",
+        "#ai",
+        "#contact",
+        "#horizontal",
+        "#showreel",
+        "#top",
+        "#vertical"
+      ]
+    },
+    {
+      "id": "billboard-too-late",
+      "title": "Billboard: TOO LATE",
+      "description": "Same billboard, second line of copy.",
+      "file": "heroes/billboard-too-late.html",
+      "thumbnail": "thumbs/billboard-too-late.jpg",
+      "design_size": [
+        1440,
+        810
+      ],
+      "links_used": [
+        "#about",
+        "#ai",
+        "#contact",
+        "#horizontal",
+        "#showreel",
+        "#top",
+        "#vertical"
+      ]
+    },
+    {
+      "id": "daily-cut",
+      "title": "The Daily Cut",
+      "description": "Tabloid front page. \"Next scandal\" cycles 5 headlines; paparazzi flash on photo hover.",
+      "file": "heroes/daily-cut.html",
+      "thumbnail": "thumbs/daily-cut.jpg",
+      "design_size": [
+        1440,
+        810
+      ],
+      "links_used": [
+        "#about",
+        "#ai",
+        "#contact",
+        "#horizontal",
+        "#showreel",
+        "#top",
+        "#vertical"
+      ]
+    },
+    {
+      "id": "breaking-news",
+      "title": "Breaking News",
+      "description": "TV news broadcast. \"Next update\" cycles 4 headlines, live clock, ticker.",
+      "file": "heroes/breaking-news.html",
+      "thumbnail": "thumbs/breaking-news.jpg",
+      "design_size": [
+        1440,
+        810
+      ],
+      "links_used": [
+        "#about",
+        "#ai",
+        "#contact",
+        "#horizontal",
+        "#showreel",
+        "#top",
+        "#vertical"
+      ]
+    },
+    {
+      "id": "licensed-to-cut",
+      "title": "Licensed to Cut",
+      "description": "Holographic ID card, tilts with the mouse, flips to the back with a button.",
+      "file": "heroes/licensed-to-cut.html",
+      "thumbnail": "thumbs/licensed-to-cut.jpg",
+      "design_size": [
+        1440,
+        810
+      ],
+      "links_used": [
+        "#about",
+        "#ai",
+        "#contact",
+        "#horizontal",
+        "#showreel",
+        "#top",
+        "#vertical"
+      ]
+    },
+    {
+      "id": "whiteout",
+      "title": "Whiteout",
+      "description": "Clean white hero, logo and photo drift in parallax.",
+      "file": "heroes/whiteout.html",
+      "thumbnail": "thumbs/whiteout.jpg",
+      "design_size": [
+        1440,
+        810
+      ],
+      "links_used": [
+        "#about",
+        "#ai",
+        "#contact",
+        "#horizontal",
+        "#showreel",
+        "#top",
+        "#vertical",
+        "#work"
+      ]
+    },
+    {
+      "id": "in-the-lens",
+      "title": "In the Lens",
+      "description": "Close-up, the showreel plays in the sunglasses; each lens links to the showreel.",
+      "file": "heroes/in-the-lens.html",
+      "thumbnail": "thumbs/in-the-lens.jpg",
+      "design_size": [
+        1440,
+        810
+      ],
+      "links_used": [
+        "#about",
+        "#ai",
+        "#contact",
+        "#horizontal",
+        "#showreel",
+        "#top",
+        "#vertical",
+        "#work"
+      ]
+    },
+    {
+      "id": "red-sun",
+      "title": "Red Sun",
+      "description": "Red sun behind him, CUTS YOU CAN'T SKIP split around the figure.",
+      "file": "heroes/red-sun.html",
+      "thumbnail": "thumbs/red-sun.jpg",
+      "design_size": [
+        1440,
+        810
+      ],
+      "links_used": [
+        "#about",
+        "#ai",
+        "#contact",
+        "#horizontal",
+        "#showreel",
+        "#top",
+        "#vertical",
+        "#work"
+      ]
+    }
+  ]
+}

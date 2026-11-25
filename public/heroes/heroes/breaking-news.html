@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3SKRINO hero: Breaking News</title>
+<style>
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+#hero-stage{position:fixed;inset:0;overflow:hidden}
+.dc-root{position:absolute;left:50%;top:50%;width:1440px;height:810px;transform-origin:center center}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&amp;family=Barlow:wght@500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#ffffff;text-decoration:none}a:hover{color:#ffd400}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes live{0%,100%{opacity:1}50%{opacity:0.35}}
+@keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+.tick{animation:tick 30s linear infinite}.livedot{animation:live 1.2s steps(1) infinite}
+.wipe{animation:wipe 300ms cubic-bezier(0.16,1,0.3,1) both}
+@media (prefers-reduced-motion: reduce){.tick,.livedot,.wipe{animation:none}}
+</style>
+</head>
+<body>
+<div id="hero-stage"></div>
+<template id="dc-template">
+<div onMouseMove="{{onMove}}" onMouseLeave="{{onLeave}}" style="width: 1440px; height: 810px; position: relative; overflow: hidden; box-sizing: border-box; background: #061533; color: #ffffff; font-family: 'Barlow', sans-serif">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: radial-gradient(ellipse 760px 620px at 1040px 380px, rgba(30,110,240,0.55), rgba(6,21,51,0) 70%), radial-gradient(circle, rgba(120,170,255,0.18) 1.2px, rgba(0,0,0,0) 1.6px); background-size: 100% 100%, 9px 9px"></div>
+<img src="../assets/logo-white.webp" alt="" style="position: absolute; left: 720px; top: 120px; width: 700px; opacity: 0.08; filter: blur(2px)">
+<img src="../assets/abdo-natural.webp" alt="Abdo Ashraf, 3SKRINO, in chrome wraparound sunglasses, a red puffer jacket and gold chains" style="position: absolute; left: 620px; top: 30px; width: 780px; height: 780px; ">
+<div style="position: absolute; left: 1170px; top: 500px; width: 230px; height: 144px; background: #000; box-shadow: 0 0 0 3px #ffffff; overflow: hidden">
+<img src="../assets/abdo-teal.webp" alt="" style="position: absolute; left: -60px; top: -90px; width: 360px; height: 360px; ">
+<span style="position: absolute; left: 0; top: 0; background: #ff2b1c; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 14px; padding: 2px 8px">ON THE SCENE</span>
+<span style="position: absolute; left: 0; bottom: 0; right: 0; background: rgba(0,0,0,0.7); font-size: 12px; padding: 4px 8px">Field reporter: also him</span></div>
+<div style="position: absolute; left: 56px; top: 150px; width: 540px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; gap: 10px; align-items: center"><span style="padding: 4px 12px; background: #ffd400; color: #061533; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 18px">EXCLUSIVE</span><span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; color: #c6d3ee">UPDATE {{n}} OF 4</span></div>
+<sc-if value="{{odd}}" hint-placeholder-val="{{ true }}"><h1 class="wipe" style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 70px; line-height: 0.92; text-transform: uppercase">{{h}}</h1></sc-if>
+<sc-if value="{{even}}" hint-placeholder-val="{{ false }}"><h1 class="wipe" style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 70px; line-height: 0.92; text-transform: uppercase">{{h}}</h1></sc-if>
+<p style="margin: 0; font-size: 18px; line-height: 1.5; color: #c6d3ee">Brands are advised to book early. More at the top of the hour.</p>
+<div style="display: flex; gap: 12px; margin-top: 6px; flex-wrap: wrap">
+<button type="button" onClick="{{next}}" style="height: 54px; padding: 0 20px; border: 2px solid #ffd400; background: transparent; color: #ffd400; font: 800 16px 'Barlow Condensed', sans-serif; cursor: pointer">NEXT UPDATE</button>
+<a href="#showreel" style="display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 22px; border: 2px solid #ffffff; box-sizing: border-box; font-size: 16px; font-weight: 700"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 14 14"><path d="M3 1.5 L12 7 L3 12.5 Z" fill="currentColor"></path></svg><span>Watch live</span></a>
+<a href="#contact" style="display: flex; align-items: center; height: 54px; padding: 0 26px; background: #ff2b1c; color: #ffffff; font-size: 16px; font-weight: 800">Book him</a></div>
+</div>
+<div style="position: absolute; right: 40px; top: 96px; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.45); padding: 8px 12px"><img src="../assets/logo-white.webp" alt="" style="width: 90px"><span style="display: flex; align-items: center; gap: 6px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 17px"><span class="livedot" style="width: 9px; height: 9px; border-radius: 50%; background: #ff2b1c"></span>LIVE {{clock}}</span></div>
+<div style="position: absolute; left: 0; bottom: 64px; width: 1440px; height: 66px; display: flex">
+<span style="display: flex; align-items: center; padding: 0 26px; background: #ff2b1c; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 32px">BREAKING</span>
+<sc-if value="{{odd}}" hint-placeholder-val="{{ true }}"><span class="wipe" style="flex: 1; display: flex; align-items: center; padding: 0 26px; background: #ffffff; color: #061533; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px">{{sub}}</span></sc-if>
+<sc-if value="{{even}}" hint-placeholder-val="{{ false }}"><span class="wipe" style="flex: 1; display: flex; align-items: center; padding: 0 26px; background: #ffffff; color: #061533; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px">{{sub}}</span></sc-if>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 0; bottom: 0; width: 1440px; height: 64px; overflow: hidden; background: #020a1c; display: flex; align-items: center">
+<div class="tick" style="display: flex; gap: 60px; width: max-content; padding-right: 60px; white-space: nowrap; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 24px; color: #ffd400"><span>Vertical cuts now booking</span><span>Horizontal cuts available</span><span>AI cuts: yes, he does those too</span><span>Drip levels: critical</span><span>Cairo, Dubai, Riyadh, worldwide</span><span>Vertical cuts now booking</span><span>Horizontal cuts available</span><span>AI cuts: yes, he does those too</span><span>Drip levels: critical</span><span>Cairo, Dubai, Riyadh, worldwide</span><span>Vertical cuts now booking</span><span>Horizontal cuts available</span><span>AI cuts: yes, he does those too</span><span>Drip levels: critical</span><span>Cairo, Dubai, Riyadh, worldwide</span><span>Vertical cuts now booking</span><span>Horizontal cuts available</span><span>AI cuts: yes, he does those too</span><span>Drip levels: critical</span><span>Cairo, Dubai, Riyadh, worldwide</span></div></div><nav aria-label="Primary" style="position: absolute; left: 0; top: 0; width: 1440px; height: 80px; box-sizing: border-box; padding: 0 56px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; z-index: 5">
+<a href="#top" style="justify-self: start; padding: 12px 0; font-weight: 800; font-size: 19px">3SKRINO</a>
+<div style="display: flex; gap: 32px; font-size: 15px; font-weight: 500">
+<a href="#vertical" style="padding: 12px 0">Vertical cuts</a>
+<a href="#horizontal" style="padding: 12px 0">Horizontal cuts</a>
+<a href="#ai" style="padding: 12px 0">AI cuts</a>
+<a href="#about" style="padding: 12px 0">About</a>
+<a href="#contact" style="padding: 12px 0">Contact</a>
+</div>
+<div style="justify-self: end"></div>
+</nav>
+</div>
+</template>
+<script src="../runtime/dc-lite.js"></script>
+<script>
+class Component extends DCLogic {
+componentDidMount() { this.timer = setInterval(() => this.setState({ t: Date.now() }), 15000); }
+componentWillUnmount() { clearInterval(this.timer); }
+renderVals() {
+const s = this.state || {};
+let clock = '00:00'; try { clock = new Date().toLocaleTimeString('en-GB', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit', hour12: false }); } catch (e) {}
+const N = [['Cairo editor makes every other reel look slow', 'Abdo Ashraf, 3SKRINO, takes new projects for 2026'],
+['Eyewitness: I blinked and the reel was done', 'Authorities unable to explain the turnaround time'],
+['Markets rally as 3SKRINO opens bookings', 'Brands advised to secure a slot before Friday'],
+['Confirmed: the chains are real', 'Gold experts on scene. Drip levels critical.']];
+const c = s.k ?? 0; const k = c % 4;
+return {
+clock: clock, h: N[k][0], sub: N[k][1], n: k + 1, odd: c % 2 === 0, even: c % 2 === 1, next: () => this.setState({ k: c + 1 }),
+onMove: (e) => {
+const el=e.currentTarget;const r=el.getBoundingClientRect();const fx=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),fy=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height));el.style.setProperty('--mx',(fx*2-1).toFixed(3));el.style.setProperty('--my',(fy*2-1).toFixed(3));el.style.setProperty('--px',(fx*1440).toFixed(0)+'px');el.style.setProperty('--py',(fy*810).toFixed(0)+'px');
+
+},
+onLeave: (e) => {
+const el=e.currentTarget;el.style.setProperty('--mx','0');el.style.setProperty('--my','0');
+
+}
+};
+}
+}
+DCLite.mount(Component, document.getElementById('dc-template'), document.getElementById('hero-stage'), {});
+</script>
+</body>
+</html>
