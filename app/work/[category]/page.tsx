@@ -29,7 +29,7 @@ export default async function CategoryPage(props: PageProps<"/work/[category]">)
   const { category: id } = await props.params;
   const category = getCategory(id);
   // Disabled in admin → Categories: the page goes away with it.
-  if (!category?.enabled) notFound();
+  if (!category?.enabled || category.count === 0) notFound();
 
   const items = getProjectsByCategory(category.id);
   const index = categories.findIndex((c) => c.id === category.id);

@@ -23,8 +23,12 @@ export const allCategories: Category[] = brandConfig.categories.map((c) => ({
   count: c.id === "reels" ? reels.length : projects.filter((p) => p.category === c.id).length,
 }));
 
-/** The public list: enabled categories in admin order. */
-export const categories: Category[] = allCategories.filter((c) => c.enabled);
+/**
+ * The public list: enabled categories in admin order, minus empty ones — a field
+ * with no projects yet (e.g. Real estate, Lifestyle) stays hidden from the Fields
+ * grid, menus, search and sitemap until its first project is added in admin.
+ */
+export const categories: Category[] = allCategories.filter((c) => c.enabled && c.count > 0);
 
 /** Any category by slug (disabled ones still resolve, so a project's label never disappears). */
 export function getCategory(id: string): Category | undefined {
