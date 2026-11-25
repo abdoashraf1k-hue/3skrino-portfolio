@@ -611,3 +611,23 @@ html[data-rack-focus] :focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .engine-frame-new { animation: none; }
 }
+
+/* PageHeader reveal — CSS so it runs from the first paint (no hydration wait). Same
+   distance / easing / duration as the old framer-motion variant. .reveal-rise never
+   fades (it's usually the LCP element); .reveal-up fades and rises. */
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(60px); }
+}
+@keyframes reveal-rise {
+  from { transform: translateY(60px); }
+}
+.reveal-up,
+.reveal-rise {
+  animation: 1s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0s) both;
+}
+.reveal-up { animation-name: reveal-up; }
+.reveal-rise { animation-name: reveal-rise; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-up,
+  .reveal-rise { animation: none; }
+}
