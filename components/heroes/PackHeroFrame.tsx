@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { LANDSCAPE_MEDIA, PORTRAIT_MEDIA, packHeroUrl, packPortraitThumbUrl, packThumbUrl, type PackHero } from "@/data/hero-pack";
+import { site } from "@/data/site";
 import { getLenis, scrollToTarget } from "@/lib/scroll";
 
 /** The hero pages' #links → the site's real routes ("#top" scrolls instead). */
@@ -73,6 +74,10 @@ export default function PackHeroFrame({ hero }: { hero: PackHero }) {
 
   return (
     <section id="home" aria-label={hero.title} className="relative h-[100svh] w-full overflow-hidden bg-black">
+      {/* The hero's own heading lives inside the iframe, which doesn't count for this page. */}
+      <h1 className="sr-only">
+        {site.name} — {site.role}
+      </h1>
       {/* React hoists these into <head> of the server HTML, so the thumbnail is the first paint. */}
       <link rel="preload" as="image" href={thumb} media={LANDSCAPE_MEDIA} fetchPriority="high" />
       <link rel="preload" as="image" href={portraitThumb} media={PORTRAIT_MEDIA} fetchPriority="high" />
