@@ -8,6 +8,7 @@
       "description": "Layered 3D: logo behind, glasses and chains pop out toward the viewer with the mouse.",
       "file": "heroes/depth.html",
       "thumbnail": "thumbs/depth.jpg",
+      "thumbnail_portrait": "thumbs/depth-portrait.webp",
       "design_size": [
         1440,
         810
@@ -28,6 +29,7 @@
       "description": "Gilded frame in a gallery. Move close to the frame and the lasers arm.",
       "file": "heroes/museum.html",
       "thumbnail": "thumbs/museum.jpg",
+      "thumbnail_portrait": "thumbs/museum-portrait.webp",
       "design_size": [
         1440,
         810
@@ -48,6 +50,7 @@
       "description": "Night billboard, he breaks out of the top edge. Tilts with the mouse.",
       "file": "heroes/billboard-too-cold.html",
       "thumbnail": "thumbs/billboard-too-cold.jpg",
+      "thumbnail_portrait": "thumbs/billboard-too-cold-portrait.webp",
       "design_size": [
         1440,
         810
@@ -68,6 +71,7 @@
       "description": "Same billboard, second line of copy.",
       "file": "heroes/billboard-too-late.html",
       "thumbnail": "thumbs/billboard-too-late.jpg",
+      "thumbnail_portrait": "thumbs/billboard-too-late-portrait.webp",
       "design_size": [
         1440,
         810
@@ -88,6 +92,7 @@
       "description": "Tabloid front page. \"Next scandal\" cycles 5 headlines; paparazzi flash on photo hover.",
       "file": "heroes/daily-cut.html",
       "thumbnail": "thumbs/daily-cut.jpg",
+      "thumbnail_portrait": "thumbs/daily-cut-portrait.webp",
       "design_size": [
         1440,
         810
@@ -108,6 +113,7 @@
       "description": "TV news broadcast. \"Next update\" cycles 4 headlines, live clock, ticker.",
       "file": "heroes/breaking-news.html",
       "thumbnail": "thumbs/breaking-news.jpg",
+      "thumbnail_portrait": "thumbs/breaking-news-portrait.webp",
       "design_size": [
         1440,
         810
@@ -128,6 +134,7 @@
       "description": "Holographic ID card, tilts with the mouse, flips to the back with a button.",
       "file": "heroes/licensed-to-cut.html",
       "thumbnail": "thumbs/licensed-to-cut.jpg",
+      "thumbnail_portrait": "thumbs/licensed-to-cut-portrait.webp",
       "design_size": [
         1440,
         810
@@ -148,6 +155,7 @@
       "description": "Clean white hero, logo and photo drift in parallax.",
       "file": "heroes/whiteout.html",
       "thumbnail": "thumbs/whiteout.jpg",
+      "thumbnail_portrait": "thumbs/whiteout-portrait.webp",
       "design_size": [
         1440,
         810
@@ -169,6 +177,7 @@
       "description": "Close-up, the showreel plays in the sunglasses; each lens links to the showreel.",
       "file": "heroes/in-the-lens.html",
       "thumbnail": "thumbs/in-the-lens.jpg",
+      "thumbnail_portrait": "thumbs/in-the-lens-portrait.webp",
       "design_size": [
         1440,
         810
@@ -190,6 +199,7 @@
       "description": "Red sun behind him, CUTS YOU CAN'T SKIP split around the figure.",
       "file": "heroes/red-sun.html",
       "thumbnail": "thumbs/red-sun.jpg",
+      "thumbnail_portrait": "thumbs/red-sun-portrait.webp",
       "design_size": [
         1440,
         810

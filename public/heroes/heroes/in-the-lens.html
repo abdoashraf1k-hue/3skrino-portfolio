@@ -23,6 +23,20 @@ a{color:#f4f1ee;text-decoration:none}a:hover{color:#ff8a72}
 .glint{animation:glintSweep 1.4s cubic-bezier(0.3, 0.6, 0.2, 1) 0.5s 1 both}
 @media (prefers-reduced-motion: reduce){.reel,.glint,.reel-wrap{animation:none}}
 </style>
+<style>
+.il{container-type:inline-size;position:relative;width:100%;height:100%;overflow:hidden;background:#000;color:#f4f1ee;font-family:'Syne','Helvetica Neue',Arial,sans-serif;display:flex;flex-direction:column}
+.il-nav{position:absolute;left:0;right:0;top:0;height:64px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;z-index:5;font-size:15px;font-weight:500}
+.il-stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;margin-top:56px;container-type:size}
+.il-crop{position:relative;width:min(100cqw,93.8cqh);aspect-ratio:760/810;overflow:hidden;-webkit-mask-image:radial-gradient(ellipse 62% 58% at 50% 46%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 62% 58% at 50% 46%,#000 62%,transparent 100%)}
+.il-face{position:absolute;left:0;top:0;width:760px;height:810px;overflow:hidden;transform-origin:0 0}
+.il-face>*{margin-left:-343px}
+.il-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(#000,rgba(0,0,0,0) 16%,rgba(0,0,0,0) 62%,#000 97%),linear-gradient(90deg,#000,rgba(0,0,0,0) 8%,rgba(0,0,0,0) 92%,#000),radial-gradient(ellipse 70% 60% at 50% 45%,rgba(0,0,0,0) 55%,rgba(0,0,0,.6))}
+.il-copy{position:relative;z-index:3;padding:0 20px 28px;display:flex;flex-direction:column;gap:12px}
+.il-copy h1{margin:0;font-size:clamp(50px,14cqw,76px);line-height:.92;font-weight:800;letter-spacing:-.035em}
+.il-copy p{margin:0;font-size:15px;line-height:1.5;color:#cdc7c1;max-width:36ch}
+.il-cta{display:flex;gap:10px;flex-wrap:wrap}
+.il-cta a{display:flex;align-items:center;gap:10px;height:48px;padding:0 20px;box-sizing:border-box;font-size:15px;font-weight:700}
+</style>
 </head>
 <body>
 <div id="hero-stage"></div>
@@ -81,6 +95,42 @@ a{color:#f4f1ee;text-decoration:none}a:hover{color:#ff8a72}
 <a href="#work" style="display: flex; align-items: center; height: 54px; padding: 0 26px; background: #ff3b1f; color: #000000; font-size: 16px; font-weight: 700">View work</a>
 </div>
 
+</div>
+</template>
+<template id="dc-template-portrait">
+<div class="il" onMouseMove="{{onMove}}" onMouseLeave="{{onLeave}}">
+<nav aria-label="Primary" class="il-nav"><a href="#top" style="font-weight: 800; font-size: 18px; padding: 10px 0">3SKRINO</a><a href="#contact" style="padding: 10px 0">Contact</a></nav>
+<div class="il-stage"><div class="il-crop"><div class="il-face" data-fit="width">
+<img src="../assets/abdo-lens-closeup.jpg" alt="Extreme close-up of Abdo Ashraf, 3SKRINO, in chrome wraparound sunglasses, with his showreel playing as a reflection in the lenses" style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; display: block; transform: scale(1.02) translate3d(calc(var(--mx, 0) * 6px), calc(var(--my, 0) * 4px), 0); transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1)">
+
+<a class="lens" href="#showreel" aria-label="Play showreel" style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; display: block; mix-blend-mode: screen; clip-path: polygon(663px 333px, 650px 374px, 632px 411px, 599px 435px, 561px 442px, 527px 440px, 497px 435px, 468px 429px, 440px 415px, 415px 395px, 391px 369px, 370px 333px, 357px 288px, 384px 251px, 431px 240px, 469px 240px, 498px 241px, 524px 244px, 550px 248px, 580px 254px, 615px 266px, 657px 291px); transform: scale(1.02) translate3d(calc(var(--mx, 0) * 6px), calc(var(--my, 0) * 4px), 0); transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1)">
+<div class="reel-wrap" style="position: absolute; left: 200px; top: 205px; width: 4428px; height: 260px; filter: blur(0.7px) saturate(1.2); transform: translate3d(calc(var(--mx, 0) * -90px), calc(var(--my, 0) * -24px), 0) skewY(-7deg); transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1)">
+<div class="reel" style="display: flex; width: 4428px; height: 260px">
+<img src="../assets/reel-strip.webp" alt="" style="width: 2214px; height: 260px; display: block">
+<img src="../assets/reel-strip.webp" alt="" style="width: 2214px; height: 260px; display: block">
+</div>
+</div>
+<div style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; background: linear-gradient(118deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.3) 34%, rgba(255, 255, 255, 0) 38%); transform: translate3d(calc(var(--mx, 0) * 160px), 0, 0); transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1)"></div>
+<div class="glint" style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; background: linear-gradient(110deg, rgba(255, 255, 255, 0) 44%, rgba(255, 255, 255, 0.85) 48%, rgba(255, 255, 255, 0) 52%)"></div>
+</a>
+
+<a class="lens" href="#showreel" aria-label="Play showreel" style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; display: block; mix-blend-mode: screen; clip-path: polygon(1073px 333px, 1054px 368px, 1029px 395px, 1002px 414px, 975px 426px, 946px 433px, 917px 439px, 882px 443px, 843px 435px, 810px 411px, 791px 374px, 776px 333px, 781px 288px, 825px 264px, 862px 251px, 892px 245px, 919px 243px, 945px 241px, 974px 241px, 1009px 243px, 1055px 254px, 1090px 286px); transform: scale(1.02) translate3d(calc(var(--mx, 0) * 6px), calc(var(--my, 0) * 4px), 0); transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1)">
+<div class="reel-wrap" style="position: absolute; left: 200px; top: 215px; width: 4428px; height: 260px; filter: blur(0.7px) saturate(1.2); transform: translate3d(calc(var(--mx, 0) * -90px), calc(var(--my, 0) * -24px), 0) skewY(7deg); transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1)">
+<div class="reel" style="display: flex; width: 4428px; height: 260px">
+<img src="../assets/reel-strip.webp" alt="" style="width: 2214px; height: 260px; display: block">
+<img src="../assets/reel-strip.webp" alt="" style="width: 2214px; height: 260px; display: block">
+</div>
+</div>
+<div style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; background: linear-gradient(118deg, rgba(255, 255, 255, 0) 62%, rgba(255, 255, 255, 0.3) 66%, rgba(255, 255, 255, 0) 70%); transform: translate3d(calc(var(--mx, 0) * 160px), 0, 0); transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1)"></div>
+<div class="glint" style="position: absolute; left: 0; top: 0; width: 1440px; height: 810px; background: linear-gradient(110deg, rgba(255, 255, 255, 0) 44%, rgba(255, 255, 255, 0.85) 48%, rgba(255, 255, 255, 0) 52%)"></div>
+</a>
+
+</div><div aria-hidden="true" class="il-shade"></div></div></div>
+<div class="il-copy">
+<h1>Look closer.</h1>
+<p>My reel is playing in the lenses. Tap either one to watch it full screen. Abdo Ashraf, cinematographer and editor in Cairo.</p>
+<div class="il-cta"><a href="#showreel" style="border: 1.5px solid rgba(244, 241, 238, 0.7)"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 14 14"><path d="M3 1.5 L12 7 L3 12.5 Z" fill="currentColor"></path></svg><span>Play showreel</span></a><a href="#work" style="background: #ff3b1f; color: #000000">View work</a></div>
+</div>
 </div>
 </template>
 <script src="../runtime/dc-lite.js"></script>

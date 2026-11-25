@@ -10,7 +10,7 @@ Ten interactive hero designs for the 3SKRINO portfolio, exported from Claude Des
 | `heroes/*.html` | One self-contained page per hero, designed at 1440×810 |
 | `runtime/dc-lite.js` | A small script (about 250 lines, no dependencies) that runs the heroes' interactions and scales them to the screen |
 | `assets/` | Photos, layers and logos the heroes use |
-| `thumbs/` | A 960×540 screenshot of each hero, for an admin picker |
+| `thumbs/` | A 960×540 screenshot of each hero (`<id>.jpg`) and a 390×844 phone screenshot (`<id>-portrait.webp`) |
 | `preview.html` | A gallery of all ten. Open it through a local server, for example `npx serve .` |
 | `CLAUDE_CODE_PROMPT.md` | The instructions to give Claude Code to add this to the site |
 
@@ -43,5 +43,5 @@ When a hero runs inside an iframe it sends `window.postMessage` events to the pa
 
 ## Notes
 
-- The designs are desktop-first (1440×810). On phones, show the site's current hero unless a mobile layout is made for a hero.
+- Each hero has a desktop composition (1440×810, `#dc-template`) and a portrait one (`#dc-template-portrait`, canvas 844 tall and 390–640 wide) that the runtime picks whenever the viewport is taller than ~wide. Touch drags, device tilt (after a tap on iOS) and a slow idle drift stand in for the mouse; `prefers-reduced-motion` turns the motion off.
 - Fonts load from Google Fonts.

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { packHeroUrl, packThumbUrl, type PackHero } from "@/data/hero-pack";
+import { LANDSCAPE_MEDIA, PORTRAIT_MEDIA, packHeroUrl, packPortraitThumbUrl, packThumbUrl, type PackHero } from "@/data/hero-pack";
 import { getLenis, scrollToTarget } from "@/lib/scroll";
 
 /** The hero pages' #links → the site's real routes ("#top" scrolls instead). */
@@ -26,12 +26,14 @@ function isMessage(d: unknown): d is { type: string; href?: unknown; deltaY?: un
 /**
  * A pack hero (public/heroes/) full-width at the top of the home page, in a
  * same-origin iframe under the site's own navigation. Its thumbnail is the
- * first paint and stays until the frame has loaded. The hero's links and
- * wheel events arrive as postMessages and are mapped to the site's routes and
- * scroll.
+ * first paint and stays until the frame has loaded (the phone/upright-tablet
+ * screenshot when the hero will show its portrait layout). The hero's links
+ * and wheel events arrive as postMessages and are mapped to the site's routes
+ * and scroll; touch swipes scroll the page natively (the hero allows pan-y).
  */
 export default function PackHeroFrame({ hero }: { hero: PackHero }) {
   const thumb = packThumbUrl(hero);
+  const portraitThumb = packPortraitThumbUrl(hero);
   const router = useRouter();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [loaded, setLoaded] = useState(false);
@@ -71,18 +73,21 @@ export default function PackHeroFrame({ hero }: { hero: PackHero }) {
 
   return (
     <section id="home" aria-label={hero.title} className="relative h-[100svh] w-full overflow-hidden bg-black">
-      {/* React hoists this into <head> of the server HTML, so the thumbnail is the first paint. */}
-      <link rel="preload" as="image" href={thumb} fetchPriority="high" />
+      {/* React hoists these into <head> of the server HTML, so the thumbnail is the first paint. */}
+      <link rel="preload" as="image" href={thumb} media={LANDSCAPE_MEDIA} fetchPriority="high" />
+      <link rel="preload" as="image" href={portraitThumb} media={PORTRAIT_MEDIA} fetchPriority="high" />
       {/* Removed once the frame has faded in: the hero pages are partly transparent, so it would show through. */}
       {!covered && (
-        // eslint-disable-next-line @next/next/no-img-element -- static placeholder, same file the preload fetched
-        <img src={thumb} alt="" aria-hidden fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" />
+        <picture>
+          <source media={PORTRAIT_MEDIA} srcSet={portraitThumb} />
+          <img src={thumb} alt="" aria-hidden fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" />
+        </picture>
       )}
       <iframe
         ref={frameRef}
         src={packHeroUrl(hero, "?nav=0&fit=cover")}
         title={hero.title}
-        allow="autoplay"
+        allow="autoplay; accelerometer; gyroscope"
         loading="eager"
         onLoad={() => setLoaded(true)}
         onTransitionEnd={() => setCovered(loaded)}

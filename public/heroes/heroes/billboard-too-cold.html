@@ -15,6 +15,18 @@ body{margin:0}
 a{color:#ffffff;text-decoration:none}a:hover{color:#ffe600}
 .board{transition:transform 200ms cubic-bezier(0.16,1,0.3,1)}
 </style>
+<style>
+.pb{container-type:inline-size;position:relative;width:100%;height:100%;overflow:hidden;background:linear-gradient(#03050f,#0d0b24 55%,#2a0f2a);color:#fff;font-family:'Manrope',sans-serif;display:flex;flex-direction:column}
+.pb-nav{position:absolute;left:0;right:0;top:0;height:64px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;z-index:5;font-size:15px;font-weight:500}
+.pb-copy{position:relative;z-index:3;padding:92px 24px 0;display:flex;flex-direction:column;gap:14px}
+.pb-copy h1{margin:0;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:clamp(52px,15cqw,72px);line-height:.9;letter-spacing:-.04em;text-transform:uppercase}
+.pb-copy p{margin:0;font-size:16px;line-height:1.45;color:#c8c3dc;max-width:32ch}
+.pb-cta{display:flex;gap:10px;flex-wrap:wrap}
+.pb-cta a{display:flex;align-items:center;gap:10px;height:48px;padding:0 20px;box-sizing:border-box;font-size:15px;font-weight:700}
+.pb-stage{position:relative;flex:1;min-height:0;margin:0 -7%}
+.pb-fit{position:absolute;left:50%;top:48%;width:900px;height:820px;translate:-50% -50%}
+.pb-sky{position:absolute;left:0;right:0;bottom:0;height:26%;background:#070612;clip-path:polygon(0 30%,9% 30%,9% 8%,21% 8%,21% 22%,33% 22%,33% 0,45% 0,45% 36%,58% 36%,58% 14%,70% 14%,70% 44%,100% 44%,100% 100%,0 100%)}
+</style>
 </head>
 <body>
 <div id="hero-stage"></div>
@@ -59,6 +71,39 @@ a{color:#ffffff;text-decoration:none}a:hover{color:#ffe600}
 <p style="margin: 0; font-size: 18px; line-height: 1.5; color: #c8c3dc">Ads get skipped. This face doesn&#8217;t. Book the spot before your competitor does.</p>
 <div style="display: flex; gap: 12px"><a href="#showreel" style="display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 22px; border: 2px solid #ffffff; box-sizing: border-box; font-size: 16px; font-weight: 700"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 14 14"><path d="M3 1.5 L12 7 L3 12.5 Z" fill="currentColor"></path></svg><span>Play showreel</span></a><a href="#contact" style="display: flex; align-items: center; height: 54px; padding: 0 28px; background: #ffe600; color: #111111; font-size: 16px; font-weight: 800">Hire me</a></div>
 </div>
+</div>
+</template>
+<template id="dc-template-portrait">
+<div class="pb" onMouseMove="{{onMove}}" onMouseLeave="{{onLeave}}">
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: radial-gradient(1px 1px at 8% 12%, #fff, transparent), radial-gradient(1px 1px at 33% 8%, #fff, transparent), radial-gradient(1px 1px at 61% 15%, #fff, transparent), radial-gradient(1px 1px at 88% 6%, #fff, transparent), radial-gradient(ellipse 600px 320px at 55% 100%, rgba(255,60,40,0.25), transparent 70%)"></div>
+<div aria-hidden="true" class="pb-sky"></div>
+<nav aria-label="Primary" class="pb-nav"><a href="#top" style="font-weight: 800; font-size: 18px; padding: 10px 0">3SKRINO</a><a href="#contact" style="padding: 10px 0">Contact</a></nav>
+<div class="pb-copy">
+<h1>Can&#8217;t skip<br>this.</h1>
+<p>Ads get skipped. This face doesn&#8217;t. Book the spot before your competitor does.</p>
+<div class="pb-cta"><a href="#showreel" style="border: 2px solid #ffffff"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 14 14"><path d="M3 1.5 L12 7 L3 12.5 Z" fill="currentColor"></path></svg><span>Play showreel</span></a><a href="#contact" style="background: #ffe600; color: #111111; font-weight: 800; padding: 0 26px">Hire me</a></div>
+</div>
+<div class="pb-stage"><div class="pb-fit" data-fit="contain"><div style="position: absolute; left: 0; top: 230px; width: 900px; height: 640px; perspective: 1500px">
+<div class="board" style="position: absolute; left: 20px; top: 70px; width: 860px; height: 520px; transform-style: preserve-3d; transform: rotateY(calc(-7deg + var(--mx, 0) * 10deg)) rotateX(calc(2deg - var(--my, 0) * 6deg))">
+<div style="position: absolute; left: 0; top: 0; width: 860px; height: 520px; background: #c4120c; overflow: hidden; box-shadow: 0 0 0 10px #141414, 0 0 0 12px #2b2b2b, 0 30px 80px rgba(255,40,20,0.25)">
+<img src="../assets/logo-white.webp" alt="" style="position: absolute; left: 300px; top: 40px; width: 640px; opacity: 0.12">
+<div style="position: absolute; left: 0; top: 0; width: 860px; height: 520px; background: radial-gradient(ellipse 500px 420px at 600px 300px, rgba(255,120,80,0.35), rgba(0,0,0,0) 70%), linear-gradient(90deg, rgba(0,0,0,0.25), rgba(0,0,0,0) 40%)"></div>
+<div style="position: absolute; left: 30px; top: 46px; font-family: 'Archivo Black', sans-serif; font-size: 150px; line-height: 0.88; letter-spacing: -0.04em; color: #ffffff">TOO<br>COLD.</div>
+</div>
+<div style="position: absolute; left: 400px; top: -230px; width: 700px; height: 700px; transform: translateZ(36px); clip-path: inset(0 240px 0 0)">
+<img src="../assets/abdo-red.webp" alt="Abdo Ashraf, 3SKRINO, in chrome wraparound sunglasses, a red puffer jacket and gold chains" style="position: absolute; left: 0px; top: 0px; width: 700px; height: 700px; filter: drop-shadow(-10px 16px 18px rgba(0,0,0,0.45))"></div>
+<div style="position: absolute; left: 0; top: 0; width: 860px; height: 420px; transform: translateZ(39px); pointer-events: none">
+<div style="position: absolute; left: 34px; top: 4px; font-family: 'Archivo Black', sans-serif; font-size: 34px; line-height: 1; color: #ffe600; letter-spacing: -0.02em">warning</div>
+<div style="position: absolute; left: 40px; top: 368px; font-family: 'Archivo Black', sans-serif; font-size: 20px; color: #111111; background: #ffe600; padding: 6px 14px">handle with gloves</div></div>
+<div style="position: absolute; left: 0; top: 420px; width: 860px; height: 100px; transform: translateZ(37px); background: #0d0d0d; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; box-sizing: border-box">
+<span style="font-family: 'Anton', sans-serif; font-size: 34px; color: #ffffff">NOW SHOWING IN YOUR FEED</span>
+<img src="../assets/logo-white.webp" alt="3SKRINO logo" style="width: 150px"></div>
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 860px; height: 520px; transform: translateZ(38px); background: linear-gradient(to top, rgba(255,244,214,0.28), rgba(255,244,214,0) 55%); mix-blend-mode: screen; pointer-events: none"></div>
+<div style="position: absolute; left: -20px; top: 530px; width: 900px; height: 14px; background: #1a1a1a; transform: translateZ(40px)"></div>
+<span style="position: absolute; left: 80px; top: 512px; width: 40px; height: 22px; border-radius: 8px 8px 4px 4px; background: #2a2a2a; transform: translateZ(48px); box-shadow: 0 -6px 18px rgba(255,240,200,0.7)"></span><span style="position: absolute; left: 300px; top: 512px; width: 40px; height: 22px; border-radius: 8px 8px 4px 4px; background: #2a2a2a; transform: translateZ(48px); box-shadow: 0 -6px 18px rgba(255,240,200,0.7)"></span><span style="position: absolute; left: 520px; top: 512px; width: 40px; height: 22px; border-radius: 8px 8px 4px 4px; background: #2a2a2a; transform: translateZ(48px); box-shadow: 0 -6px 18px rgba(255,240,200,0.7)"></span><span style="position: absolute; left: 740px; top: 512px; width: 40px; height: 22px; border-radius: 8px 8px 4px 4px; background: #2a2a2a; transform: translateZ(48px); box-shadow: 0 -6px 18px rgba(255,240,200,0.7)"></span>
+<div style="position: absolute; left: 190px; top: 544px; width: 16px; height: 300px; background: #151515"></div><div style="position: absolute; left: 650px; top: 544px; width: 16px; height: 300px; background: #151515"></div>
+</div>
+</div></div></div>
 </div>
 </template>
 <script src="../runtime/dc-lite.js"></script>

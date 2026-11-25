@@ -18,6 +18,20 @@ a{color:#111111;text-decoration:none}a:hover{color:#d21a10}
 @keyframes slam{0%{transform:scale(1.25) rotate(-2deg);opacity:0}60%{transform:scale(0.98);opacity:1}100%{transform:scale(1)}}
 .slam{animation:slam 300ms cubic-bezier(0.16,1,0.3,1) both;transform-origin:0 50%}
 </style>
+<style>
+.dcp{container-type:inline-size;position:relative;width:100%;height:100%;overflow:hidden;background:#efe9dc;color:#111;font-family:'Libre Baskerville',Georgia,serif;display:flex;flex-direction:column;gap:10px;padding:76px 16px 16px;box-sizing:border-box}
+.dcp-nav{position:absolute;left:0;right:0;top:0;height:64px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;z-index:5;font-size:15px;font-weight:500}
+.dcp-mast{position:relative;flex:none;background:#d21a10;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:8px 14px;gap:10px}
+.dcp-mast b{font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(38px,11cqw,58px);line-height:1}
+.dcp-mast small{font-size:11px;line-height:1.4;text-align:right}
+.dcp-row{display:flex;align-items:center;gap:10px;flex:none;position:relative}
+.dcp h1{margin:0;font-family:'Anton',sans-serif;font-weight:400;line-height:.9;white-space:pre-line;position:relative;flex:none}
+.dcp-photo{position:relative;flex:1;min-height:150px;overflow:hidden;background:#cfcac0}
+.dcp-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 28%;filter:grayscale(1) contrast(1.45) brightness(1.05)}
+.dcp p{margin:0;font-size:14px;line-height:1.38;font-weight:700;position:relative;flex:none}
+.dcp-cta{display:flex;gap:10px;flex:none;position:relative}
+.dcp-cta a{display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;box-sizing:border-box;font-size:14px;font-weight:700;white-space:nowrap}
+</style>
 </head>
 <body>
 <div id="hero-stage"></div>
@@ -56,6 +70,25 @@ a{color:#111111;text-decoration:none}a:hover{color:#d21a10}
 </div>
 <div style="justify-self: end"></div>
 </nav>
+</div>
+</template>
+<template id="dc-template-portrait">
+<div class="dcp" onMouseMove="{{onMove}}" onMouseLeave="{{onLeave}}">
+<svg aria-hidden="true" width="100%" height="100%" style="position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0.35; mix-blend-mode: multiply"><filter id="pnp"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4"></feTurbulence><feColorMatrix values="0 0 0 0 0.35  0 0 0 0 0.3  0 0 0 0 0.25  0 0 0 0.9 0"></feColorMatrix></filter><rect width="100%" height="100%" filter="url(#pnp)"></rect></svg>
+<nav aria-label="Primary" class="dcp-nav"><a href="#top" style="font-weight: 800; font-size: 18px; padding: 10px 0">3SKRINO</a><a href="#contact" style="padding: 10px 0">Contact</a></nav>
+<div class="dcp-mast"><b>THE DAILY CUT</b><small>Cairo edition<br>EGP 5</small></div>
+<div class="dcp-row"><span style="background: #111111; color: #ffd400; font-family: 'Anton', sans-serif; font-size: 17px; padding: 3px 10px">SCANDAL {{n}} OF 5</span><button type="button" onClick="{{next}}" style="height: 44px; padding: 0 14px; border: 2px solid #111111; background: transparent; color: #111111; font: 700 14px 'Libre Baskerville', serif; cursor: pointer">Next scandal</button></div>
+<sc-if value="{{odd}}"><h1 class="slam" style="font-size: calc({{fs}}px * 0.56 + (100cqw - 390px) * 0.12)">{{h}}</h1></sc-if>
+<sc-if value="{{even}}"><h1 class="slam" style="font-size: calc({{fs}}px * 0.56 + (100cqw - 390px) * 0.12)">{{h}}</h1></sc-if>
+<div class="photo dcp-photo">
+<img src="../assets/abdo-natural.webp" alt="Abdo Ashraf, 3SKRINO, in chrome wraparound sunglasses, a red puffer jacket and gold chains">
+<div aria-hidden="true" style="position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(0,0,0,0.5) 0.9px, rgba(0,0,0,0) 1.3px); background-size: 4px 4px; mix-blend-mode: multiply; opacity: 0.5"></div>
+<div class="pap" aria-hidden="true" style="position: absolute; inset: 0; background: #ffffff; opacity: 0"></div>
+<span style="position: absolute; right: 10px; top: 10px; width: 88px; height: 88px; border-radius: 50%; background: #ffd400; display: flex; align-items: center; justify-content: center; text-align: center; font-family: 'Anton', sans-serif; font-size: 16px; line-height: 1.05; transform: rotate(12deg); box-shadow: 0 4px 0 rgba(0,0,0,0.25)">WORLD<br>EXCLUSIVE</span>
+<span style="position: absolute; left: 0; bottom: 0; background: #111111; color: #ffffff; font-size: 11px; padding: 6px 10px">Pictured: suspect leaving the edit suite at 4am</span>
+</div>
+<p>{{d}}</p>
+<div class="dcp-cta"><a href="#showreel" style="border: 2px solid #111111"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 14 14"><path d="M3 1.5 L12 7 L3 12.5 Z" fill="currentColor"></path></svg><span>Play showreel</span></a><a href="#contact" style="background: #111111; color: #efe9dc; font-weight: 800">Read the full story</a></div>
 </div>
 </template>
 <script src="../runtime/dc-lite.js"></script>

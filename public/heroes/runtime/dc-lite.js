@@ -4,6 +4,13 @@
  * a DCLogic class with state / setState / lifecycle, and it scales the 1440x810 hero
  * to the viewport.
  *
+ * Portrait: a hero may also ship <template id="dc-template-portrait">, used whenever the
+ * viewport is taller than ~wide (phones, tablets held upright). It is laid out on a canvas
+ * 844px tall and 390-640px wide (fluid in width), scaled to fit. The component sees
+ * this.mode ('portrait' | 'landscape'); <html data-mode> mirrors it for CSS.
+ * Touch: drags, device tilt and an idle drift drive the template's onMouseMove handler
+ * (see "Touch + motion" below). prefers-reduced-motion turns the drift and tilt off.
+ *
  * URL options (all optional):
  *   ?fit=cover    fill the viewport, crop the overflow (default)
  *   ?fit=contain  show the whole hero, letterboxed
@@ -154,14 +161,28 @@
     while (parent.childNodes.length > fresh.length) parent.removeChild(parent.lastChild);
   }
 
+  // Portrait canvas: 390x844 at phone size; wider screens (tablets) get a wider canvas of the
+  // same height instead of a bigger scale, so the template must be fluid in width (390-640).
+  const PW = 390, PH = 844;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const coarse = window.matchMedia('(hover: none), (pointer: coarse)');
+
   function mount(Cls, tpl, stage, props) {
     const params = new URLSearchParams(location.search);
     const fit = params.get('fit') || 'cover';
-    if (params.get('nav') === '0') {
-      const st = document.createElement('style');
-      st.textContent = 'nav[aria-label="Primary"]{display:none!important}';
-      document.head.appendChild(st);
-    }
+    const head = document.createElement('style');
+    head.textContent =
+      (params.get('nav') === '0' ? 'nav[aria-label="Primary"]{display:none!important}' : '') +
+      // vertical swipes scroll the page (native scroll chaining); horizontal drags tilt the hero
+      '.dc-root{touch-action:pan-y;-webkit-tap-highlight-color:transparent}' +
+      // touch: every link/button gets a hit area of at least 44 screen px, whatever the scale
+      '@media (pointer: coarse){.dc-root :where(a,button):not([style*="position: absolute"]){position:relative}' +
+      '.dc-root :where(a,button)::after{content:"";position:absolute;' +
+      'top:calc(50% - max(50%, 22px / var(--dc-s, 1)));bottom:calc(50% - max(50%, 22px / var(--dc-s, 1)));' +
+      'left:calc(50% - max(50%, 22px / var(--dc-s, 1)));right:calc(50% - max(50%, 22px / var(--dc-s, 1)))}}' +
+      '@media (prefers-reduced-motion: reduce){.dc-root *,.dc-root *::before,.dc-root *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}';
+    document.head.appendChild(head);
+    const portraitTpl = document.getElementById('dc-template-portrait');
     const comp = new Cls(props || {});
     comp.props = props || {};
     if (!comp.state) comp.state = {};
@@ -169,25 +190,128 @@
     root.className = 'dc-root';
     stage.appendChild(root);
     let raf = 0;
+    let mode = '';
+    let mover = null; // the element carrying the template's onMouseMove (see Touch + motion)
+    function pickMode() { return portraitTpl && window.innerWidth / window.innerHeight < 1.1 ? 'portrait' : 'landscape'; }
     function render() {
+      comp.mode = mode;
       const vals = comp.renderVals();
       const out = [];
-      tpl.content.childNodes.forEach(function (n) { build(n, vals, out, ''); });
+      (mode === 'portrait' ? portraitTpl : tpl).content.childNodes.forEach(function (n) { build(n, vals, out, mode); });
       morphChildren(root, out);
+      mover = null;
+      fitAll();
+    }
+    // <el data-fit="width|contain">: scale a fixed-size piece of the desktop composition to fit its
+    // parent (portrait templates reuse the board / card / frame as is). Re-applied after each render.
+    function fitAll() {
+      const els = root.querySelectorAll('[data-fit]');
+      for (let i = 0; i < els.length; i++) {
+        const el = els[i], p = el.parentElement;
+        const k = el.getAttribute('data-fit') === 'contain'
+          ? Math.min(p.clientWidth / el.offsetWidth, p.clientHeight / el.offsetHeight)
+          : p.clientWidth / el.offsetWidth;
+        el.style.scale = String(Math.round(k * 1e4) / 1e4);
+      }
     }
     comp.__schedule = function () { if (!raf) raf = requestAnimationFrame(function () { raf = 0; render(); }); };
-    render();
-    if (comp.componentDidMount) comp.componentDidMount();
-    window.addEventListener('pagehide', function () { if (comp.componentWillUnmount) comp.componentWillUnmount(); });
 
     function resize() {
-      const W = 1440, H = 810, vw = window.innerWidth, vh = window.innerHeight;
-      let s = fit === 'contain' ? Math.min(vw / W, vh / H) : fit === 'width' ? vw / W : Math.max(vw / W, vh / H);
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const next = pickMode();
+      if (next !== mode) {
+        mode = next;
+        document.documentElement.setAttribute('data-mode', mode);
+        root.textContent = '';
+        render();
+      }
+      if (mode === 'portrait') {
+        const s = Math.min(vw / PW, vh / PH);
+        root.style.width = (vw / s).toFixed(2) + 'px';
+        root.style.height = (vh / s).toFixed(2) + 'px';
+        root.style.transform = 'translate(-50%, -50%) scale(' + s + ')';
+        root.style.setProperty('--dc-s', s.toFixed(4));
+        stage.style.position = ''; stage.style.height = '';
+        stage.style.backgroundColor = ''; stage.style.backgroundImage = '';
+        fitAll();
+        return;
+      }
+      const W = 1440, H = 810;
+      root.style.width = ''; root.style.height = '';
+      // cover, but never crop more than ~6% off the sides or ~10% off the top and bottom: the copy
+      // and buttons sit 56-80px from the edges, so a 4:3 tablet or a phone on its side would lose
+      // them. Any band left over is filled with the hero's own background.
+      let s = fit === 'contain' ? Math.min(vw / W, vh / H) : fit === 'width' ? vw / W
+        : Math.min(Math.max(vw / W, vh / H), vw / (W * 0.94), vh / (H * 0.9));
+      const first = root.firstElementChild;
+      const band = fit !== 'width' && first && (W * s < vw - 1 || H * s < vh - 1);
+      const cs = band ? getComputedStyle(first) : null;
+      stage.style.backgroundColor = cs ? cs.backgroundColor : '';
+      stage.style.backgroundImage = cs ? cs.backgroundImage : '';
       root.style.transform = 'translate(-50%, -50%) scale(' + s + ')';
+      root.style.setProperty('--dc-s', s.toFixed(4));
       if (fit === 'width') { stage.style.position = 'relative'; stage.style.height = Math.round(H * s) + 'px'; }
     }
     window.addEventListener('resize', resize);
     resize();
+    if (comp.componentDidMount) comp.componentDidMount();
+    window.addEventListener('pagehide', function () { if (comp.componentWillUnmount) comp.componentWillUnmount(); });
+
+    // ---- Touch + motion: drive the hero's own onMouseMove handler without a mouse. ----
+    // Touch drags, device tilt (after a tap on iOS) and, failing both, a slow idle drift all call
+    // the same handler with { clientX, clientY, currentTarget, synthetic }. synthetic=true means
+    // "not a real pointer" (heroes can ignore it for proximity effects, e.g. the museum lasers).
+    function target() {
+      if (mover && mover.isConnected) return mover;
+      const all = root.querySelectorAll('*');
+      for (let i = 0; i < all.length; i++) if (all[i].__ev && all[i].__ev.mousemove) return (mover = all[i]);
+      return null;
+    }
+    function drive(fx, fy, synthetic) {
+      const el = target();
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      el.__ev.mousemove({ currentTarget: el, target: el, clientX: r.left + fx * r.width, clientY: r.top + fy * r.height, synthetic: synthetic });
+    }
+    const clamp = function (v) { return Math.min(1, Math.max(0, v)); };
+    let lastInput = 0;
+    root.addEventListener('pointerdown', onPointer);
+    root.addEventListener('pointermove', onPointer);
+    function onPointer(e) {
+      if (e.pointerType === 'mouse') return; // the template's own mouse handlers cover this
+      lastInput = performance.now();
+      const el = target();
+      if (el && el.__ev.mousemove) el.__ev.mousemove({ currentTarget: el, target: e.target, clientX: e.clientX, clientY: e.clientY, synthetic: false });
+    }
+
+    let tilt = null, base = null, asked = false;
+    function onOrient(e) {
+      if (e.gamma == null || e.beta == null || reduced.matches) return;
+      if (base === null) base = e.beta;
+      tilt = [clamp(0.5 + e.gamma / 50), clamp(0.5 + (e.beta - base) / 50)];
+    }
+    if (coarse.matches && 'DeviceOrientationEvent' in window) {
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // iOS: needs a user gesture; ask on the first tap
+        root.addEventListener('pointerup', function () {
+          if (asked) return;
+          asked = true;
+          DeviceOrientationEvent.requestPermission().then(function (s) { if (s === 'granted') window.addEventListener('deviceorientation', onOrient); }).catch(function () {});
+        });
+      } else window.addEventListener('deviceorientation', onOrient);
+    }
+
+    let visible = true;
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }).observe(root);
+    if (coarse.matches) {
+      const t0 = performance.now();
+      setInterval(function () {
+        if (!visible || document.hidden || reduced.matches || performance.now() - lastInput < 2500) return;
+        if (tilt) { drive(tilt[0], tilt[1], true); return; }
+        const t = (performance.now() - t0) / 1000;
+        drive(0.5 + 0.16 * Math.sin(t * 0.55), 0.5 + 0.12 * Math.sin(t * 0.37), true);
+      }, 90);
+    }
 
     document.addEventListener('click', function (e) {
       const a = e.target.closest && e.target.closest('a[href^="#"]');

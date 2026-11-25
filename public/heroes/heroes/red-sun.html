@@ -14,6 +14,16 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden}
 body{margin:0}
 a{color:#f4f2ee;text-decoration:none}a:hover{color:#ff8a7d}
 </style>
+<style>
+.rs{container-type:inline-size;position:relative;width:100%;height:100%;overflow:hidden;background:#080606;color:#f4f2ee;font-family:'Archivo','Helvetica Neue',Arial,sans-serif}
+.rs-mono{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;letter-spacing:.16em}
+.rs-nav{position:absolute;left:0;right:0;top:0;height:64px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;z-index:5}
+.rs-line{position:absolute;left:0;right:0;margin:0;text-align:center;font-family:'Anton',Impact,'Arial Narrow',sans-serif;font-weight:400;font-size:clamp(76px,21.5cqw,124px);line-height:.92;letter-spacing:.01em;white-space:nowrap;transition:transform .4s cubic-bezier(.2,.7,.2,1)}
+.rs-sun{position:absolute;left:50%;top:150px;width:min(92cqw,520px);aspect-ratio:1;margin-left:calc(min(92cqw,520px) / -2);transition:transform .4s cubic-bezier(.2,.7,.2,1)}
+.rs-photo{position:absolute;left:50%;top:150px;width:min(128cqw,700px);aspect-ratio:1;margin-left:calc(min(128cqw,700px) / -2);transition:transform .4s cubic-bezier(.2,.7,.2,1)}
+.rs-foot{position:absolute;left:20px;right:20px;bottom:24px;display:flex;flex-direction:column;gap:16px;z-index:4}
+.rs-cta{display:flex;align-items:center;gap:22px}
+</style>
 </head>
 <body>
 <div id="hero-stage"></div>
@@ -69,6 +79,20 @@ a{color:#f4f2ee;text-decoration:none}a:hover{color:#ff8a7d}
 </a>
 </div>
 
+</div>
+</template>
+<template id="dc-template-portrait">
+<div class="rs" onMouseMove="{{onMove}}" onMouseLeave="{{onLeave}}">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: radial-gradient(ellipse 520px 620px at 50% 62%, rgba(120, 14, 8, 0.55), rgba(8, 6, 6, 0) 70%)"></div>
+<div aria-hidden="true" class="rs-sun" style="transform: translate3d(calc(var(--mx, 0) * -18px), calc(var(--my, 0) * -10px), 0)"><div style="width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle at 50% 40%, #ff7a5c, {{accent}} 55%); box-shadow: 0 0 120px 26px rgba(255,43,28,0.45)"></div></div>
+<h1 style="margin: 0"><span class="rs-line" style="top: 92px; transform: translate3d(calc(var(--mx, 0) * -8px), calc(var(--my, 0) * -4px), 0)">CUTS YOU</span><span class="rs-line" style="top: 560px; z-index: 3; transform: translate3d(calc(var(--mx, 0) * -8px), calc(var(--my, 0) * -4px), 0)">CAN&#8217;T SKIP</span></h1>
+<div class="rs-photo" style="transform: translate3d(calc(var(--mx, 0) * 12px), calc(var(--my, 0) * 6px), 0)"><img src="../assets/abdo-natural.webp" alt="Backlit portrait of 3SKRINO in chrome wraparound sunglasses and a red puffer jacket and gold chains" style="width: 100%; height: 100%; display: block"></div>
+<div aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 0; height: 300px; z-index: 2; background: linear-gradient(to top, #080606 34%, rgba(8, 6, 6, 0))"></div>
+<nav aria-label="Primary" class="rs-nav"><a href="#top" style="font-weight: 900; font-size: 17px; letter-spacing: 0.04em; padding: 12px 0">3SKRINO&#8482;</a><span class="rs-mono" style="display: flex; align-items: center; gap: 10px; font-size: 11px; color: #aaa5a0"><span>{{clock}}</span><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: {{accent}}"></span><span>CAIRO</span></span></nav>
+<div class="rs-foot">
+<div class="rs-mono" style="display: flex; align-items: center; gap: 10px; font-size: 12px"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: {{accent}}"></span><span>AVAILABLE FOR WORK &#8212; 2026</span></div>
+<div class="rs-cta"><a href="#work" class="rs-mono" style="display: flex; align-items: center; justify-content: center; height: 48px; padding: 0 26px; background: #f4f2ee; color: #080606; font-size: 12px; font-weight: 700; letter-spacing: 0.2em">VIEW WORK</a><a href="#showreel" class="rs-mono" style="display: flex; align-items: center; gap: 12px; height: 48px; font-size: 12px; font-weight: 500; letter-spacing: 0.2em"><span>SHOWREEL</span><svg aria-hidden="true" width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="15" cy="15" r="14"></circle><path d="M12.5 10.5 L19.5 15 L12.5 19.5 Z" fill="currentColor" stroke="none"></path></svg></a></div>
+</div>
 </div>
 </template>
 <script src="../runtime/dc-lite.js"></script>

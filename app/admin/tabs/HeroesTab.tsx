@@ -4,7 +4,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import MiniPreview from "@/components/admin/MiniPreview";
 import { card, Field, input, micro, Section, Slider, TabHeader, Toggle } from "@/components/admin/ui";
 import { DEFAULT_CINEMATIC } from "@/data/cinematic-defaults";
-import { DEFAULT_ACTIVE_HERO, PACK_HEROES, packHero, packHeroUrl, packThumbUrl } from "@/data/hero-pack";
+import { DEFAULT_ACTIVE_HERO, PACK_HEROES, packHero, packHeroUrl, packPortraitThumbUrl, packThumbUrl } from "@/data/hero-pack";
 import type { Project } from "@/data/projects";
 import type { HeroVariant } from "@/data/site-config";
 import { useConfigStore } from "../store";
@@ -127,7 +127,7 @@ export default function HeroesTab({ projects }: Props) {
       >
         {packOn && (
           <p className="mb-3 border border-[#e7fe55]/40 px-3 py-2 text-xs text-white/60">
-            A pack hero is on the home page (desktop). The one marked here is the default hero — phones always show it, and picking one switches the home page back to it.
+            A pack hero is on the home page. The one marked here is the default hero — picking one switches the home page back to it.
           </p>
         )}
         <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
@@ -175,8 +175,8 @@ export default function HeroesTab({ projects }: Props) {
 
       <Section
         title="Pack heroes"
-        hint={`${PACK_HEROES.length} interactive designs · desktop only, phones keep the default hero`}
-        help="Standalone pages from public/heroes/ (heroes.json is the list). The active one fills the top of the home page under the site menu; its buttons open your real pages. Save to publish."
+        hint={`${PACK_HEROES.length} interactive designs · desktop and phone layouts`}
+        help="Standalone pages from public/heroes/ (heroes.json is the list). The active one fills the top of the home page under the site menu on every screen — phones and upright tablets get its portrait layout (right-hand thumbnail), with touch and tilt instead of the mouse. Its buttons open your real pages. Save to publish."
         onReset={() => pickHero(DEFAULT_ACTIVE_HERO)}
       >
         <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
@@ -187,8 +187,16 @@ export default function HeroesTab({ projects }: Props) {
               description: `The hero the site has today — ${variantName}. Pick it in Active hero above.`,
               preview: `/?${new URLSearchParams({ activeHero: DEFAULT_ACTIVE_HERO })}`,
               thumb: null as string | null,
+              phone: null as string | null,
             },
-            ...PACK_HEROES.map((h) => ({ id: h.id, title: h.title, description: h.description, preview: packHeroUrl(h), thumb: packThumbUrl(h) })),
+            ...PACK_HEROES.map((h) => ({
+              id: h.id,
+              title: h.title,
+              description: h.description,
+              preview: packHeroUrl(h),
+              thumb: packThumbUrl(h),
+              phone: packPortraitThumbUrl(h),
+            })),
           ].map((h, i) => {
             const on = activeHero === h.id;
             return (
@@ -198,8 +206,15 @@ export default function HeroesTab({ projects }: Props) {
                 style={{ "--i": i } as CSSProperties}
               >
                 {h.thumb ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- static 960×540 screenshot from the pack
-                  <img src={h.thumb} alt={`${h.title} thumbnail`} loading="lazy" className="aspect-video w-full object-cover" />
+                  // Desktop 16:9 and phone 390×844 side by side at the same height (phone = 20.6% of the row).
+                  <div className="flex gap-px bg-black">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- static 960×540 screenshot from the pack */}
+                    <img src={h.thumb} alt={`${h.title}, desktop`} loading="lazy" className="aspect-video min-w-0 flex-1 object-cover" />
+                    {h.phone && (
+                      // eslint-disable-next-line @next/next/no-img-element -- static 390×844 screenshot from the pack
+                      <img src={h.phone} alt={`${h.title}, phone`} loading="lazy" className="w-[20.6%] self-stretch object-cover" />
+                    )}
+                  </div>
                 ) : (
                   <MiniPreview path={`/?heroVariant=${site.heroVariant}`} hero={hero} site={site} enabled={live} title="Default hero preview" />
                 )}

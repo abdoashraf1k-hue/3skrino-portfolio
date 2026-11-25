@@ -20,6 +20,28 @@ a{color:#ffffff;text-decoration:none}a:hover{color:#ffd400}
 .wipe{animation:wipe 300ms cubic-bezier(0.16,1,0.3,1) both}
 @media (prefers-reduced-motion: reduce){.tick,.livedot,.wipe{animation:none}}
 </style>
+<style>
+.bn{container-type:inline-size;position:relative;width:100%;height:100%;overflow:hidden;background:#061533;color:#fff;font-family:'Barlow',sans-serif;display:flex;flex-direction:column}
+.bn-bg{position:absolute;inset:0;background:radial-gradient(ellipse 520px 620px at 60% 72%,rgba(30,110,240,.55),rgba(6,21,51,0) 70%),radial-gradient(circle,rgba(120,170,255,.18) 1.2px,rgba(0,0,0,0) 1.6px);background-size:100% 100%,9px 9px}
+.bn-nav{position:absolute;left:0;right:0;top:0;height:64px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;z-index:5;font-size:15px;font-weight:500}
+.bn-copy{position:relative;z-index:3;padding:80px 20px 0;display:flex;flex-direction:column;gap:12px}
+.bn-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.bn-tag{display:flex;gap:8px;align-items:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;color:#c6d3ee}
+.bn-tag b{padding:3px 10px;background:#ffd400;color:#061533;font-weight:800}
+.bn-live{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.45);padding:6px 10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px}
+.bn h1{margin:0;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:clamp(40px,11cqw,58px);line-height:.92;text-transform:uppercase;min-height:2.76em}
+.bn-copy p{margin:0;font-size:15px;line-height:1.45;color:#c6d3ee;max-width:36ch}
+.bn-cta{display:flex;gap:8px;flex-wrap:wrap}
+.bn-cta a,.bn-cta button{display:flex;align-items:center;gap:8px;height:48px;padding:0 14px;box-sizing:border-box;font-size:15px;font-weight:700;white-space:nowrap}
+.bn-next{height:40px;padding:0 12px;border:2px solid #ffd400;background:transparent;color:#ffd400;font:800 15px 'Barlow Condensed',sans-serif;cursor:pointer}
+.bn-stage{position:relative;flex:1;min-height:0;container-type:size}
+.bn-photo{position:absolute;bottom:0;left:50%;width:min(112cqh,118cqw);aspect-ratio:1;transform:translateX(-50%)}
+.bn-photo img{width:100%;height:100%;display:block}
+.bn-scene{position:absolute;right:14px;bottom:12px;width:128px;height:80px;background:#000;box-shadow:0 0 0 3px #fff;overflow:hidden}
+.bn-bar{position:relative;z-index:3;display:flex;flex:none;min-height:52px}
+.bn-bar>span:first-child{display:flex;align-items:center;padding:0 12px;background:#ff2b1c;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px}
+.bn-sub{flex:1;display:flex;align-items:center;padding:6px 12px;background:#fff;color:#061533;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;line-height:1.1}
+</style>
 </head>
 <body>
 <div id="hero-stage"></div>
@@ -61,6 +83,26 @@ a{color:#ffffff;text-decoration:none}a:hover{color:#ffd400}
 <div style="justify-self: end"></div>
 </nav>
 </div>
+</template>
+<template id="dc-template-portrait">
+<div class="bn" onMouseMove="{{onMove}}" onMouseLeave="{{onLeave}}">
+<div aria-hidden="true" class="bn-bg"></div>
+<nav aria-label="Primary" class="bn-nav"><a href="#top" style="font-weight: 800; font-size: 18px; padding: 10px 0">3SKRINO</a><a href="#contact" style="padding: 10px 0">Contact</a></nav>
+<div class="bn-copy">
+<div class="bn-row"><span class="bn-tag"><b>EXCLUSIVE</b>UPDATE {{n}} OF 4</span><span class="bn-live"><span class="livedot" style="width: 9px; height: 9px; border-radius: 50%; background: #ff2b1c"></span>LIVE {{clock}}</span></div>
+<sc-if value="{{odd}}"><h1 class="wipe">{{h}}</h1></sc-if>
+<sc-if value="{{even}}"><h1 class="wipe">{{h}}</h1></sc-if>
+<p>Brands are advised to book early. More at the top of the hour.</p>
+<div class="bn-cta"><button type="button" class="bn-next" onClick="{{next}}" style="height: 48px">NEXT UPDATE</button><a href="#showreel" style="border: 2px solid #ffffff"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 14 14"><path d="M3 1.5 L12 7 L3 12.5 Z" fill="currentColor"></path></svg><span>Watch live</span></a><a href="#contact" style="background: #ff2b1c; font-weight: 800">Book him</a></div>
+</div>
+<div class="bn-stage">
+<img src="../assets/logo-white.webp" alt="" style="position: absolute; left: 6%; top: 4%; width: 88%; opacity: 0.08; filter: blur(2px)">
+<div class="bn-photo"><img src="../assets/abdo-natural.webp" alt="Abdo Ashraf, 3SKRINO, in chrome wraparound sunglasses, a red puffer jacket and gold chains"></div>
+<div class="bn-scene"><img src="../assets/abdo-teal.webp" alt="" style="position: absolute; left: -34px; top: -50px; width: 200px; height: 200px"><span style="position: absolute; left: 0; top: 0; background: #ff2b1c; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 11px; padding: 1px 6px">ON THE SCENE</span></div>
+</div>
+<div class="bn-bar"><span>BREAKING</span><sc-if value="{{odd}}"><span class="wipe bn-sub">{{sub}}</span></sc-if><sc-if value="{{even}}"><span class="wipe bn-sub">{{sub}}</span></sc-if></div>
+<div aria-hidden="true" style="position: relative; height: 44px; flex: none; overflow: hidden; background: #020a1c; display: flex; align-items: center">
+<div class="tick" style="display: flex; gap: 40px; width: max-content; padding-right: 40px; white-space: nowrap; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 19px; color: #ffd400"><span>Vertical cuts now booking</span><span>Horizontal cuts available</span><span>AI cuts: yes, he does those too</span><span>Drip levels: critical</span><span>Cairo, Dubai, Riyadh, worldwide</span><span>Vertical cuts now booking</span><span>Horizontal cuts available</span><span>AI cuts: yes, he does those too</span><span>Drip levels: critical</span><span>Cairo, Dubai, Riyadh, worldwide</span><span>Vertical cuts now booking</span><span>Horizontal cuts available</span><span>AI cuts: yes, he does those too</span><span>Drip levels: critical</span><span>Cairo, Dubai, Riyadh, worldwide</span><span>Vertical cuts now booking</span><span>Horizontal cuts available</span><span>AI cuts: yes, he does those too</span><span>Drip levels: critical</span><span>Cairo, Dubai, Riyadh, worldwide</span></div></div></div>
 </template>
 <script src="../runtime/dc-lite.js"></script>
 <script>

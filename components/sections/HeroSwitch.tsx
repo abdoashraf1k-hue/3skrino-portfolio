@@ -28,24 +28,16 @@ function readForcedActive(): string | null {
 }
 const noop = () => () => {};
 
-/** The pack heroes are desktop-first (1440×810): under 768px the default hero shows. */
-const WIDE = "(min-width: 768px)";
-function subscribeWide(cb: () => void) {
-  const mq = window.matchMedia(WIDE);
-  mq.addEventListener("change", cb);
-  return () => mq.removeEventListener("change", cb);
-}
-
 /**
  * admin → Heroes → Pack heroes (site-config activeHero): a pack hero in an
- * iframe on desktop, else — "default", or under 768px — the variant below.
+ * iframe at every width (each has a desktop and a portrait layout), else
+ * ("default") the variant below.
  */
 export default function HeroSwitch() {
   const forced = useSyncExternalStore(noop, readForcedActive, () => null);
   const { activeHero } = useSiteConfig();
-  const wide = useSyncExternalStore(subscribeWide, () => window.matchMedia(WIDE).matches, () => true);
   const pack = packHero(forced ?? activeHero ?? DEFAULT_ACTIVE_HERO);
-  if (pack && wide) return <PackHeroFrame key={pack.id} hero={pack} />;
+  if (pack) return <PackHeroFrame key={pack.id} hero={pack} />;
   return <VariantHero />;
 }
 
