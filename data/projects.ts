@@ -843,11 +843,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1793019678819-4hwe9jxqay0u.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1793019731563-s2c5sk1e2gls.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696643835-v8petnvrm2vg.jpg",
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-26T13:03:05.112Z",
   },
   {
