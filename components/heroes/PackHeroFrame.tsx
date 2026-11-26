@@ -39,6 +39,25 @@ export default function PackHeroFrame({ hero }: { hero: PackHero }) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [covered, setCovered] = useState(false);
+  const [heroVisible, setHeroVisible] = useState(true);
+
+  // Pause the embedded hero's animations while it is outside the viewport.
+  useEffect(() => {
+    const section = frameRef.current?.closest("#home");
+    if (!section || !("IntersectionObserver" in window)) return;
+    const observer = new IntersectionObserver(([entry]) => setHeroVisible(entry.isIntersecting), { threshold: 0 });
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const doc = frameRef.current?.contentDocument;
+    if (!doc) return;
+    for (const animation of doc.getAnimations()) {
+      if (heroVisible) animation.play();
+      else animation.pause();
+    }
+  }, [heroVisible, loaded]);
 
   // The frame can finish loading before React hydrates and attaches onLoad.
   useEffect(() => {
