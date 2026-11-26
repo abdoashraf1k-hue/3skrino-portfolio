@@ -77,11 +77,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792620417377-y8v0z0998y3i.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792620427098-0rheup99v1wz.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696371907-o0f00nti3qow.jpg",
     filmed: false,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-02T01:33:46.163Z",
   },
   {
@@ -100,12 +100,12 @@ export const projects: Project[] = [
     videoUrl:
       "https://res.cloudinary.com/gnstqf5t/video/upload/v1790767326/fevtvnuij6xh1lgtx0h6.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792621949304-y9j7hy66f3wv.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696379584-boos5c1e88qa.jpg",
     featured: true,
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
   },
   {
     id: "downtown-mall-marathon",
@@ -121,13 +121,13 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792622110245-i915hxfhza2y.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792622590165-lxqiuvv5zhv3.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696388706-ifve6vrdnuev.jpg",
     featured: true,
     filmed: false,
     directed: false,
     edited: true,
     tags: ["downtown", "mall", "marathon"],
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-09-30T14:40:16.046Z",
   },
   {
@@ -166,12 +166,12 @@ export const projects: Project[] = [
     videoUrl:
       "https://res.cloudinary.com/gnstqf5t/video/upload/v1790767481/ywy46evz68uqpfjrwmyx.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792622030613-vitswcpa80du.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696397328-1omm3avjsr6o.jpg",
     featured: true,
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
   },
   {
     id: "al-ahly-vs-miami-one-world-tours",
@@ -187,11 +187,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792620840835-v970h3e34lqr.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792620884390-tbhrwk3pza8a.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696501968-fwlkwwxhxb2j.jpg",
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-02T01:40:48.063Z",
   },
   {
@@ -208,12 +208,12 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792620969630-omcx1czjinss.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792621022575-77uex598if14.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696411761-ry32ila1tw4a.jpg",
     filmed: false,
     directed: true,
     edited: true,
     tags: ["recap", "world", "tours"],
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-02T01:41:14.030Z",
   },
   {
@@ -230,13 +230,13 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792872476392-32ik9u5yh2dy.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792872482532-u6pxg4yfp8r1.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696420587-vlasv3vmq647.jpg",
     featured: true,
     filmed: false,
     directed: true,
     edited: true,
     tags: ["frogz", "edition", "ai", "video"],
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-06T11:51:06.809Z",
   },
   {
@@ -296,11 +296,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792872535189-ifp0aodfg9wn.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792872568142-1ovhtfi6c4l5.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696429191-kynmo0xflllg.jpg",
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-06T14:00:28.404Z",
   },
   {
@@ -317,11 +317,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792854590506-b14lm452alw9.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792854629287-s5y3y7szay39.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696438746-l6b03gus5y5o.jpg",
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-06T14:03:38.656Z",
   },
   {
@@ -338,11 +338,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1791330938180-hmui87lx6h5i.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1791331253970-ggtty8xpz984.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696447260-jzgc5hf50x5j.jpg",
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-07T00:01:09.194Z",
   },
   {
@@ -359,11 +359,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1791331499669-x66u5298e2dl.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1791331627126-izw6y4vxwjbv.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696456358-qtw8kpcfu3mv.jpg",
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-07T00:07:13.541Z",
   },
   {
@@ -380,11 +380,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1791331667567-938fxcdz1w9e.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1791331748977-obqo372jytce.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696464991-iuiulw7ijv7m.jpg",
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-07T00:09:17.518Z",
   },
   {
@@ -401,11 +401,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1791331942618-ee50815c4msv.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1791332188646-u234nc6jp76k.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696474337-o1ms8jk876ev.jpg",
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-07T00:16:45.892Z",
   },
   {
@@ -422,11 +422,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792621795994-87f30afrteo1.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792621880994-qljjj5sh74b6.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696483214-qoxtzqufgizt.jpg",
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-21T22:31:33.577Z",
   },
   {
@@ -443,11 +443,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792853356686-kbrj7z3h45r3.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792853435192-5ffon9owcfsp.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696510060-tgwdv78dmnih.jpg",
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T14:50:38.587Z",
   },
   {
@@ -464,11 +464,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792854292464-579rxx13vqy1.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792854376488-h55qdu14jrp2.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696519727-97rsqor9143n.jpg",
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T15:06:19.695Z",
   },
   {
@@ -485,11 +485,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792854505233-8ggz2jvtkjza.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792854532207-iw96q3cgne1z.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696526183-hke198av2tt6.jpg",
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T15:09:31.482Z",
   },
   {
@@ -506,11 +506,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792870957682-gj0rk3dcijon.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792871080347-6sndkixc28t6.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696533503-kx33jy2twzrz.jpg",
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T19:44:52.558Z",
   },
   {
@@ -527,11 +527,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792871117790-0hiiq4985td3.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792871160037-g66jeoammovi.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696540729-7owgf71dqk99.jpg",
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T19:46:11.274Z",
   },
   {
@@ -548,11 +548,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792871211354-yljtmuq73xcs.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792871256668-eebryduq1254.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696548107-d6yaqecomii4.jpg",
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T19:48:35.098Z",
   },
   {
@@ -569,11 +569,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792871333214-rgvkyw2trz17.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792871368708-fh60sy1y62p9.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696555408-uudrfi6knfm5.jpg",
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T19:49:34.750Z",
   },
   {
@@ -590,11 +590,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792871410726-9yno0r911vk9.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792871507365-ar96b0exuqta.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696567012-0r8xk81o063z.jpg",
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T19:51:56.964Z",
   },
   {
@@ -611,11 +611,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792871559675-mv868tbztf2j.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792871633897-9pr3f024774p.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696574471-fdonfippj4ac.jpg",
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T19:54:22.358Z",
   },
   {
@@ -632,11 +632,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792871679308-0h1mb13ktydy.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792871773321-y23b7x5w9jis.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696582081-p97r9mive69o.jpg",
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T19:56:24.717Z",
   },
   {
@@ -674,11 +674,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792871977254-ubisuylvrb22.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792959462529-39e4px8sslbx.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696589031-m42n9bsrkdvr.jpg",
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T20:01:31.100Z",
   },
   {
@@ -716,11 +716,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792872315066-hudc338sfe80.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792872393749-e682j4fhlc7a.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696597139-po43uw56latp.jpg",
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T20:06:56.379Z",
   },
   {
@@ -737,11 +737,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792872629370-yx025xeknnsk.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792872723077-ralz999w83pp.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696605005-s6bperolmgvw.jpg",
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T20:12:06.775Z",
   },
   {
@@ -758,11 +758,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792872743603-bi6h69kkae5k.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792872783317-i8wc3pwbsrtu.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696612500-odmvoe00l8gx.jpg",
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T20:13:12.465Z",
   },
   {
@@ -779,11 +779,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1793019163200-qelworx0wkpx.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1793019206825-va2ibfk04yjq.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696621487-pssy79v2rspy.jpg",
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-26T12:53:46.636Z",
   },
   {
@@ -800,11 +800,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1793019254026-7hii6rs0eb02.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1793019272277-hbc5ddpfuep3.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696628874-1tfaeroavvls.jpg",
     filmed: true,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-26T12:54:43.992Z",
   },
   {
