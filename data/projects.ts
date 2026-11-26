@@ -121,13 +121,13 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792622110245-i915hxfhza2y.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792622590165-lxqiuvv5zhv3.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696388706-ifve6vrdnuev.jpg",
     featured: true,
     filmed: false,
     directed: false,
     edited: true,
     tags: ["downtown", "mall", "marathon"],
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-09-30T14:40:16.046Z",
   },
   {
