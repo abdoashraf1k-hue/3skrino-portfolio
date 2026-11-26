@@ -275,8 +275,8 @@ export const siteConfig: SiteConfig = {
     ],
     aboutHighlight: "Lately I'm directing AI-generated sequences too — treating generative tools like a new camera department, with the same editorial discipline.",
     stats: [
-      { value: "3M+", label: "Views" },
-      { value: "100+", label: "Clients" },
+      { value: "10M+", label: "Views" },
+      { value: "50+", label: "Clients" },
       { value: "9+", label: "Years" },
     ],
     socials: [{ label: "Instagram", href: "https://instagram.com/3skrino" }],
