@@ -100,12 +100,12 @@ export const projects: Project[] = [
     videoUrl:
       "https://res.cloudinary.com/gnstqf5t/video/upload/v1790767326/fevtvnuij6xh1lgtx0h6.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792621949304-y9j7hy66f3wv.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696379584-boos5c1e88qa.jpg",
     featured: true,
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
   },
   {
     id: "downtown-mall-marathon",
