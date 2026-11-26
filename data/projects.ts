@@ -55,13 +55,13 @@ export const projects: Project[] = [
     videoUrl:
       "https://res.cloudinary.com/gnstqf5t/video/upload/v1790767671/q9n1asudfeuqslxakb9z.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792853271876-hyj02hqid62n.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696359050-7963rh8oipbs.jpg",
     featured: true,
     filmed: true,
     directed: true,
     edited: true,
     tags: ["twist", "unofficial", "lifestyle", "video"],
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
   },
   {
     id: "rz-lexus-copy",
