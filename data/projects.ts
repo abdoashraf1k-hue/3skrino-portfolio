@@ -166,12 +166,12 @@ export const projects: Project[] = [
     videoUrl:
       "https://res.cloudinary.com/gnstqf5t/video/upload/v1790767481/ywy46evz68uqpfjrwmyx.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792622030613-vitswcpa80du.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696397328-1omm3avjsr6o.jpg",
     featured: true,
     filmed: false,
     directed: false,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
   },
   {
     id: "al-ahly-vs-miami-one-world-tours",
