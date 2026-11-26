@@ -215,7 +215,7 @@ function CrtFx() {
   }, [curve, glow, trails]);
 
   if (!active) return null;
-  return <div aria-hidden className="fx-crt fixed inset-0 z-[88]" />;
+  return <div aria-hidden className="fx-crt fixed inset-0 z-[88] will-change-transform" />;
 }
 
 /* ------------------------------------------------------------------ */
@@ -681,7 +681,7 @@ function TransitionFx() {
 
   if ((!burnOn && !flashOn) || reduced) return null;
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-[96] overflow-hidden">
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-[96] overflow-hidden will-change-transform">
       {burnOn && (
         <div
           ref={burnRef}

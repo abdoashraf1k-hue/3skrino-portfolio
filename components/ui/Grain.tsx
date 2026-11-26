@@ -29,6 +29,17 @@ export default function Grain() {
     let frame = 0;
     let last = 0;
     let image: ImageData | null = null;
+    let visible = true;
+    let reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const start = () => {
+      if (!visible || reduced || frame) return;
+      frame = requestAnimationFrame(loop);
+    };
+    const stop = () => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+    };
 
     const resize = () => {
       canvas.width = Math.ceil(window.innerWidth / SCALE);
@@ -80,11 +91,20 @@ export default function Grain() {
 
     resize();
     window.addEventListener("resize", resize);
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!reduced) frame = requestAnimationFrame(loop);
+    const hero = document.querySelector("#home");
+    const observer = hero && "IntersectionObserver" in window
+      ? new IntersectionObserver(([entry]) => {
+          visible = entry.isIntersecting;
+          if (visible) start();
+          else stop();
+        }, { threshold: 0 })
+      : null;
+    observer?.observe(hero!);
+    if (!hero) start();
 
     return () => {
-      cancelAnimationFrame(frame);
+      stop();
+      observer?.disconnect();
       window.removeEventListener("resize", resize);
     };
   }, []);
@@ -94,8 +114,8 @@ export default function Grain() {
       ref={canvasRef}
       aria-hidden
       className="pointer-events-none fixed inset-0 z-[90] h-full w-full mix-blend-overlay [image-rendering:pixelated]"
+      style={{ opacity: active ? filmGrain.intensity * 2.2 : "var(--grain-opacity)", willChange: "transform", contain: "layout style" }}
       // Strength: the theme's grain (data/site-config.ts → theme.grain), or the Film grain effect's intensity.
-      style={{ opacity: active ? filmGrain.intensity * 2.2 : "var(--grain-opacity)" }}
     />
   );
 }
