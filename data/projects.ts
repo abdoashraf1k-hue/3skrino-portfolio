@@ -485,11 +485,11 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792854505233-8ggz2jvtkjza.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792854532207-iw96q3cgne1z.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696526183-hke198av2tt6.jpg",
     filmed: true,
     directed: true,
     edited: true,
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-24T15:09:31.482Z",
   },
   {
