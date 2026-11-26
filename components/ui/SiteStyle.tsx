@@ -54,7 +54,7 @@ export default function SiteStyle() {
       {/* Vignette: darkens the screen edges; strength from the theme. */}
       <div
         aria-hidden
-        className="site-vignette pointer-events-none fixed inset-0 z-[89]"
+        className="site-vignette pointer-events-none fixed inset-0 z-[89] will-change-transform"
         style={{ background: "radial-gradient(120% 90% at 50% 45%, transparent 55%, rgb(0 0 0 / 0.55) 100%)" }}
       />
     </>
