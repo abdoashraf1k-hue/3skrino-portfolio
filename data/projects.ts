@@ -208,12 +208,12 @@ export const projects: Project[] = [
     description: "",
     videoUrl: "https://3skrino-portfolio.vercel.app/media/videos/1792620969630-omcx1czjinss.mp4",
     thumbnail:
-      "https://3skrino-portfolio.vercel.app/media/thumbnails/1792621022575-77uex598if14.jpg",
+      "https://3skrino-portfolio.vercel.app/media/thumbnails/1795696411761-ry32ila1tw4a.jpg",
     filmed: false,
     directed: true,
     edited: true,
     tags: ["recap", "world", "tours"],
-    thumbnailSource: "auto",
+    thumbnailSource: "manual",
     createdAt: "2026-10-02T01:41:14.030Z",
   },
   {
